@@ -17,32 +17,37 @@ slog; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdarg.h>
 
 #include "../include/slog/slog.h"
+#include "internal.h"
 
-#define TIME_FMT_BUFFER_SIZE 80
-#define RED
+#define TIME_FMT_BUFFER_SIZE 64
+#define LEVEL_FMT_BUFFER_SIZE 32
 
-/*
- * Stores time formatted in yy-mm-dd hh:mm:ss in a char buffer.
- * On success, get_time() returns 0, and on failure, returns 1
- */
-static int32_t get_time(char time_fmt[TIME_FMT_BUFFER_SIZE]);
+#define LOG_LEVEL_FORMAT(fmt, level) { memcpy(fmt, level, sizeof(level)); }
 
-void slog_log(void)
+static int32_t timef_get(char time_fmt[TIME_FMT_BUFFER_SIZE]);
+static void level_format(char level_fmt[LEVEL_FMT_BUFFER_SIZE], enum SLOG_LEVEL level);
+
+void slog_log(FILE *output, enum SLOG_LEVEL level, const char *fmt, ...)
 {
-    char time_fmt[TIME_FMT_BUFFER_SIZE];
-    int32_t res = get_time(time_fmt);
+    char time_buffer[TIME_FMT_BUFFER_SIZE] = {0};
+    char level_buffer[LEVEL_FMT_BUFFER_SIZE] = {0};
+    va_list args;
 
-    if (res != 0) {
-        fprintf(stderr, "Failed to get time\n");
-        return;
-    }
+    timef_get(time_buffer);
+    level_format(level_buffer, level);
 
-    printf("[ %s ] | %s |\n");
+    va_start(args, fmt);
+    fprintf(output, LOG_PREHEADER_FMT, time_buffer, level_buffer, __FILE__, __LINE__);
+    vfprintf(output, fmt, args);
+    fprintf(output, "\n");
+    va_end(args);
 }
 
-static int32_t get_time(char time_fmt[TIME_FMT_BUFFER_SIZE])
+static int32_t timef_get(char time_fmt[TIME_FMT_BUFFER_SIZE])
 {
     time_t raw_time = (time_t) -1;
     struct tm *info = NULL;
@@ -55,4 +60,16 @@ static int32_t get_time(char time_fmt[TIME_FMT_BUFFER_SIZE])
     strftime(time_fmt, 80, "%Y-%m-%d %H:%M:%S", info);
 
     return 0;
+}
+
+static void level_format(char level_fmt[LEVEL_FMT_BUFFER_SIZE], enum SLOG_LEVEL level)
+{
+    switch (level) {
+        case PASS:  LOG_LEVEL_FORMAT(level_fmt, PASS_LABEL_FMT); break;
+        case DEBUG: LOG_LEVEL_FORMAT(level_fmt, DEBUG_LABEL_FMT); break;
+        case INFO:  LOG_LEVEL_FORMAT(level_fmt, INFO_LABEL_FMT); break;
+        case WARN:  LOG_LEVEL_FORMAT(level_fmt, WARN_LABEL_FMT); break;
+        case ERROR: LOG_LEVEL_FORMAT(level_fmt, ERROR_LABEL_FMT); break;
+        case FATAL: LOG_LEVEL_FORMAT(level_fmt, FATAL_LABEL_FMT); break;
+    }
 }

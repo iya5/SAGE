@@ -104,14 +104,11 @@ char *load_shader_source(const char *path)
 int main(int argc, [[maybe_unused]] char **argv)
 {
     if (argc > 1) {
-        fprintf(stderr, "usage: ./sage\n");
+        LOG_FATAL("usage: bin/sage");
         exit(1);
     }
 
-    printf("hello from sage\n");
-
     GLFWwindow *window = NULL;
-    // slog_log();
 
     glfwSetErrorCallback(error_callback);
 
