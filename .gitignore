@@ -1,8 +1,7 @@
-build/
-
 bin/
 
 # object files
+obj/
 *.o
 
 # clangd
