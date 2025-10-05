@@ -5,9 +5,11 @@ CFLAGS = -Wall -Wextra -Wpedantic -g -std=c23
 
 CFLAGS += -Ilib/glfw/include -Ilib/glad/include -Ilib/cglm/include
 CFLAGS += -Ilib/slog/include -Ilib/openal-soft/include
+CFLAGS += -Ilib/cimgui -Ilib/cimgui/imgui -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS
 
 LDFLAGS = lib/glad/src/glad.o lib/glfw/src/libglfw3.a -lm
 LDFLAGS += lib/slog/src/slog.o lib/openal-soft/build/libopenal.so
+LDFLAGS += lib/cimgui/libcimgui.a
 
 ifeq ($(UNAME), Linux)
 	LDFLAGS += -lGL -lX11 -lpthread -lXrandr -lXi -ldl
@@ -25,6 +27,7 @@ libs:
 	cd lib/glad && $(CC) -o src/glad.o -Iinclude -c src/glad.c
 	cd lib/openal-soft/build && cmake .. && cmake --build .
 	cd lib/slog && $(CC) -o src/slog.o -Iinclude -c src/slog.c
+	cd lib/cimgui/generator && ./generator.sh -c "glfw opengl3" && cd .. && make static
 
 dirs: 
 	mkdir -p ./$(BIN)

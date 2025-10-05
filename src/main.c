@@ -13,7 +13,9 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#include "cglm/vec3.h"
+//#include <cimgui.h>
+//#include <cimgui_impl.h>
+
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -26,6 +28,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#include <cimgui.h>
+#include <cimgui_impl.h>
 
 #include "math/math.h"
 
@@ -289,6 +294,7 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     GLFWwindow *window = NULL;
 
+
     glfwSetErrorCallback(error_callback);
 
     // GLFW Library initialization
@@ -305,7 +311,6 @@ int main(int argc, [[maybe_unused]] char **argv)
     glfwSwapInterval(SAGE_VSYNC_SETTING);
 
     window = glfwCreateWindow(640, 480, SAGE_WINDOW_TITLE, NULL, NULL);
-    double previous_second = glfwGetTime();
     if (window == NULL) {
         LOG_FATAL("GLFW failed to create a window");
         glfwTerminate();
@@ -345,19 +350,29 @@ int main(int argc, [[maybe_unused]] char **argv)
     vec3 cam_pos = {0.0, 0.0, 2.0};
     float cam_yaw = 0.0;
 
+    double previous_seconds = glfwGetTime();
     // render loop
     while (!glfwWindowShouldClose(window)) {
+        double current_seconds = glfwGetTime();
+        double delta = current_seconds - previous_seconds;
+        previous_seconds = current_seconds;
+
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_program_hot_reload(&program);
+
         // camera
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            cam_pos[Z] += -0.5;
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            cam_pos[X] += -0.5;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            cam_pos[Z] += 0.5;
+            cam_pos[X] -= cam_speed * delta;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            cam_pos[X] += 0.5;
+            cam_pos[X] += cam_speed * delta;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            cam_pos[Z] -= cam_speed * delta;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            cam_pos[Z] += cam_speed * delta; 
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            cam_pos[Y] += cam_speed * delta; 
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+            cam_pos[Y] -= cam_speed * delta; 
 
         shader_program_use(&program);
 
