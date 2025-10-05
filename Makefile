@@ -13,7 +13,7 @@ ifeq ($(UNAME), Linux)
 	LDFLAGS += -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 endif
 
-SRC = $(wildcard src/*.c)
+SRC = $(wildcard src/*.c) $(wildcard src/**/*.c)
 OBJ = $(SRC:.c=.o)
 BIN = bin
 

@@ -31,7 +31,11 @@ slog; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 static int32_t timef_get(char time_fmt[TIME_FMT_BUFFER_SIZE]);
 static void level_format(char level_fmt[LEVEL_FMT_BUFFER_SIZE], enum SLOG_LEVEL level);
 
-void slog_log(FILE *output, enum SLOG_LEVEL level, const char *fmt, ...)
+void slog_log(FILE *output, 
+              enum SLOG_LEVEL level, 
+              const char *file,
+              int line,
+              const char *fmt, ...)
 {
     char time_buffer[TIME_FMT_BUFFER_SIZE] = {0};
     char level_buffer[LEVEL_FMT_BUFFER_SIZE] = {0};
@@ -41,7 +45,7 @@ void slog_log(FILE *output, enum SLOG_LEVEL level, const char *fmt, ...)
     level_format(level_buffer, level);
 
     va_start(args, fmt);
-    fprintf(output, LOG_PREHEADER_FMT, time_buffer, level_buffer, __FILE__, __LINE__);
+    fprintf(output, LOG_PREHEADER_FMT, time_buffer, level_buffer, file, line);
     vfprintf(output, fmt, args);
     fprintf(output, "\n");
     va_end(args);

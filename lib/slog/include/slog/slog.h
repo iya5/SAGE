@@ -27,13 +27,17 @@ enum SLOG_LEVEL {
     FATAL
 };
 
-void slog_log(FILE *output, enum SLOG_LEVEL level, const char *fmt, ...);
+void slog_log(FILE *output, 
+              enum SLOG_LEVEL level, 
+              const char *file,
+              int line,
+              const char *fmt, ...);
 
-#define LOG_PASS(fmt, ...)  slog_log(stdout, PASS, fmt, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) slog_log(stdout, DEBUG, fmt, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...)  slog_log(stdout, INFO, fmt, ##__VA_ARGS__)
-#define LOG_WARN(fmt, ...)  slog_log(stdout, WARN, fmt, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) slog_log(stderr, ERROR, fmt, ##__VA_ARGS__)
-#define LOG_FATAL(fmt, ...) slog_log(stderr, FATAL, fmt, ##__VA_ARGS__)
+#define LOG_PASS(fmt, ...)  slog_log(stdout, PASS, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...) slog_log(stdout, DEBUG, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...)  slog_log(stdout, INFO, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOG_WARN(fmt, ...)  slog_log(stdout, WARN, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) slog_log(stderr, ERROR, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOG_FATAL(fmt, ...) slog_log(stderr, FATAL, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
 #endif /* __SLOG_H__ */
