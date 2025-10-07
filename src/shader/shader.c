@@ -126,8 +126,6 @@ void shader_program_uniform_vec4(struct shader_program program,
                                  const char *uniform, 
                                  vec4 v)
 {
-    LOG_INFO("Attempting to set uniform: '%s' for program id '%d'", 
-             uniform, program.handle);
     int32_t location = glGetUniformLocation(program.handle, uniform);
     if (location < 0) {
         LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);
@@ -139,8 +137,6 @@ void shader_program_uniform_vec4(struct shader_program program,
 void shader_program_uniform_mat4(struct shader_program program, const char* uniform,
                            mat4 m)
 {
-    LOG_INFO("Attempting to set uniform: '%s' for program id '%d'", 
-             uniform, program.handle);
     int32_t location = glGetUniformLocation(program.handle, uniform);
     if (location < 0) {
         LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);

@@ -21,4 +21,16 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define Z 2
 #define W 3
 
+#define PI 3.14159
+#define DEG_TO_RAD(DEG) ((DEG) * (PI / 180.0))
+#define RAD_TO_DEG(RAD) ((RAD) * (180.0 / PI))
+
+#define WOLRD_UP (vec3) {0.0, 1.0, 0.0}
+
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (t)))
+#define CLAMP(value, min, max) ((min < max) \
+	? (value < min) ? min : ((value > max) ? max : value) \
+	: (value < max) ? max : ((value > min) ? min : value))
+
 #endif /* __SAGE_MATH_H__ */

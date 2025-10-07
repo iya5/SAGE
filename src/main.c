@@ -23,7 +23,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <cglm/cglm.h>
 #include <slog/slog.h>
 
-#include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,17 +31,16 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <cimgui.h>
 #include <cimgui_impl.h>
 
-#include "math/math.h"
-
 #include "config.h"
+#include "camera.h"
 #include "shader/shader.h"
-
-
 struct mesh {
     uint32_t handle;
     uint32_t vbo;
     uint32_t ebo;
 };
+
+struct camera cam = {0};
 
 void error_callback(int32_t error, const char *description)
 {
@@ -98,6 +96,83 @@ struct mesh mesh_create_triangle(void)
     return triangle;
 }
 
+struct mesh mesh_create_cube(void)
+{
+    struct mesh cube = {0};
+    float vertices[] = {
+        -0.5f, -0.5f, -0.5f,//  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,//  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,//  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,//  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,//  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,//  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,//  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,//  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,//  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,//  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,//  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,//  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,//  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f//  0.0f, 1.0f
+    };
+
+    uint32_t vao;
+    uint32_t point_vbo;
+
+    glGenVertexArrays(1, &vao);
+
+    // generating buffers for shader
+    glGenBuffers(1, &point_vbo);
+
+    // bind vao
+    glBindVertexArray(vao);
+
+    // after binding vao, vbo binds to vao as well
+    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
+
+    glEnableVertexAttribArray(0);
+
+    // bind color buffer
+
+    // safely unbinding
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    cube.handle = vao;
+    cube.vbo = point_vbo;
+
+    return cube;
+}
+
 struct mesh mesh_create_quad(void)
 {
     struct mesh quad = {0};
@@ -150,138 +225,32 @@ void mesh_destroy(struct mesh m)
     glDeleteBuffers(1, &m.vbo);
 }
 
-void perspective_projection(mat4 projection,
-                            float near, float far,
-                            float range,
-                            float aspect_ratio,
-                            float fov)
+void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_pos)
 {
-    /*
-     * Projection matrix looks like this (in column major)
-     *
-     * [Sx,  0,  0,  0]
-     * [ 0, Sy,  0,  0]
-     * [ 0,  0, Sz, Pz]
-     * [ 0,  0, -1,  0]
-     *
-     * S is just a vector that scales its respective components x, y, z
-     * Pz adjusts points' range between clipping planes (the near and far plane
-     * of the view frustrum
-     * the -1 swaps the vector's fourth component 'w' with its negated
-     * third 'z' component used for perspective division
-     */
+    static bool first_mouse = true;
+    static float last_x = 640.0 / 2.0;
+    static float last_y = 480.0 / 2.0;
 
-    vec3 scale = {
-        (2 * near) / (range * aspect_ratio + range * aspect_ratio),
-        near / range,
-        -(far + near) / (far - near)
-    };
+    if (first_mouse) {
+        last_x = x_pos;
+        last_y = y_pos;
+        first_mouse = false;
+    }
 
-    // what exactly is that name Pz?
-    float pz = -(2 * far * near) / (far - near);
-    range = tan(fov * 0.5) * near;
+    float dx = x_pos - last_x;
+    float dy = last_y - y_pos;
 
-    mat4 temp = {
-        {scale[X], 0, 0, 0},
-        {0, scale[Y], 0, 0},
-        {0, 0, scale[Z], -1},
-        {0, 0, pz, 0}
-    };
-    glm_mat4_copy(temp, projection);
+    last_x = x_pos;
+    last_y = y_pos;
+    camera_mouse(&cam, dx, dy);
 }
 
-void camera_lookat(mat4 view, 
-                   vec3 camera_pos, 
-                   vec3 target_pos, 
-                   vec3 up_direction)
+void scroll_callback([[maybe_unused]] GLFWwindow *window, 
+                     [[maybe_unused]] double dx, 
+                     double dy)
 {
-    vec3 distance_vector;
-    glm_vec3_copy(
-        (vec3) {
-            target_pos[X] - camera_pos[X],
-            target_pos[Y] - camera_pos[Y],
-            target_pos[Z] - camera_pos[Z]
-        },
-        distance_vector
-    );
-
-    /*
-     * A view matrix typically looks like this (in column major)
-     *
-     * [ Rx,  Ry,  Rz, -Px]
-     * [ Ux,  Uy,  Uv, -Py]
-     * [-Fx, -Fy, -Fz, -Pz]
-     * [  0,   0,   0,   1]
-     *
-     * Where U is a unit vector pointing upwards
-     * Where F is forwards
-     * Where R is to the right
-     * and P is the position of the camera relative to the world space
-     *
-     * Since U handles pointing upwards, it is the camera pitch and yaw
-     */
-
-    // normalize the distance vector by calculating the magnitude and
-    // multiplying the vector by it
-    // this is done so that our forward direction vector has a length of
-    // 1 unit
-    //
-    // Why is P the negated world position of the camera?
-    //
-    // Why is Forward negated as well?
-    float magnitude = sqrtf(
-        distance_vector[X] * distance_vector[X] + \
-        distance_vector[Y] * distance_vector[Y] + \
-        distance_vector[Z] * distance_vector[Z]
-    );
-
-    // normalizing the distance vector gives the forward unit vector
-    vec3 forward_vector;
-    glm_vec3_copy(
-        (vec3) {
-            distance_vector[X] / magnitude,
-            distance_vector[Y] / magnitude,
-            distance_vector[Z] / magnitude
-        },
-        forward_vector
-    );
-
-    /* finding the Right vector means to find the vector perpendicular
-     * to both forward and upward, which is to the right(or left but right
-     * because left hand coordinate!)
-     * this is done by caculating the cross product of r^ = F x U^
-     *
-     * what order should it be done?, 
-     */
-    
-    // R^ = F^ x U^
-    vec3 right_vector;
-
-    glm_vec3_copy(
-        (vec3) {
-            forward_vector[Y] * up_direction[Z] - forward_vector[Z] * up_direction[Y],
-            forward_vector[Z] * up_direction[X] - forward_vector[X] * up_direction[Z],
-            forward_vector[X] * up_direction[Y] - forward_vector[Y] * up_direction[X]
-        },
-        right_vector
-    );
-
-    // recaculating the up vector for consistency
-    // U^ = r^ x F^
-    up_direction[X] = right_vector[Y] * forward_vector[Z] - right_vector[Z] * forward_vector[Y];
-    up_direction[Y] = right_vector[Z] * forward_vector[X] - right_vector[X] * forward_vector[Z];
-    up_direction[Z] = right_vector[X] * forward_vector[Y] - right_vector[Y] * forward_vector[X];
-
-    glm_mat4_identity(view);
-    mat4 temp = {
-        {right_vector[X], up_direction[X], -forward_vector[X], 0},
-        {right_vector[Y], up_direction[Y], -forward_vector[Y], 0},
-        {right_vector[Z], up_direction[Z], -forward_vector[Z], 0},
-        {-camera_pos[X], -camera_pos[Y], -camera_pos[Z], 1}
-    };
-    glm_mat4_copy(temp, view);
+    camera_scroll(&cam, dy);
 }
-
 
 int main(int argc, [[maybe_unused]] char **argv)
 {
@@ -306,9 +275,6 @@ int main(int argc, [[maybe_unused]] char **argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // setup MSAA
-    glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
-    glfwSwapInterval(SAGE_VSYNC_SETTING);
 
     window = glfwCreateWindow(640, 480, SAGE_WINDOW_TITLE, NULL, NULL);
     if (window == NULL) {
@@ -320,59 +286,74 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGL()) {
         LOG_FATAL("Failed to load and initialize GLAD");
         return -1;
     }
+    // setup MSAA
+    glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
+    glfwSwapInterval(SAGE_VSYNC_SETTING);
 
     glViewport(0, 0, 640, 480);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
-    // disappears when these are turned on
-    // glDepthFunc(GL_LESS);
-    // glEnable(GL_DEPTH_TEST);
-
-    struct mesh quad = mesh_create_quad();
+    struct mesh cube= mesh_create_cube();
     // struct mesh triangle = mesh_create_triangle();
+
+    float aspect = 640.0 / 480.0;
+
+    camera_init(&cam, CAM_DEFAULT_POS, CAM_DEFAULT_FORWARD, CAM_DEFAULT_UP);
+    camera_perspective(
+        &cam, 
+        FOV_DEFAULT, 
+        aspect, 
+        PERSPECTIVE_DEFAULT_NEAR, 
+        PERSPECTIVE_DEFAULT_FAR
+    );
 
     struct shader_program program = shader_program_create(
         "res/shader/shader.vert",
         "res/shader/shader.frag"
     );
 
-    float cam_speed = 1.0;
-    float cam_yaw_speed = 10.0; // 10 degrees per second
-    
-    // OpenGL has -z as towards the screen and +z as towards the user
-    vec3 cam_pos = {0.0, 0.0, 2.0};
-    float cam_yaw = 0.0;
 
     double previous_seconds = glfwGetTime();
     // render loop
     while (!glfwWindowShouldClose(window)) {
         double current_seconds = glfwGetTime();
-        double delta = current_seconds - previous_seconds;
+        double dt = current_seconds - previous_seconds;
         previous_seconds = current_seconds;
+
+        // input_process(int KEY);
 
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_program_hot_reload(&program);
-
-        // camera
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            cam_pos[X] -= cam_speed * delta;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            cam_pos[X] += cam_speed * delta;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            cam_pos[Z] -= cam_speed * delta;
+            camera_move(&cam, MOVE_FORWARD, dt);
+
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            cam_pos[Z] += cam_speed * delta; 
+            camera_move(&cam, MOVE_BACKWARD, dt);
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera_move(&cam, STRAFE_LEFT, dt);
+
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera_move(&cam, STRAFE_RIGHT, dt);
+
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            cam_pos[Y] += cam_speed * delta; 
+            camera_move(&cam, MOVE_UP, dt);
+
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-            cam_pos[Y] -= cam_speed * delta; 
+            camera_move(&cam, MOVE_DOWN, dt);
+
 
         shader_program_use(&program);
 
@@ -381,35 +362,22 @@ int main(int argc, [[maybe_unused]] char **argv)
             (vec4) {0.2, 0.1, 0.2, 1.0}
         );
 
-        mat4 model, view, projection;
+        mat4 model;
         glm_mat4_identity(model);
-        shader_program_uniform_mat4(program, "model", model);
 
-        camera_lookat(view, cam_pos, (vec3) {0, 0, 0}, (vec3) {0, 1, 0});
-        shader_program_uniform_mat4(program, "view", view);
+        camera_update(&cam);
         
-        float near = 0.1;
-        float far = 100.0;
-        float fov = 67.0 * (2.0 * 3.14278) / 360.0;
-        float aspect = 640.0 / 480.0;
+        shader_program_uniform_mat4(program, "model", model);
+        shader_program_uniform_mat4(program, "view", cam.view);
+        shader_program_uniform_mat4(program, "projection", cam.projection);
 
-        float range = tan(fov * 0.5) * near;
-        perspective_projection(
-            projection, 
-            near, 
-            far, 
-            range, 
-            aspect,
-            fov
-        );
-        shader_program_uniform_mat4(program, "projection", projection);
 
         // renderingArray
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindVertexArray(quad.handle);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(cube.handle);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // swap buffers and poll
         glfwSwapBuffers(window);
@@ -417,7 +385,7 @@ int main(int argc, [[maybe_unused]] char **argv)
         process_input(window);
     }
 
-    mesh_destroy(quad);
+    mesh_destroy(cube);
     shader_program_destroy(&program);
     glfwTerminate();
     window = NULL;
