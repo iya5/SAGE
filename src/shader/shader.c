@@ -20,7 +20,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
-#include <sys/types.h>
 
 #include "shader.h"
 
@@ -134,14 +133,28 @@ void shader_program_uniform_vec4(struct shader_program program,
     }
 }
 
-void shader_program_uniform_mat4(struct shader_program program, const char* uniform,
-                           mat4 m)
+void shader_program_uniform_mat4(struct shader_program program, 
+                                 const char* uniform,
+                                 mat4 m)
 {
     int32_t location = glGetUniformLocation(program.handle, uniform);
     if (location < 0) {
         LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);
     } else {
         glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat *)m);
+    }
+
+}
+
+void shader_program_uniform_vec3(struct shader_program program,
+                                 const char* uniform,
+                                 vec3 v)
+{
+    int32_t location = glGetUniformLocation(program.handle, uniform);
+    if (location < 0) {
+        LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);
+    } else {
+        glUniform3f(location, v[0], v[1], v[2]);
     }
 
 }

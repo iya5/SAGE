@@ -55,11 +55,17 @@ void shader_program_destroy(struct shader_program *program);
 void shader_program_hot_reload(struct shader_program *program);
 
 /**/
+
+void shader_program_uniform_vec3(struct shader_program program,
+                                 const char* uniform,
+                                 vec3 v);
+
 void shader_program_uniform_vec4(struct shader_program program, 
                                  const char *uniform, 
                                  vec4 v);
 
-void shader_program_uniform_mat4(struct shader_program program, const char* uniform,
-                           mat4 m);
+void shader_program_uniform_mat4(struct shader_program program, 
+                                 const char* uniform,
+                                 mat4 m);
 
 #endif /* __SAGE_SHADER_H__ */

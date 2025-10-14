@@ -16,6 +16,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 //#include <cimgui.h>
 //#include <cimgui_impl.h>
 
+#include "cglm/mat4.h"
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -34,17 +35,41 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "config.h"
 #include "camera.h"
 #include "shader/shader.h"
-struct mesh {
-    uint32_t handle;
+#include "geometry.h"
+#include "texture.h"
+#include "math/math.h"
+
+struct vertex_array {
+    uint32_t vao;
     uint32_t vbo;
-    uint32_t ebo;
+    uint32_t vertex_count;
 };
+
+struct transform {
+    vec3 rotate;
+    vec3 scale;
+    vec3 position;
+};
+
+struct entity {
+    struct vertex_array va;
+    struct transform transform;
+};
+
+void entity_transform(struct entity entity)
+{
+    mat4 transform;
+    glm_mat4_identity(transform);
+    rotate_x(transform, DEG_TO_RAD(entity.transform.rotate[X]), transform);
+    rotate_y(transform, DEG_TO_RAD(entity.transform.rotate[Y]), transform);
+    rotate_z(transform, DEG_TO_RAD(entity.transform.rotate[Z]), transform);
+}
 
 struct camera cam = {0};
 
 void error_callback(int32_t error, const char *description)
 {
-    fprintf(stderr, "Error (%d): %s\n", error, description);
+    LOG_FATAL("Error (%d): %s", error, description);
 }
 
 void framebuffer_size_callback([[maybe_unused]] GLFWwindow *window, int32_t width, int32_t height)
@@ -52,177 +77,96 @@ void framebuffer_size_callback([[maybe_unused]] GLFWwindow *window, int32_t widt
     glViewport(0, 0, width, height);
 }
 
-void process_input(GLFWwindow *window)
+void process_input(GLFWwindow *window, double dt)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera_move(&cam, MOVE_FORWARD, dt);
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera_move(&cam, MOVE_BACKWARD, dt);
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera_move(&cam, STRAFE_LEFT, dt);
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera_move(&cam, STRAFE_RIGHT, dt);
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        camera_move(&cam, MOVE_UP, dt);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        camera_move(&cam, MOVE_DOWN, dt);
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        cam.can_move = true;
+    } else {
+        cam.can_move = false;
+    }
 }
 
-struct mesh mesh_create_triangle(void)
+struct vertex_array vertex_array_create(const float *vertices, uint32_t vertex_count)
 {
-    struct mesh triangle = {0};
-    // now onto the vertices
-    // rendering a triangle
-    float vertices[] = {
-        -0.5, -0.5, 0.0,
-        0.5, -0.5, 0.0,
-        0.0, 0.5, 0.0
-    };
+    struct vertex_array va = {0};
 
-    // generating a vao first
     uint32_t vao;
-    uint32_t vertex_vbo;
+    uint32_t vbo;
 
     glGenVertexArrays(1, &vao);
+
     // generating buffers for shader
-    glGenBuffers(1, &vertex_vbo);
+    glGenBuffers(1, &vbo);
 
     // bind vao
     glBindVertexArray(vao);
 
     // after binding vao, vbo binds to vao as well
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertex_count, vertices, GL_STATIC_DRAW);
 
+    // bind position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
+
+    // bind texture uv
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE, 
+        5 * sizeof(float), 
+        (void *) (3 * sizeof(float))
+    );
+    glEnableVertexAttribArray(1);
 
     // safely unbinding
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    triangle.handle = vao;
+    va.vao= vao;
+    va.vbo = vbo;
+    va.vertex_count = vertex_count;
 
-    return triangle;
+    return va;
 }
 
-struct mesh mesh_create_cube(void)
+void vertex_array_free(struct vertex_array *va)
 {
-    struct mesh cube = {0};
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f,//  0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,//  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,//  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,//  0.0f, 0.0f,
-
-        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,//  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,//  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,//  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,//  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
-
-        -0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
-
-         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,//  1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,//  1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,//  1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,//  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,//  0.0f, 1.0f,
-
-        -0.5f,  0.5f, -0.5f,//  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,//  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,//  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,//  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f//  0.0f, 1.0f
-    };
-
-    uint32_t vao;
-    uint32_t point_vbo;
-
-    glGenVertexArrays(1, &vao);
-
-    // generating buffers for shader
-    glGenBuffers(1, &point_vbo);
-
-    // bind vao
-    glBindVertexArray(vao);
-
-    // after binding vao, vbo binds to vao as well
-    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
-
-    glEnableVertexAttribArray(0);
-
-    // bind color buffer
-
-    // safely unbinding
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    cube.handle = vao;
-    cube.vbo = point_vbo;
-
-    return cube;
+    LOG_INFO("Destroying vertex array buffers");
+    glDeleteVertexArrays(1, &(va->vao));
+    glDeleteBuffers(1, &(va->vbo));
+    va->vao = 0;
+    va->vbo = 0;
+    va->vertex_count = 0;
 }
 
-struct mesh mesh_create_quad(void)
+void vertex_array_bind(struct vertex_array va)
 {
-    struct mesh quad = {0};
-    float vertices[] = {
-        // first triangle
-        -0.5, -0.5, 0.0,
-        0.5, -0.5, 0.0,
-        -0.5, 0.5, 0.0,
-
-        // second triangle
-        0.5, -0.5, 0.0,
-        0.5, 0.5, 0.0,
-        -0.5, 0.5, 0.0
-    };
-
-    uint32_t vao;
-    uint32_t point_vbo;
-
-    glGenVertexArrays(1, &vao);
-
-    // generating buffers for shader
-    glGenBuffers(1, &point_vbo);
-
-    // bind vao
-    glBindVertexArray(vao);
-
-    // after binding vao, vbo binds to vao as well
-    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
-
-    glEnableVertexAttribArray(0);
-
-    // bind color buffer
-
-    // safely unbinding
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    quad.handle = vao;
-    quad.vbo = point_vbo;
-
-    return quad;
+    glBindVertexArray(va.vao);
 }
 
-void mesh_destroy(struct mesh m)
+void vertex_array_draw(struct vertex_array va)
 {
-    LOG_INFO("Destroying mesh vertex buffers");
-    glDeleteVertexArrays(1, &m.handle);
-    glDeleteBuffers(1, &m.vbo);
+    glDrawArrays(GL_TRIANGLES, 0, va.vertex_count);
 }
 
 void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_pos)
@@ -244,7 +188,6 @@ void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_
     last_y = y_pos;
     camera_mouse(&cam, dx, dy);
 }
-
 void scroll_callback([[maybe_unused]] GLFWwindow *window, 
                      [[maybe_unused]] double dx, 
                      double dy)
@@ -275,7 +218,6 @@ int main(int argc, [[maybe_unused]] char **argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-
     window = glfwCreateWindow(640, 480, SAGE_WINDOW_TITLE, NULL, NULL);
     if (window == NULL) {
         LOG_FATAL("GLFW failed to create a window");
@@ -285,10 +227,13 @@ int main(int argc, [[maybe_unused]] char **argv)
     }
 
     glfwMakeContextCurrent(window);
+
+    // setting up event callback
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGL()) {
         LOG_FATAL("Failed to load and initialize GLAD");
@@ -305,14 +250,14 @@ int main(int argc, [[maybe_unused]] char **argv)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    struct mesh cube= mesh_create_cube();
-    // struct mesh triangle = mesh_create_triangle();
+    int n_vertex_attributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n_vertex_attributes);
+    LOG_INFO("Maximum vertex attributes supported: %d", n_vertex_attributes);
 
     float aspect = 640.0 / 480.0;
 
     camera_init(&cam, CAM_DEFAULT_POS, CAM_DEFAULT_FORWARD, CAM_DEFAULT_UP);
-    camera_perspective(
-        &cam, 
+    camera_perspective(&cam, 
         FOV_DEFAULT, 
         aspect, 
         PERSPECTIVE_DEFAULT_NEAR, 
@@ -320,72 +265,135 @@ int main(int argc, [[maybe_unused]] char **argv)
     );
 
     struct shader_program program = shader_program_create(
-        "res/shader/shader.vert",
-        "res/shader/shader.frag"
+        "res/shaders/default.vert",
+        "res/shaders/default.frag"
     );
 
+    struct shader_program light_source_program = shader_program_create(
+        "res/shaders/light.vert",
+        "res/shaders/light.frag"
+    );
+
+    struct shader_program object_program = shader_program_create(
+        "res/shaders/object.vert",
+        "res/shaders/object.frag"
+    );
+
+    struct vertex_array cube = vertex_array_create(
+        CUBE_VERTICES,
+        sizeof(CUBE_VERTICES)
+    );
+
+    shader_program_use(&light_source_program);
+    uint32_t light_vao, light_vbo;
+    glGenVertexArrays(1, &light_vao);
+    glGenBuffers(1, &light_vbo);
+    glBindVertexArray(light_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, light_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(LIGHT_CUBE_VERTICES), LIGHT_CUBE_VERTICES, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    shader_program_use(&object_program);
+    uint32_t object_vao, object_vbo;
+    glGenVertexArrays(1, &object_vao);
+    glGenBuffers(1, &object_vbo);
+    glBindVertexArray(object_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, object_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(LIGHT_CUBE_N_VERTICES), LIGHT_CUBE_N_VERTICES, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    struct texture def = texture_create(
+        "res/textures/base.png"
+    );
 
     double previous_seconds = glfwGetTime();
     // render loop
+    static float rotation_angle = 0.0f;
+
     while (!glfwWindowShouldClose(window)) {
         double current_seconds = glfwGetTime();
         double dt = current_seconds - previous_seconds;
         previous_seconds = current_seconds;
 
-        // input_process(int KEY);
+        process_input(window, dt);
 
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_program_hot_reload(&program);
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera_move(&cam, MOVE_FORWARD, dt);
 
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera_move(&cam, MOVE_BACKWARD, dt);
-
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera_move(&cam, STRAFE_LEFT, dt);
-
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera_move(&cam, STRAFE_RIGHT, dt);
-
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera_move(&cam, MOVE_UP, dt);
-
-        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-            camera_move(&cam, MOVE_DOWN, dt);
-
-
-        shader_program_use(&program);
-
-        shader_program_uniform_vec4(
-            program, "color", 
-            (vec4) {0.2, 0.1, 0.2, 1.0}
-        );
 
         mat4 model;
         glm_mat4_identity(model);
-
         camera_update(&cam);
-        
-        shader_program_uniform_mat4(program, "model", model);
-        shader_program_uniform_mat4(program, "view", cam.view);
-        shader_program_uniform_mat4(program, "projection", cam.projection);
 
+        shader_program_use(&program);
 
-        // renderingArray
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        // rendering
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glBindTexture(GL_TEXTURE_2D, def.id);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindVertexArray(cube.handle);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        vertex_array_bind(cube);
 
+        for (size_t i = 0; i < 10; i++) {
+            for (size_t j = 0; j < 10; j++) {
+                mat4 model;
+                glm_mat4_identity(model);
+                rotate_x(model, DEG_TO_RAD(64), model);
+                //glm_rotated_x(model, DEG_TO_RAD(64), model);
+                glm_translate(model, (vec3) {(float) i, -0.5, -(float) j});
+            
+                shader_program_uniform_mat4(program, "model", model);
+                shader_program_uniform_mat4(program, "view", cam.view);
+                shader_program_uniform_mat4(program, "projection", cam.projection);
+
+                vertex_array_draw(cube);
+            }
+
+        }
+
+        // draw the cube being lit on
+        shader_program_use(&object_program);
+        mat4 light_model;
+        glm_mat4_identity(light_model);
+        glm_translate(light_model, (vec3) {0.5, 1.5, -1.0});
+
+        rotation_angle += 50.0f * dt; // 50 degrees per second
+        if (rotation_angle > 360.0f) rotation_angle -= 360.0f;
+
+        glm_rotate(light_model, glm_rad(rotation_angle), (vec3){1.0f, 0.3f, 0.5f});
+
+        shader_program_uniform_mat4(object_program, "model", light_model);
+        shader_program_uniform_mat4(object_program, "view", cam.view);
+        shader_program_uniform_mat4(object_program, "projection", cam.projection);
+
+        shader_program_uniform_vec3(object_program, "light_color", (vec3) {1.0, 1.0, 1.0});
+        shader_program_uniform_vec3(object_program, "object_color", (vec3) {1.0, 0.5, 0.31});
+        shader_program_uniform_vec3(object_program, "light_pos", (vec3) {2.0, 2.2, -3.5});
+        shader_program_uniform_vec3(object_program, "view_pos", cam.pos);
+        glDrawArrays(GL_TRIANGLES, 0, (sizeof(CUBE_VERTICES) / sizeof(float)) / 3);
+
+        // draw actual light
+        shader_program_use(&light_source_program);
+        glm_mat4_identity(light_model);
+        glm_translate(light_model, (vec3) {2.0, 2.2, -3.5});
+        shader_program_uniform_mat4(light_source_program, "model", light_model);
+        shader_program_uniform_mat4(light_source_program, "view", cam.view);
+        shader_program_uniform_mat4(light_source_program, "projection", cam.projection);
+        glDrawArrays(GL_TRIANGLES, 0, sizeof(CUBE_VERTICES) / sizeof(float));
         // swap buffers and poll
         glfwSwapBuffers(window);
         glfwPollEvents();
-        process_input(window);
     }
 
-    mesh_destroy(cube);
+    vertex_array_free(&cube);
     shader_program_destroy(&program);
     glfwTerminate();
     window = NULL;

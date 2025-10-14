@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License along with
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "camera.h"
-#include "cglm/vec3.h"
 #include "math/math.h"
 
 void camera_init(struct camera *cam, vec3 pos, vec3 forward, vec3 world_up)
@@ -26,11 +25,13 @@ void camera_init(struct camera *cam, vec3 pos, vec3 forward, vec3 world_up)
     glm_normalize(cam->world_up);
     glm_normalize(cam->forward);
 
-    cam->speed = 1.0;
-    cam->sensitivity = 0.1;
+    cam->speed = CAMERA_DEFAULT_SPEED;
+    cam->sensitivity = CAMERA_DEFAULT_SENSITIVITY;
     // reason for -90 is because we're offset facing the left
     cam->yaw = -90.0;
     cam->pitch = 0;
+
+    cam->can_move = false;
 
     glm_mat4_identity(cam->view);
     glm_mat4_identity(cam->projection);
@@ -54,7 +55,6 @@ void camera_perspective(struct camera *cam,
 
 void camera_move(struct camera *cam, int command, double dt)
 {
-
     if (command == MOVE_FORWARD) {
         vec3 delta;
         glm_vec3_scale(cam->forward, cam->speed * dt, delta);
@@ -76,7 +76,6 @@ void camera_move(struct camera *cam, int command, double dt)
     }
 
     if (command == STRAFE_RIGHT) {
-
         vec3 right;
         glm_vec3_cross(cam->forward, cam->world_up, right);
         glm_vec3_normalize(right);
@@ -93,6 +92,7 @@ void camera_move(struct camera *cam, int command, double dt)
 
 void camera_mouse(struct camera *cam, float dx, float dy)
 {
+    if (!cam->can_move) return;
     cam->yaw += dx * cam->sensitivity;
     cam->pitch += dy * cam->sensitivity;
 
@@ -113,7 +113,7 @@ void camera_mouse(struct camera *cam, float dx, float dy)
 
 void camera_scroll(struct camera *cam, float dy)
 {
-    cam->fov += dy;
+    cam->fov -= dy;
     cam->fov = CLAMP(cam->fov, FOV_DEFAULT_MIN, FOV_DEFAULT_MAX);
 }
 
@@ -170,49 +170,6 @@ void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
      *  of the camera's position onto the basis vectors, hence getting its
      *  inverse. It places the camera's position parallel to the basis vectors
      *  of the view space.
-     */
-
-    /*
-     * Doing rotations such as camera yaw and pitch can be done using rotation
-     * matrices, however a problem occurs with this method.
-     *
-     * Namely, once a vector is parallel to another unit vector (representing
-     * the rotation axis), its rank ends up decreasing, thus locking its
-     * transformation to that unit vector, making it linearly dependent.
-     * This is what's known as a Gimbal Lock. This ends with us losing an axis
-     * of rotation because we can no longer reach the full span of 3D space.
-     *
-     * In layman's: when two rotation handles line up, turning one is the
-     * same as turning the other, loosing axis of rotation of the other.
-     *
-     * Solutions such as clamping before it's parallel to a unit vector can be
-     * made, but it becomes very messy to deal with, thus rotations are typically
-     * done using quaternions
-     *
-     * Below are the rotation axis formulas (in column major) as a proof of
-     * conecpt
-     *
-     * Rotating around the x:
-     * [1,    0,     0, 0] [x]     [      1      ]
-     * [0, cosθ, -sinθ, 0] [y]  =  [cosθy - sinθz]
-     * [0, sinθ,  cosθ, 0] [z]     [sinθy + cosθz]
-     * [0,    0,     0, 1] [w]     [      1      ]
-     *
-     * Rotating around the y:
-     * [ cosθ,    0, sinθ, 0] [x]     [ cosθx - sinθz]
-     * [    0,    1,    0, 0] [y]  =  [       y      ]
-     * [-sinθ,    0, cosθ, 0] [z]     [-sinθx + cosθz]
-     * [    0,    0,    0, 1] [w]     [       1      ]
-     *
-     * Rotating around the x:
-     * [cosθ, -sinθ, 0, 0] [x]     [cosθx - sinθy]
-     * [sinθ,  cosθ, 0, 0] [y]  =  [sinθx + cosθy]
-     * [   0,     0, 1, 0] [z]     [      z      ]
-     * [   0,     0, 0, 1] [w]     [      1      ]
-     *
-     * A better matrice can be done to avoid gimbal lock by rotating around an
-     * arbitrary unit axis but still does not solve the issue. This matrix is
-     * referenced in https://learnopengl.com/Getting-started/Transformations
      */
 
     /*
@@ -333,7 +290,8 @@ void projection_perspective(mat4 projection,
      * the near and far clipping planes. This is the visible range along the Z
      * axis (take for example the chunk render distance in minecraft), with the
      * front of the "near" distance—or behind the camera—and anything past the
-     * "far" distance being outside the visible range.
+     * "far" distance being outside the visible range. Projection is simply just
+     * the mapping of camera-space coordinates to screen-space coordinates.
      *
      * All the geometry outside this range is then "clipped" or removed from the
      * rendering pipeline in a later state
@@ -364,7 +322,7 @@ void projection_perspective(mat4 projection,
      *
      * S is just a vector that scales its respective components x, y, z
      * Pz adjusts points' range between clipping planes (the near and far plane
-     * of the view frustrum
+     * of the view frustrum, thus it is used for the perspective division
      * the -1 swaps the vector's fourth component 'w' with its negated
      * third 'z' component used for perspective division
      */

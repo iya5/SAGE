@@ -1,4 +1,4 @@
-/* Camera header: transformation/controls for Sage
+/* Camera header for Sage
 
 This file is part of Sage
 
@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define __SAGE_CAMERA_H__
 
 #include <cglm/cglm.h>
+#include <stdbool.h>
 
 #define CAM_PITCH_MAX 89.0
 #define CAM_PITCH_MIN -89.0
@@ -30,6 +31,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define FOV_DEFAULT 67.0
 #define FOV_DEFAULT_MIN 4.0
 #define FOV_DEFAULT_MAX 98.0
+#define CAMERA_DEFAULT_SENSITIVITY 0.2
+#define CAMERA_DEFAULT_SPEED 1
 
 enum movement_type {
     MOVE_FORWARD,
@@ -55,6 +58,8 @@ struct camera {
     float fov;      // viewing frustum angle
     float speed;    // camera movement on coordinate space
     float sensitivity; // camera rotation speed
+    
+    bool can_move; // flag for checking if camera is allowed to move
 
     mat4 view;
     mat4 projection;

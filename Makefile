@@ -4,7 +4,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -g -std=c23
 
 CFLAGS += -Ilib/glfw/include -Ilib/glad/include -Ilib/cglm/include
-CFLAGS += -Ilib/slog/include -Ilib/openal-soft/include
+CFLAGS += -Ilib/slog/include -Ilib/openal-soft/include -Ilib/stb
 CFLAGS += -Ilib/cimgui -Ilib/cimgui/imgui -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS
 
 LDFLAGS = lib/glad/src/glad.o lib/glfw/src/libglfw3.a -lm
