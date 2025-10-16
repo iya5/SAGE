@@ -13,6 +13,11 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <dcimgui.h>
+#include <dcimgui_internal.h>
+#include <dcimgui_impl_glfw.h>
+#include <dcimgui_impl_opengl3.h>
+
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE

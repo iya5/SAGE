@@ -3,4 +3,3 @@
 rm -rf .cache/ compile_commands.json
 make clean
 bear -- make
-make clean

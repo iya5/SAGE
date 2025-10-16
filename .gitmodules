@@ -7,3 +7,10 @@
 [submodule "lib/stb"]
 	path = lib/stb
 	url = https://github.com/nothings/stb.git
+[submodule "lib/dear_bindings"]
+	path = lib/dear_bindings
+	url = https://github.com/dearimgui/dear_bindings
+[submodule "lib/imgui"]
+	path = lib/imgui
+	url = https://github.com/ocornut/imgui
+	branch = docking
