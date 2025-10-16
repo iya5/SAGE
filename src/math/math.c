@@ -125,9 +125,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  * [0  sinθ  cosθ]
  *
  *
- * Since we are handling model matrices as the principal reason for rotation,
- * we will use a 4x4 identity matrix and ignore the w component and the 4th
- * column
+ * Rotations only require a 3x3 but affine transformations require a 4x4 such as
+ * translations, thus the rotation matrices will be stored in a 4x4 identity
+ * matrix.
  */
 
 void rotate_x(mat4 in, float theta, mat4 out)
@@ -138,33 +138,32 @@ void rotate_x(mat4 in, float theta, mat4 out)
      * [0  cosθ -sinθ]
      * [0  sinθ  cosθ]
      */
-    mat4 r = {
+    mat4 rotate_x = {
         {1,          0,           0, 0},
         {0, cos(theta), -sin(theta), 0},
         {0, sin(theta),  cos(theta), 0},
         {0,          0,           0, 1},
     };
 
-    glm_mat4_mul
-
-    glm_mat4_copy(temp, out);
+    glm_mat4_mul(in, rotate_x, out);
 }
 
 void rotate_y(mat4 in, float theta, mat4 out)
 {
-    /* For rotating around the y-axis
+    /* 
+     * For rotating around the y-axis
      * [cosθ 0 -sinθ]
      * [ 0   1   0  ]
      * [sinθ 0  cosθ]
      */
-    mat4 temp = {
-        {in[0][0] * cos(theta), in[0][1], in[0][2] * -sin(theta), in[0][3]},
-        {in[1][0], in[1][1], in[1][2], in[1][3]},
-        {in[2][0] * sin(theta), in[2][1], in[2][2] * cos(theta), in[2][3]},
-        {in[3][0], in[3][1], in[3][2], in[3][3]},
+    mat4 rotate_y = {
+        {cos(theta), 0, -sin(theta), 0},
+        {         0, 0,           0, 0},
+        {sin(theta), 0,  cos(theta), 0},
+        {         0, 0,           0, 1},
     };
 
-    glm_mat4_copy(temp, out);
+    glm_mat4_mul(in, rotate_y, out);
 }
 
 void rotate_z(mat4 in, float theta, mat4 out)
@@ -175,14 +174,14 @@ void rotate_z(mat4 in, float theta, mat4 out)
      * [sinθ  cosθ 0]
      * [ 0     0   1]
      */
-    mat4 temp = {
-        {in[0][0] * cos(theta), in[0][1] * -sin(theta), in[0][2], in[0][3]},
-        {in[1][0] * sin(theta), in[1][1] * cos(theta), in[1][2], in[1][3]},
-        {in[2][0], in[2][1], in[2][2], in[2][3]},
-        {in[3][0], in[3][1], in[3][2], in[3][3]},
+    mat4 rotate_z = {
+        {cos(theta), -sin(theta), 0, 0},
+        {sin(theta),  cos(theta), 0, 0},
+        {         0,           0, 0, 0},
+        {         0,           0, 0, 0},
     };
 
-    glm_mat4_copy(temp, out);
+    glm_mat4_mul(in, rotate_z, out);
 }
 
 /* wrapper for vec3 rotating all three euler angles x->y->z */

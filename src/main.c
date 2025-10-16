@@ -13,10 +13,6 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-//#include <cimgui.h>
-//#include <cimgui_impl.h>
-
-#include "cglm/mat4.h"
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -28,9 +24,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
-#include <cimgui.h>
-#include <cimgui_impl.h>
 
 #include "config.h"
 #include "camera.h"
@@ -346,8 +339,8 @@ int main(int argc, [[maybe_unused]] char **argv)
             for (size_t j = 0; j < 10; j++) {
                 mat4 model;
                 glm_mat4_identity(model);
-                rotate_x(model, DEG_TO_RAD(64), model);
                 //glm_rotated_x(model, DEG_TO_RAD(64), model);
+                rotate_x(model, DEG_TO_RAD(64), model);
                 glm_translate(model, (vec3) {(float) i, -0.5, -(float) j});
             
                 shader_program_uniform_mat4(program, "model", model);
