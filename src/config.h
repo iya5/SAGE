@@ -25,4 +25,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_VSYNC_UNLOCK   0
 #define SAGE_VSYNC_SETTING  SAGE_VSYNC_UNLOCK
 
+#define SAGE_OPENGL_MAJOR_VERSION 4
+#define SAGE_OPENGL_MINOR_VERSION 1
+
 #endif /* __SAGE_CONFIG_H__ */

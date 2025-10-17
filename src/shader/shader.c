@@ -13,7 +13,7 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <slog/slog.h>
 
 #include <stdlib.h>
@@ -25,10 +25,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 static char *shader_load_from_source(const char *path);
 
-struct shader_program shader_program_create(const char *vs_path, 
-                                            const char *fs_path)
+struct shader shader_create(const char *vs_path, const char *fs_path)
 {
-    struct shader_program program = {0};
+    struct shader shader = {0};
 
     int32_t success = 0;
     char info[512] = {0};
@@ -66,93 +65,87 @@ struct shader_program shader_program_create(const char *vs_path,
     }
 
     // creating shader program
-    uint32_t program_id = glCreateProgram();
-    glAttachShader(program_id, vs_id);
-    glAttachShader(program_id, fs_id);
-    glLinkProgram(program_id);
+    uint32_t id = glCreateProgram();
+    glAttachShader(id, vs_id);
+    glAttachShader(id, fs_id);
+    glLinkProgram(id);
 
-    glGetProgramiv(program_id, GL_LINK_STATUS, &success);
+    glGetProgramiv(id, GL_LINK_STATUS, &success);
     if(!success) {
-        glGetProgramInfoLog(program_id, 512, NULL, info);
+        glGetProgramInfoLog(id, 512, NULL, info);
         LOG_ERROR("Failed to link shader program: %s", info);
-        program_id = 0;
+        id = 0;
     }
 
     glDeleteShader(fs_id);
     glDeleteShader(vs_id);
 
-    program.handle = program_id;
+    shader.handle = id;
 
     size_t i = 0;
     for (i = 0; i < SHADER_PATH_BUFFER_SIZE - 1 && vs_path[i] != '\0'; i++)
-        program.vs_path[i] = vs_path[i];
-    program.vs_path[i] = '\0';
+        shader.vs_path[i] = vs_path[i];
+    shader.vs_path[i] = '\0';
 
     i = 0;
     for (i = 0; i < SHADER_PATH_BUFFER_SIZE  - 1 && fs_path[i] != '\0'; i++)
-        program.fs_path[i] = fs_path[i];
-    program.fs_path[i] = '\0';
+        shader.fs_path[i] = fs_path[i];
+    shader.fs_path[i] = '\0';
 
-    return program;
+    return shader;
 }
 
-void shader_program_hot_reload(struct shader_program *program)
+void shader_hot_reload(struct shader *shader)
 {
 
-    struct shader_program reloaded_program = shader_program_create(program->vs_path, 
-                                                                   program->fs_path);
-    if (!reloaded_program.handle) {
+    struct shader reloaded_shader = shader_create(shader->vs_path, 
+                                                  shader->fs_path);
+    if (!reloaded_shader.handle) {
         LOG_WARN("Failed to hot reload");
-        glDeleteProgram(reloaded_program.handle);
+        glDeleteProgram(reloaded_shader.handle);
     } else {
         LOG_INFO("Hot reloading shader");
-        glDeleteProgram(program->handle);
-        program->handle = reloaded_program.handle;
+        glDeleteProgram(shader->handle);
+        shader->handle = reloaded_shader.handle;
     }
 }
 
-void shader_program_use(struct shader_program *program)
+void shader_use(struct shader *shader)
 {
-    glUseProgram(program->handle);
+    glUseProgram(shader->handle);
 }
 
-void shader_program_destroy(struct shader_program *program)
+void shader_destroy(struct shader *shader)
 {
-    glDeleteProgram(program->handle);
+    glDeleteProgram(shader->handle);
 }
 
-void shader_program_uniform_vec4(struct shader_program program, 
-                                 const char *uniform, 
-                                 vec4 v)
+void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v)
 {
-    int32_t location = glGetUniformLocation(program.handle, uniform);
+    int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
-        LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);
+        LOG_WARN("Accessing uniform '%s' doesn't exist", uniform);
     } else {
         glUniform4f(location, v[0], v[1], v[2], v[3]);
     }
 }
 
-void shader_program_uniform_mat4(struct shader_program program, 
-                                 const char* uniform,
-                                 mat4 m)
+void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m)
 {
-    int32_t location = glGetUniformLocation(program.handle, uniform);
+    int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
-        LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);
+        LOG_WARN("Accessing uniform '%s' doesn't exist", uniform);
     } else {
         glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat *)m);
     }
 
 }
 
-void shader_program_uniform_vec3(struct shader_program program,
-                                 const char* uniform,
-                                 vec3 v)
+void shader_uniform_vec3(struct shader shader, const char* uniform, vec3 v)
 {
-    int32_t location = glGetUniformLocation(program.handle, uniform);
+    int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
-        LOG_WARN("Attempted to access uniform '%s' that doesn't exist", uniform);
+        LOG_WARN("Accessing uniform '%s' doesn't exist", uniform);
     } else {
         glUniform3f(location, v[0], v[1], v[2]);
     }

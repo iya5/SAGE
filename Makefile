@@ -1,54 +1,39 @@
 UNAME = $(shell uname)
 
 CC = gcc
-CXX = g++
-CFLAGS = -Wall -Wextra -Wpedantic -g -std=c23
-CXXFLAGS = -Wall -Wextra -Wpedantic -std=c++17
+CFLAGS = -Wall -Wextra -Wpedantic -g
 
 INCLUDES = -Ilib/glfw/include -Ilib/glad/include -Ilib/cglm/include \
-			-Ilib/slog/include -Ilib/openal-soft/include -Ilib/std \
-			-Ilib/imgui -Ilib/imgui/backends -Ilib/dear_bindings/generated \
-			-Ilib/dear_bindings/generated/backends
+		   -Ilib/slog/include -Ilib/std -Ilib/nuklear/ -Ilib/stb
 
-CFLAGS += $(INCLUDES)
-CXXFLAGS += $(INCLUDES)
-
-LDFLAGS = -lm lib/glad/src/glad.o lib/glfw/src/libglfw3.a \
-		  lib/slog/src/slog.o lib/openal-soft/build/libopenal.so \
-		  lib/dear_bindings/libimgui.a
+LDFLAGS = -lm lib/glad/src/gl.o lib/glfw/src/libglfw3.a \
+		  lib/slog/src/slog.o
 
 ifeq ($(UNAME), Linux)
+	CFLAGS += -std=c23
 	LDFLAGS += -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 endif
+
+ifeq ($(UNAME), Darwin)
+	CFLAGS += -v -std=c2x
+	LDFLAGS += -framework Foundation -framework AppKit -framework CoreVideo \
+			   -framework Cocoa -framework IOKit -framework Metal \
+			   -framework QuartzCore
+endif
+CFLAGS += $(INCLUDES)
+
 
 SRC = $(wildcard src/*.c) $(wildcard src/**/*.c)
 OBJ = $(SRC:.c=.o)
 BIN = bin
 
 .PHONY: all
-all: dirs libs libimgui.a sage
-
-IMGUI_SRC = $(wildcard lib/imgui/*.cpp)
-IMGUI_OBJ = $(IMGUI_SRC:.cpp=.o)
-DIMGUI_SRC = $(wildcard lib/dear_bindings/generated/*.cpp) \
-			 lib/dear_bindings/generated/backends/dcimgui_impl_glfw.cpp \
-			 lib/dear_bindings/generated/backends/dcimgui_impl_opengl3.cpp
-DIMGUI_OBJ = $(DIMGUI_SRC:.cpp=.o)
+all: dirs libs sage
 
 libs:
 	cd lib/glfw && cmake . && make
-	cd lib/glad && $(CC) -o src/glad.o -Iinclude -c src/glad.c
-	cd lib/openal-soft/build && cmake .. && cmake --build .
+	cd lib/glad && $(CC) -o src/gl.o -Iinclude -c src/gl.c
 	cd lib/slog && $(CC) -o src/slog.o -Iinclude -c src/slog.c
-
-libimgui.a: $(DIMGUI_SRC)
-	cd lib/dear_bindings && chmod +x BuildAllBindings.sh && \
-		python -m venv venv && source venv/bin/activate && \
-		pip install -r requirements.txt && ./BuildAllBindings.sh
-	$(CXX) -c $(DIMGUI_SRC) $(IMGUI_SRC) -Ilib/imgui -Ilib/imgui/backends -Ilib/dear_bindings/generated -Ilib/dear_bindings/generated/backends
-	ar rcs lib/dear_bindings/libimgui.a $(DIMGUI_OBJ) $(IMGUI_OBJ)
-	rm $(DIMGUI_OBJ) $(IMGUI_OBJ)
-	rm -rf lib/dear_bindings/venv
 
 dirs: 
 	mkdir -p ./$(BIN)
@@ -57,7 +42,7 @@ run:
 	$(BIN)/sage
 
 sage: $(OBJ)
-	$(CXX) -o $(BIN)/sage $^ $(LDFLAGS) -lstdc++
+	$(CC) -o $(BIN)/sage $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)

@@ -15,8 +15,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <slog/slog.h>
 
 #include <string.h>

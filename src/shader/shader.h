@@ -27,7 +27,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  *      vs_path -> relative path to the vertex shader
  *      fs_path -> relative path to the fragment shader
  */
-struct shader_program {
+struct shader {
     uint32_t handle;
     char vs_path[SHADER_PATH_BUFFER_SIZE];
     char fs_path[SHADER_PATH_BUFFER_SIZE];
@@ -38,34 +38,24 @@ struct shader_program {
  * fragment shader path relative to the project's root directory. Returns a
  * struct containing the OpenGL handle and shader file paths.
  */
-struct shader_program shader_program_create(const char *vs_path, 
-                                            const char *fs_path);
+struct shader shader_create(const char *vs_path, const char *fs_path);
 
 /* Wrapper around glUseProgram */
-void shader_program_use(struct shader_program *program);
+void shader_use(struct shader *shader);
 
 /* Wrapper around glDeleteProgram */
-void shader_program_destroy(struct shader_program *program);
+void shader_destroy(struct shader *shader);
 
 /*
  * Hot reloads a shader program by recompiling the shaders stored in the
  * struct. Assumes the file paths themselves remains unchanged and only the
  * shader sourcce is modified.
  */
-void shader_program_hot_reload(struct shader_program *program);
+void shader_hot_reload(struct shader *shader);
 
-/**/
-
-void shader_program_uniform_vec3(struct shader_program program,
-                                 const char* uniform,
-                                 vec3 v);
-
-void shader_program_uniform_vec4(struct shader_program program, 
-                                 const char *uniform, 
-                                 vec4 v);
-
-void shader_program_uniform_mat4(struct shader_program program, 
-                                 const char* uniform,
-                                 mat4 m);
+/* for setting uniform states */
+void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m);
+void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v);
+void shader_uniform_vec3(struct shader shader, const char* uniform, vec3 v);
 
 #endif /* __SAGE_SHADER_H__ */

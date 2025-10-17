@@ -1,16 +1,9 @@
 [submodule "lib/glfw"]
 	path = lib/glfw
 	url = https://github.com/glfw/glfw
-[submodule "lib/openal-soft"]
-	path = lib/openal-soft
-	url = https://github.com/kcat/openal-soft
 [submodule "lib/stb"]
 	path = lib/stb
 	url = https://github.com/nothings/stb.git
-[submodule "lib/dear_bindings"]
-	path = lib/dear_bindings
-	url = https://github.com/dearimgui/dear_bindings
-[submodule "lib/imgui"]
-	path = lib/imgui
-	url = https://github.com/ocornut/imgui
-	branch = docking
+[submodule "lib/nuklear"]
+	path = lib/nuklear
+	url = https://github.com/Immediate-Mode-UI/Nuklear.git

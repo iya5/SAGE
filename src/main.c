@@ -13,14 +13,11 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#include <dcimgui.h>
-#include <dcimgui_internal.h>
-#include <dcimgui_impl_glfw.h>
-#include <dcimgui_impl_opengl3.h>
+#define NK_IMPLEMENTATION
+#include <nuklear.h>
 
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/glad.h>
-#define GLFW_INCLUDE_NONE
+#include <glad/gl.h>
+// #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 #include <slog/slog.h>
@@ -212,9 +209,11 @@ int main(int argc, [[maybe_unused]] char **argv)
         return -1;
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SAGE_OPENGL_MAJOR_VERSION);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, SAGE_OPENGL_MINOR_VERSION);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
 
     window = glfwCreateWindow(640, 480, SAGE_WINDOW_TITLE, NULL, NULL);
     if (window == NULL) {
@@ -233,10 +232,16 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    if (!gladLoadGL()) {
-        LOG_FATAL("Failed to load and initialize GLAD");
+    int version = gladLoadGL(glfwGetProcAddress);
+
+    if (version == 0) {
+        LOG_FATAL("Failed to initialize OpenGL context");
         return -1;
     }
+    LOG_INFO("Loaded OpenGL %d.%d\n", 
+             GLAD_VERSION_MAJOR(version),
+             GLAD_VERSION_MINOR(version));
+
     // setup MSAA
     glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
     glfwSwapInterval(SAGE_VSYNC_SETTING);
@@ -262,17 +267,17 @@ int main(int argc, [[maybe_unused]] char **argv)
         PERSPECTIVE_DEFAULT_FAR
     );
 
-    struct shader_program program = shader_program_create(
-        "res/shaders/default.vert",
-        "res/shaders/default.frag"
+    struct shader basic_shader = shader_create(
+        "res/shaders/basic.vert",
+        "res/shaders/basic.frag"
     );
 
-    struct shader_program light_source_program = shader_program_create(
+    struct shader light_shader = shader_create(
         "res/shaders/light.vert",
         "res/shaders/light.frag"
     );
 
-    struct shader_program object_program = shader_program_create(
+    struct shader lit_shader = shader_create(
         "res/shaders/object.vert",
         "res/shaders/object.frag"
     );
@@ -282,40 +287,13 @@ int main(int argc, [[maybe_unused]] char **argv)
         sizeof(CUBE_VERTICES)
     );
 
-    shader_program_use(&light_source_program);
-    uint32_t light_vao, light_vbo;
-    glGenVertexArrays(1, &light_vao);
-    glGenBuffers(1, &light_vbo);
-    glBindVertexArray(light_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, light_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(LIGHT_CUBE_VERTICES), LIGHT_CUBE_VERTICES, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-    glUseProgram(0);
-
-    shader_program_use(&object_program);
-    uint32_t object_vao, object_vbo;
-    glGenVertexArrays(1, &object_vao);
-    glGenBuffers(1, &object_vbo);
-    glBindVertexArray(object_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, object_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(LIGHT_CUBE_N_VERTICES), LIGHT_CUBE_N_VERTICES, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glBindVertexArray(0);
-    glUseProgram(0);
-
     struct texture def = texture_create(
         "res/textures/base.png"
     );
 
     double previous_seconds = glfwGetTime();
-    // render loop
-    static float rotation_angle = 0.0f;
 
+    // render loop
     while (!glfwWindowShouldClose(window)) {
         double current_seconds = glfwGetTime();
         double dt = current_seconds - previous_seconds;
@@ -324,14 +302,14 @@ int main(int argc, [[maybe_unused]] char **argv)
         process_input(window, dt);
 
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-            shader_program_hot_reload(&program);
+            shader_hot_reload(&basic_shader);
 
 
         mat4 model;
         glm_mat4_identity(model);
         camera_update(&cam);
 
-        shader_program_use(&program);
+        shader_use(&basic_shader);
 
         // rendering
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -348,51 +326,25 @@ int main(int argc, [[maybe_unused]] char **argv)
                 rotate_x(model, DEG_TO_RAD(64), model);
                 glm_translate(model, (vec3) {(float) i, -0.5, -(float) j});
             
-                shader_program_uniform_mat4(program, "model", model);
-                shader_program_uniform_mat4(program, "view", cam.view);
-                shader_program_uniform_mat4(program, "projection", cam.projection);
+                shader_uniform_mat4(basic_shader, "model", model);
+                shader_uniform_mat4(basic_shader, "view", cam.view);
+                shader_uniform_mat4(basic_shader, "projection", cam.projection);
 
                 vertex_array_draw(cube);
             }
 
         }
 
-        // draw the cube being lit on
-        shader_program_use(&object_program);
-        mat4 light_model;
-        glm_mat4_identity(light_model);
-        glm_translate(light_model, (vec3) {0.5, 1.5, -1.0});
-
-        rotation_angle += 50.0f * dt; // 50 degrees per second
-        if (rotation_angle > 360.0f) rotation_angle -= 360.0f;
-
-        glm_rotate(light_model, glm_rad(rotation_angle), (vec3){1.0f, 0.3f, 0.5f});
-
-        shader_program_uniform_mat4(object_program, "model", light_model);
-        shader_program_uniform_mat4(object_program, "view", cam.view);
-        shader_program_uniform_mat4(object_program, "projection", cam.projection);
-
-        shader_program_uniform_vec3(object_program, "light_color", (vec3) {1.0, 1.0, 1.0});
-        shader_program_uniform_vec3(object_program, "object_color", (vec3) {1.0, 0.5, 0.31});
-        shader_program_uniform_vec3(object_program, "light_pos", (vec3) {2.0, 2.2, -3.5});
-        shader_program_uniform_vec3(object_program, "view_pos", cam.pos);
-        glDrawArrays(GL_TRIANGLES, 0, (sizeof(CUBE_VERTICES) / sizeof(float)) / 3);
-
-        // draw actual light
-        shader_program_use(&light_source_program);
-        glm_mat4_identity(light_model);
-        glm_translate(light_model, (vec3) {2.0, 2.2, -3.5});
-        shader_program_uniform_mat4(light_source_program, "model", light_model);
-        shader_program_uniform_mat4(light_source_program, "view", cam.view);
-        shader_program_uniform_mat4(light_source_program, "projection", cam.projection);
-        glDrawArrays(GL_TRIANGLES, 0, sizeof(CUBE_VERTICES) / sizeof(float));
-        // swap buffers and poll
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     vertex_array_free(&cube);
-    shader_program_destroy(&program);
+
+    shader_destroy(&basic_shader);
+    shader_destroy(&light_shader);
+    shader_destroy(&lit_shader);
+
     glfwTerminate();
     window = NULL;
 
