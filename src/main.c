@@ -17,7 +17,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <nuklear.h>
 
 #include <glad/gl.h>
-// #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 #include <slog/slog.h>
@@ -55,9 +54,20 @@ void entity_transform(struct entity entity)
 {
     mat4 transform;
     glm_mat4_identity(transform);
+
+    glm_scale(transform, entity.transform.scale);
     rotate_x(transform, DEG_TO_RAD(entity.transform.rotate[X]), transform);
     rotate_y(transform, DEG_TO_RAD(entity.transform.rotate[Y]), transform);
     rotate_z(transform, DEG_TO_RAD(entity.transform.rotate[Z]), transform);
+
+    glm_translate_to(transform, entity.transform.position, transform);
+}
+
+void entity_set_pos(struct entity *entity, vec3 position)
+{
+    entity->transform.position[X] = position[X];
+    entity->transform.position[Y] = position[Y];
+    entity->transform.position[Z] = position[Z];
 }
 
 struct camera cam = {0};
@@ -102,36 +112,53 @@ void process_input(GLFWwindow *window, double dt)
     }
 }
 
-struct vertex_array vertex_array_create(const float *vertices, uint32_t vertex_count)
+struct vertex_array vertex_array_create(const float *vertices,
+                                        size_t n_bytes)
 {
     struct vertex_array va = {0};
 
     uint32_t vao;
     uint32_t vbo;
 
+    // generating buffers for vertex
     glGenVertexArrays(1, &vao);
-
-    // generating buffers for shader
     glGenBuffers(1, &vbo);
 
     // bind vao
     glBindVertexArray(vao);
 
-    // after binding vao, vbo binds to vao as well
+    // bind and copy data over to the buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertex_count, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, n_bytes, vertices, GL_STATIC_DRAW);
 
-    // bind position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
+    // configure the vbo to interpret the data
+    // stride is the offset between consecutive generic vertex attributes
+    size_t stride = 5 * sizeof(float);
+    GLboolean normalized = GL_FALSE;
 
-    // bind texture uv
-    glVertexAttribPointer(
-        1, 2, GL_FLOAT, GL_FALSE, 
-        5 * sizeof(float), 
-        (void *) (3 * sizeof(float))
-    );
-    glEnableVertexAttribArray(1);
+    // bind position attributes
+    uint32_t pos_index = 0;
+    int32_t pos_size = 3;
+    void *pos_offset = (void *) 0;
+    glVertexAttribPointer(pos_index,
+                          pos_size,
+                          GL_FLOAT,
+                          normalized,
+                          stride,
+                          pos_offset);
+    glEnableVertexAttribArray(pos_index);
+
+    // bind texture uv attributes
+    uint32_t uv_index = 1;
+    int32_t uv_size = 2;
+    void *uv_offset = (void *) (pos_size * sizeof(float));
+    glVertexAttribPointer(uv_index,
+                          uv_size,
+                          GL_FLOAT,
+                          normalized, 
+                          stride,
+                          uv_offset);
+    glEnableVertexAttribArray(uv_index);
 
     // safely unbinding
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -139,7 +166,8 @@ struct vertex_array vertex_array_create(const float *vertices, uint32_t vertex_c
 
     va.vao= vao;
     va.vbo = vbo;
-    va.vertex_count = vertex_count;
+    va.vertex_count = (uint32_t) ((n_bytes) / sizeof(vertices[0]));
+    LOG_DEBUG("VA created, number of vertices: %d", va.vertex_count);
 
     return va;
 }
@@ -197,11 +225,10 @@ int main(int argc, [[maybe_unused]] char **argv)
         exit(1);
     }
 
-    LOG_INFO("Starting GLFW: %s", glfwGetVersionString());
 
     GLFWwindow *window = NULL;
 
-
+    LOG_INFO("Starting GLFW: %s", glfwGetVersionString());
     glfwSetErrorCallback(error_callback);
 
     // GLFW Library initialization
@@ -212,8 +239,10 @@ int main(int argc, [[maybe_unused]] char **argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SAGE_OPENGL_MAJOR_VERSION);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, SAGE_OPENGL_MINOR_VERSION);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
 
     window = glfwCreateWindow(640, 480, SAGE_WINDOW_TITLE, NULL, NULL);
     if (window == NULL) {
@@ -230,10 +259,7 @@ int main(int argc, [[maybe_unused]] char **argv)
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     int version = gladLoadGL(glfwGetProcAddress);
-
     if (version == 0) {
         LOG_FATAL("Failed to initialize OpenGL context");
         return -1;
@@ -282,6 +308,8 @@ int main(int argc, [[maybe_unused]] char **argv)
         "res/shaders/object.frag"
     );
 
+    // it's necessary to pass cube vertices size because arrays decay into 
+    // pointers
     struct vertex_array cube = vertex_array_create(
         CUBE_VERTICES,
         sizeof(CUBE_VERTICES)
@@ -309,21 +337,20 @@ int main(int argc, [[maybe_unused]] char **argv)
         glm_mat4_identity(model);
         camera_update(&cam);
 
-        shader_use(&basic_shader);
 
         // rendering
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glBindTexture(GL_TEXTURE_2D, def.id);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        vertex_array_bind(cube);
 
         for (size_t i = 0; i < 10; i++) {
             for (size_t j = 0; j < 10; j++) {
+                texture_bind(def);
+                shader_use(&basic_shader);
+                vertex_array_bind(cube);
                 mat4 model;
                 glm_mat4_identity(model);
-                //glm_rotated_x(model, DEG_TO_RAD(64), model);
-                rotate_x(model, DEG_TO_RAD(64), model);
+                rotate_x(model, DEG_TO_RAD(40), model);
                 glm_translate(model, (vec3) {(float) i, -0.5, -(float) j});
             
                 shader_uniform_mat4(basic_shader, "model", model);

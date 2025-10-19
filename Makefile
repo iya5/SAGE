@@ -15,11 +15,12 @@ ifeq ($(UNAME), Linux)
 endif
 
 ifeq ($(UNAME), Darwin)
-	CFLAGS += -v -std=c2x
+	CFLAGS += -v -std=c2x -Wgnu-zero-variadic-macro-arguments
 	LDFLAGS += -framework Foundation -framework AppKit -framework CoreVideo \
 			   -framework Cocoa -framework IOKit -framework Metal \
 			   -framework QuartzCore
 endif
+
 CFLAGS += $(INCLUDES)
 
 

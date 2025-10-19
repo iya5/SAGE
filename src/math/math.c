@@ -139,13 +139,13 @@ void rotate_x(mat4 in, float theta, mat4 out)
      * [0  sinθ  cosθ]
      */
     mat4 rotate_x = {
-        {1,          0,           0, 0},
-        {0, cos(theta), -sin(theta), 0},
-        {0, sin(theta),  cos(theta), 0},
-        {0,          0,           0, 1},
+        {1,           0,           0, 0},
+        {0,  cos(theta),  sin(theta), 0},
+        {0, -sin(theta),  cos(theta), 0},
+        {0,          0 ,           0, 1},
     };
 
-    glm_mat4_mul(in, rotate_x, out);
+    glm_mat4_mul(rotate_x, in, out);
 }
 
 void rotate_y(mat4 in, float theta, mat4 out)
@@ -157,13 +157,13 @@ void rotate_y(mat4 in, float theta, mat4 out)
      * [sinθ 0  cosθ]
      */
     mat4 rotate_y = {
-        {cos(theta), 0, -sin(theta), 0},
-        {         0, 0,           0, 0},
-        {sin(theta), 0,  cos(theta), 0},
-        {         0, 0,           0, 1},
+        { cos(theta), 0,  sin(theta), 0},
+        {          0, 1,           0, 0},
+        {-sin(theta), 0,  cos(theta), 0},
+        {          0, 0,           0, 1},
     };
 
-    glm_mat4_mul(in, rotate_y, out);
+    glm_mat4_mul(rotate_y, in, out);
 }
 
 void rotate_z(mat4 in, float theta, mat4 out)
@@ -175,13 +175,13 @@ void rotate_z(mat4 in, float theta, mat4 out)
      * [ 0     0   1]
      */
     mat4 rotate_z = {
-        {cos(theta), -sin(theta), 0, 0},
-        {sin(theta),  cos(theta), 0, 0},
-        {         0,           0, 0, 0},
-        {         0,           0, 0, 0},
+        { cos(theta), sin(theta), 0, 0},
+        {-sin(theta), cos(theta), 0, 0},
+        {          0,          0, 1, 0},
+        {          0,          0, 0, 1},
     };
 
-    glm_mat4_mul(in, rotate_z, out);
+    glm_mat4_mul(rotate_z, in, out);
 }
 
 /* wrapper for vec3 rotating all three euler angles x->y->z */

@@ -42,8 +42,6 @@ static const float CUBE_VERTICES[] = {
     -0.5f,  0.5f, -0.5f, 0.0f, 1.0f
 };
 
-
-
 static const float LIGHT_CUBE_VERTICES[] = {
     -0.5f, -0.5f, -0.5f, 
     0.5f, -0.5f, -0.5f,  

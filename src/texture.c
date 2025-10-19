@@ -46,7 +46,6 @@ struct texture texture_create(const char *path)
 	glGenTextures(1, &texture.id);
 	glBindTexture(GL_TEXTURE_2D, texture.id);
 
-	// setting texture attributes best suited for pixel art games
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -74,7 +73,9 @@ void texture_bind(struct texture t)
 
 void texture_destroy(struct texture *t)
 {
-    if (t->id > 1)
+    if (t->id > 1) {
         glDeleteTextures(1, &t->id);
+        t->id = 0;
+    }
 }
 
