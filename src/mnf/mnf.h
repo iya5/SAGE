@@ -1,4 +1,4 @@
-/* Texture header file for Sage
+/* Manifold graphics math library for Sage
 
 This file is part of Sage
 
@@ -13,20 +13,27 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_TEXTURE_H__
-#define __SAGE_TEXTURE_H__
+/* 
+ * This math header defines basic 3D graphics maths used in Sage.
+ *
+ * All operations column-major order and in right-handed coordinates.
+ *
+ * Unless specified otherwise, functions generally take on the form:
+ *      out = transform * in
+ *
+ *  Matrix multiplication follows post-order similar to function notation:
+ *      M' = M(M)
+ *  or, when multiplying a matrix by a vector:
+ *      v' = M(v)
+ */
 
-#include <stdint.h>
-//#include <cglm/cglm.h>
-#include "mnf/mnf.h"
+#ifndef __MNF_H__
+#define __MNF_H__
 
-struct texture {
-    uint32_t id;
-    ivec2 size;
-};
+#include "mnf_types.h"
+#include "mnf_matrix.h"
+#include "mnf_transform.h"
+#include "mnf_vector.h"
+#include "mnf_util.h"
 
-void texture_bind(struct texture t);
-struct texture texture_create(const char *path);
-void texture_destroy(struct texture *t);
-
-#endif /* __SAGE_TEXTURE_H__ */
+#endif /* __MNF_H__ */

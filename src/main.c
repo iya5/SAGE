@@ -18,8 +18,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
-#include <cglm/cglm.h>
 #include <slog/slog.h>
+//#include <cglm/cglm.h>
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -31,7 +31,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "shader/shader.h"
 #include "geometry.h"
 #include "texture.h"
-#include "math/math.h"
 
 struct vertex_array {
     uint32_t vao;
@@ -44,31 +43,6 @@ struct transform {
     vec3 scale;
     vec3 position;
 };
-
-struct entity {
-    struct vertex_array va;
-    struct transform transform;
-};
-
-void entity_transform(struct entity entity)
-{
-    mat4 transform;
-    glm_mat4_identity(transform);
-
-    glm_scale(transform, entity.transform.scale);
-    rotate_x(transform, DEG_TO_RAD(entity.transform.rotate[X]), transform);
-    rotate_y(transform, DEG_TO_RAD(entity.transform.rotate[Y]), transform);
-    rotate_z(transform, DEG_TO_RAD(entity.transform.rotate[Z]), transform);
-
-    glm_translate_to(transform, entity.transform.position, transform);
-}
-
-void entity_set_pos(struct entity *entity, vec3 position)
-{
-    entity->transform.position[X] = position[X];
-    entity->transform.position[Y] = position[Y];
-    entity->transform.position[Z] = position[Z];
-}
 
 struct camera cam = {0};
 
@@ -322,6 +296,7 @@ int main(int argc, [[maybe_unused]] char **argv)
     double previous_seconds = glfwGetTime();
 
     // render loop
+    LOG_DEBUG("before loop");
     while (!glfwWindowShouldClose(window)) {
         double current_seconds = glfwGetTime();
         double dt = current_seconds - previous_seconds;
@@ -333,25 +308,29 @@ int main(int argc, [[maybe_unused]] char **argv)
             shader_hot_reload(&basic_shader);
 
 
-        mat4 model;
-        glm_mat4_identity(model);
         camera_update(&cam);
-
 
         // rendering
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
 
         for (size_t i = 0; i < 10; i++) {
             for (size_t j = 0; j < 10; j++) {
                 texture_bind(def);
                 shader_use(&basic_shader);
                 vertex_array_bind(cube);
+
                 mat4 model;
-                glm_mat4_identity(model);
-                rotate_x(model, DEG_TO_RAD(40), model);
-                glm_translate(model, (vec3) {(float) i, -0.5, -(float) j});
+                mat4 identity;
+
+
+                //glm_mat4_identity(model);
+                mnf_mat4_identity(model);
+
+                //mnf_euler_rotate_z(model, MNF_RAD(40), model);
+
+                mnf_mat4_translate(model, (vec3) {(float) i, 0, -(float) j}, model);
             
                 shader_uniform_mat4(basic_shader, "model", model);
                 shader_uniform_mat4(basic_shader, "view", cam.view);

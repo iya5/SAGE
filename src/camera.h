@@ -16,8 +16,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #ifndef __SAGE_CAMERA_H__
 #define __SAGE_CAMERA_H__
 
-#include <cglm/cglm.h>
 #include <stdbool.h>
+//#include <cglm/cglm.h>
+#include "mnf/mnf.h"
 
 #define CAM_PITCH_MAX 89.0
 #define CAM_PITCH_MIN -89.0
