@@ -13,6 +13,7 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <stdint.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <glad/gl.h>
@@ -51,11 +52,15 @@ struct texture texture_create(const char *path)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	// generting texture
-	glTexImage2D(
-		GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-		data
-	);
+	glTexImage2D(GL_TEXTURE_2D, // target
+              0,                // level (lod)
+              GL_RGBA,          // color components
+              width,            // width
+              height,           // height
+              0,                // border (must be 0)
+              GL_RGBA,          // format of the pixel
+              GL_UNSIGNED_BYTE, // data type
+              data);            // data in memory
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -65,6 +70,41 @@ struct texture texture_create(const char *path)
 
 	return texture;
 }
+
+struct texture texture_create_default(void)
+{
+	LOG_INFO("Creating default 1x1 texture");
+	struct texture texture = {0};
+
+    // single pixel of (255, 255, 255, 255)
+    const unsigned char white[4] = {255, 255, 255, 255};
+	memcpy(&texture.size, (ivec2) {1, 1}, sizeof(ivec2));
+
+	glGenTextures(1, &texture.id);
+	glBindTexture(GL_TEXTURE_2D, texture.id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, // target
+              0,                // level (lod)
+              GL_RGBA,          // color components
+              1,                // width
+              1,                // height
+              0,                // border (must be 0)
+              GL_RGBA,          // format of the pixel
+              GL_UNSIGNED_BYTE, // data type
+              white);           // data in memory
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return texture;
+}
+
 
 void texture_bind(struct texture t)
 {

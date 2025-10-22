@@ -42,5 +42,8 @@ void mnf_axis_angle_rotate(mat4 in, vec3 n, float theta, mat4 out);
 
 void mnf_mat4_translate(mat4 in, vec3 v, mat4 out);
 
+
+void mnf_mat4_scale(mat4 in, vec3 scalars, mat4 out);
+
 #endif /* __MNF_TRANSFORM_H__ */
 

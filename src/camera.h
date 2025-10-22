@@ -33,7 +33,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define FOV_DEFAULT_MIN 4.0
 #define FOV_DEFAULT_MAX 98.0
 #define CAMERA_DEFAULT_SENSITIVITY 0.2
-#define CAMERA_DEFAULT_SPEED 1
+#define CAMERA_DEFAULT_SPEED 10
 
 enum movement_type {
     MOVE_FORWARD,

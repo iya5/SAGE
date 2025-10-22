@@ -23,22 +23,22 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 /*
  * Represents an OpenGL shader program containing:
- *      handle  -> id of the program object
- *      vs_path -> relative path to the vertex shader
- *      fs_path -> relative path to the fragment shader
+ * handle   - id of the program object
+ * path     - .glsl file path
+ *
  */
 struct shader {
     uint32_t handle;
-    char vs_path[SHADER_PATH_BUFFER_SIZE];
-    char fs_path[SHADER_PATH_BUFFER_SIZE];
+    char path[SHADER_PATH_BUFFER_SIZE];
 };
 
 /*
- * Creates a shader program object using OpenGL using a specified vertex and
- * fragment shader path relative to the project's root directory. Returns a
- * struct containing the OpenGL handle and shader file paths.
+ * Creates a shader program object using OpenGL using a specified glsl shader
+ * that combines both vertex and fragment shader relative to the project's root.
+ * 
+ * It returns a struct containing the handle and file path.
  */
-struct shader shader_create(const char *vs_path, const char *fs_path);
+struct shader shader_create(const char *path);
 
 /* Wrapper around glUseProgram */
 void shader_use(struct shader *shader);

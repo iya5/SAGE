@@ -17,7 +17,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define __SAGE_TEXTURE_H__
 
 #include <stdint.h>
-//#include <cglm/cglm.h>
 #include "mnf/mnf.h"
 
 struct texture {
@@ -26,6 +25,7 @@ struct texture {
 };
 
 void texture_bind(struct texture t);
+struct texture texture_create_default(void);
 struct texture texture_create(const char *path);
 void texture_destroy(struct texture *t);
 

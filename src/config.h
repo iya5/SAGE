@@ -23,7 +23,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 // constants are based off glfwSwapInterval()
 #define SAGE_VSYNC_LOCK     1
 #define SAGE_VSYNC_UNLOCK   0
-#define SAGE_VSYNC_SETTING  SAGE_VSYNC_UNLOCK
+#define SAGE_VSYNC_SETTING  SAGE_VSYNC_LOCK
 
 #define SAGE_OPENGL_MAJOR_VERSION 4
 #define SAGE_OPENGL_MINOR_VERSION 1

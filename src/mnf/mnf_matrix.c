@@ -30,7 +30,8 @@ void mnf_mat4_copy(mat4 src, mat4 dest)
 
 void mnf_mat4_identity(mat4 mat)
 {
-    __attribute__((aligned(16)))  mat4 identity = MNF_MAT4_IDENTITY_INIT;
+    //__attribute__((aligned(16)))  mat4 identity = MNF_MAT4_IDENTITY_INIT;
+    mat4 identity = MNF_MAT4_IDENTITY_INIT;
     mnf_mat4_copy(identity, mat);
 }
 

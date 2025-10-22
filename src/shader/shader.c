@@ -23,9 +23,13 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "shader.h"
 
+#define DEF_VERSION "#version 410 core\n"
+#define DEF_VS      "#define COMPILE_VS\n"
+#define DEF_FS      "#define COMPILE_FS\n"
+
 static char *shader_load_from_source(const char *path);
 
-struct shader shader_create(const char *vs_path, const char *fs_path)
+struct shader shader_create(const char *path)
 {
     struct shader shader = {0};
 
@@ -33,35 +37,43 @@ struct shader shader_create(const char *vs_path, const char *fs_path)
     char info[512] = {0};
 
     // compiling the vertex shader
-    LOG_INFO("Compiling '%s'", vs_path);
-    char *vs_source = shader_load_from_source(vs_path);
+    LOG_INFO("Compiling vertex shader '%s'", path);
+    char *vs_source[] = {
+        DEF_VERSION,
+        DEF_VS,
+        shader_load_from_source(path)
+    };
     uint32_t vs_id = glCreateShader(GL_VERTEX_SHADER);
 
-    glShaderSource(vs_id, 1, (const GLchar * const *) &vs_source, NULL);
+    glShaderSource(vs_id, 3, (const GLchar * const *) &vs_source, NULL);
     glCompileShader(vs_id);
-    free(vs_source);
-    vs_source = NULL;
+    free(vs_source[2]);
+    vs_source[2] = NULL;
 
     glGetShaderiv(vs_id, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vs_id, 512, NULL, info);
-        LOG_ERROR("Failed to compile '%s': %s", vs_path, info);
+        LOG_ERROR("Failed to compile vertex shader '%s': %s", path, info);
     }
 
     // compiling the fragment shader
-    LOG_INFO("Compiling '%s'", fs_path);
-    char *fs_source = shader_load_from_source(fs_path);
+    LOG_INFO("Compiling fragment shader '%s'", path);
+    char *fs_source[] = {
+        DEF_VERSION,
+        DEF_FS,
+        shader_load_from_source(path)
+    };
     uint32_t fs_id = glCreateShader(GL_FRAGMENT_SHADER);
 
-    glShaderSource(fs_id, 1, (const GLchar * const *) &fs_source, NULL);
+    glShaderSource(fs_id, 3, (const GLchar * const *) &fs_source, NULL);
     glCompileShader(fs_id);
-    free(fs_source);
-    fs_source = NULL;
+    free(fs_source[2]);
+    fs_source[2] = NULL;
 
     glGetShaderiv(fs_id, GL_COMPILE_STATUS, &success);
     if(!success) {
         glGetShaderInfoLog(fs_id, 512, NULL, info);
-        LOG_ERROR("Failed to compile shader: %s", info);
+        LOG_ERROR("Failed to compile fragment shader '%s': %s", path, info);
     }
 
     // creating shader program
@@ -82,15 +94,10 @@ struct shader shader_create(const char *vs_path, const char *fs_path)
 
     shader.handle = id;
 
-    size_t i = 0;
-    for (i = 0; i < SHADER_PATH_BUFFER_SIZE - 1 && vs_path[i] != '\0'; i++)
-        shader.vs_path[i] = vs_path[i];
-    shader.vs_path[i] = '\0';
-
-    i = 0;
-    for (i = 0; i < SHADER_PATH_BUFFER_SIZE  - 1 && fs_path[i] != '\0'; i++)
-        shader.fs_path[i] = fs_path[i];
-    shader.fs_path[i] = '\0';
+    int i = 0;
+    for (i = 0; i < SHADER_PATH_BUFFER_SIZE  - 1 && path[i] != '\0'; i++)
+        shader.path[i] = path[i];
+    shader.path[i] = '\0';
 
     return shader;
 }
@@ -98,8 +105,7 @@ struct shader shader_create(const char *vs_path, const char *fs_path)
 void shader_hot_reload(struct shader *shader)
 {
 
-    struct shader reloaded_shader = shader_create(shader->vs_path, 
-                                                  shader->fs_path);
+    struct shader reloaded_shader = shader_create(shader->path);
     if (!reloaded_shader.handle) {
         LOG_WARN("Failed to hot reload");
         glDeleteProgram(reloaded_shader.handle);
@@ -124,7 +130,7 @@ void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
-        LOG_WARN("Accessing uniform '%s' doesn't exist", uniform);
+        LOG_WARN("Uniform '%s' doesn't exist in %s", uniform, shader.path);
     } else {
         glUniform4f(location, v[0], v[1], v[2], v[3]);
     }
@@ -134,7 +140,7 @@ void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
-        LOG_WARN("Accessing uniform '%s' doesn't exist", uniform);
+        LOG_WARN("Uniform '%s' doesn't exist in %s", uniform, shader.path);
     } else {
         glUniformMatrix4fv(location, 1, GL_FALSE, (const GLfloat *)m);
     }
@@ -145,7 +151,7 @@ void shader_uniform_vec3(struct shader shader, const char* uniform, vec3 v)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
-        LOG_WARN("Accessing uniform '%s' doesn't exist", uniform);
+        LOG_WARN("Uniform '%s' doesn't exist in %s", uniform, shader.path);
     } else {
         glUniform3f(location, v[0], v[1], v[2]);
     }
