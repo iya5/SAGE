@@ -17,23 +17,23 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define __SAGE_CAMERA_H__
 
 #include <stdbool.h>
-//#include <cglm/cglm.h>
 #include "mnf/mnf.h"
 
 #define CAM_PITCH_MAX 89.0
 #define CAM_PITCH_MIN -89.0
 
-#define CAM_DEFAULT_POS (vec3) {0.0, 0.0, 2.0}
+#define CAM_DEFAULT_POS (vec3) {5.0, 5.0, 5.0}
 #define CAM_DEFAULT_FORWARD (vec3) {0.0, 0.0, -1.0}
 #define CAM_DEFAULT_UP  (vec3) {0.0, 1.0, 0.0}
+
+#define CAM_DEFAULT_SENSITIVITY 0.2
+#define CAM_DEFAULT_SPEED 10.0
 
 #define PERSPECTIVE_DEFAULT_NEAR 0.1
 #define PERSPECTIVE_DEFAULT_FAR 100.0
 #define FOV_DEFAULT 67.0
 #define FOV_DEFAULT_MIN 4.0
 #define FOV_DEFAULT_MAX 98.0
-#define CAMERA_DEFAULT_SENSITIVITY 0.2
-#define CAMERA_DEFAULT_SPEED 10
 
 enum movement_type {
     MOVE_FORWARD,

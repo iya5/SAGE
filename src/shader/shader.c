@@ -85,7 +85,7 @@ struct shader shader_create(const char *path)
     glGetProgramiv(id, GL_LINK_STATUS, &success);
     if(!success) {
         glGetProgramInfoLog(id, 512, NULL, info);
-        LOG_ERROR("Failed to link shader program: %s", info);
+        LOG_ERROR("Failed to link shader program for '%s': %s", path, info);
         id = 0;
     }
 
@@ -108,7 +108,7 @@ void shader_hot_reload(struct shader *shader)
     struct shader reloaded_shader = shader_create(shader->path);
     if (!reloaded_shader.handle) {
         LOG_WARN("Failed to hot reload");
-        glDeleteProgram(reloaded_shader.handle);
+        // glDeleteProgram(reloaded_shader.handle);
     } else {
         LOG_INFO("Hot reloading shader");
         glDeleteProgram(shader->handle);
@@ -124,6 +124,7 @@ void shader_use(struct shader *shader)
 void shader_destroy(struct shader *shader)
 {
     glDeleteProgram(shader->handle);
+    shader->handle = 0;
 }
 
 void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v)
@@ -136,7 +137,7 @@ void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v)
     }
 }
 
-void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m)
+void shader_uniform_mat4(struct shader shader, const char *uniform, mat4 m)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {
@@ -147,7 +148,17 @@ void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m)
 
 }
 
-void shader_uniform_vec3(struct shader shader, const char* uniform, vec3 v)
+void shader_uniform_float(struct shader shader, const char *uniform, float f)
+{
+    int32_t location = glGetUniformLocation(shader.handle, uniform);
+    if (location < 0) {
+        LOG_WARN("Uniform '%s' doesn't exist in %s", uniform, shader.path);
+    } else {
+        glUniform1f(location, f);
+    }
+}
+
+void shader_uniform_vec3(struct shader shader, const char *uniform, vec3 v)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {

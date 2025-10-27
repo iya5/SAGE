@@ -1,34 +1,35 @@
 #ifdef COMPILE_VS
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 uv;
+layout (location = 0) in vec3 attr_pos;
+layout (location = 1) in vec2 attr_uv;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
 
-out vec2 fs_uv;
+out vec2 vert_uv;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(position, 1.0);
-    fs_uv = uv;
+    gl_Position = u_projection * u_view * u_model * vec4(attr_pos, 1.0);
+
+    vert_uv = attr_uv;
 }
 
 #endif /* COMPILE_VS */
 
 #ifdef COMPILE_FS
 
-in vec2 fs_uv;
+in vec2 vert_uv;
 
-uniform sampler2D sampler_texture;
-uniform vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform sampler2D u_texture;
+uniform vec4 u_color = vec4(1.0, 1.0, 1.0, 1.0);
 
-out vec4 out_color;
+out vec4 frag_color;
 
 void main()
 {
-    out_color = texture(sampler_texture, fs_uv) * color;
+    frag_color = texture(u_texture, vert_uv) * u_color;
 }
 
 #endif /* COMPILE_FS */

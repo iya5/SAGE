@@ -16,7 +16,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #ifndef __SAGE_CONFIG_H__
 #define __SAGE_CONFIG_H__
 
-#define SAGE_WINDOW_TITLE   "SageN"
+#define SAGE_WINDOW_TITLE   "Sage"
 
 #define SAGE_MULTISAMPLE_ANTIALIASING 8
 

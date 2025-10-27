@@ -19,18 +19,29 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 void camera_init(struct camera *cam, vec3 pos, vec3 forward, vec3 world_up)
 {
-    LOG_DEBUG("initializing camera");
     mnf_vec3_copy(pos, cam->pos);
     mnf_vec3_copy(forward, cam->forward);
     mnf_vec3_copy(world_up, cam->world_up);
     mnf_vec3_normalize(cam->world_up, cam->world_up);
     mnf_vec3_normalize(cam->forward, cam->forward);
 
-    cam->speed = CAMERA_DEFAULT_SPEED;
-    cam->sensitivity = CAMERA_DEFAULT_SENSITIVITY;
+    cam->speed = CAM_DEFAULT_SPEED;
+    cam->sensitivity = CAM_DEFAULT_SENSITIVITY;
     // reason for -90 is because we're offset facing the left
-    cam->yaw = -90.0;
-    cam->pitch = 0;
+    cam->yaw = -90.0 - 45;
+    cam->pitch = 0 - 25;
+
+    /* recomputing the forward based on the yaw and pitch defaults */
+    mnf_vec3_copy(
+        (vec3) {
+            cos(MNF_RAD(cam->yaw)) * cos(MNF_RAD(cam->pitch)),
+            sin(MNF_RAD(cam->pitch)),
+            sin(MNF_RAD(cam->yaw)) * cos(MNF_RAD(cam->pitch))
+        },
+        cam->forward
+    );
+    mnf_vec3_normalize(cam->forward, cam->forward);
+
 
     cam->can_move = false;
 

@@ -54,8 +54,9 @@ void shader_destroy(struct shader *shader);
 void shader_hot_reload(struct shader *shader);
 
 /* for setting uniform states */
-void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m);
-void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v);
+void shader_uniform_float(struct shader shader, const char *uniform, float f);
 void shader_uniform_vec3(struct shader shader, const char* uniform, vec3 v);
+void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v);
+void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m);
 
 #endif /* __SAGE_SHADER_H__ */

@@ -13,16 +13,13 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#include "mnf/mnf.h"
-#include "mnf/mnf_matrix.h"
-#include "mnf/mnf_transform.h"
+#include "mnf/mnf.h" // IWYU pragma: keep
 #define NK_IMPLEMENTATION
 #include <nuklear.h>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <slog/slog.h>
-//#include <cglm/cglm.h>
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -46,6 +43,7 @@ struct transform {
     vec3 scale;
     vec3 position;
 };
+
 
 struct camera cam = {0};
 
@@ -111,7 +109,9 @@ struct vertex_array vertex_array_create(const float *vertices,
 
     // configure the vbo to interpret the data
     // stride is the offset between consecutive generic vertex attributes
-    size_t stride = 5 * sizeof(float);
+
+    size_t vertex_size = 8;
+    size_t stride = vertex_size * sizeof(float);
     GLboolean normalized = GL_FALSE;
 
     // bind position attributes
@@ -138,13 +138,25 @@ struct vertex_array vertex_array_create(const float *vertices,
                           uv_offset);
     glEnableVertexAttribArray(uv_index);
 
+    // bind normal uv attributes
+    uint32_t normal_index = 2;
+    int32_t normal_size = 3;
+    void *normal_offset = (void *) ((pos_size + uv_size) * sizeof(float));
+    glVertexAttribPointer(normal_index,
+                          normal_size,
+                          GL_FLOAT,
+                          normalized,
+                          stride,
+                          normal_offset);
+    glEnableVertexAttribArray(normal_index);
+
     // safely unbinding
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     va.vao= vao;
     va.vbo = vbo;
-    va.vertex_count = (uint32_t) ((n_bytes) / sizeof(vertices[0]));
+    va.vertex_count = (uint32_t) ((n_bytes) / sizeof(float) / 8);
     LOG_DEBUG("VA created, number of vertices: %d", va.vertex_count);
 
     return va;
@@ -189,6 +201,7 @@ void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_
     last_y = y_pos;
     camera_mouse(&cam, dx, dy);
 }
+
 void scroll_callback([[maybe_unused]] GLFWwindow *window, 
                      [[maybe_unused]] double dx, 
                      double dy)
@@ -213,20 +226,20 @@ void world_grid_draw(struct vertex_array va,
     // x axis (red)
     mnf_mat4_identity(model);
     mnf_mat4_scale(model, (vec3){200.0, 0.01, 0.01}, model);
-    shader_uniform_mat4(shader, "model", model);
-    shader_uniform_mat4(shader, "view", cam.view);
-    shader_uniform_mat4(shader, "projection", cam.projection);
-    shader_uniform_vec4(shader, "color", (vec4){1.0, 0.0, 0.0, 1.0});
+    shader_uniform_mat4(shader, "u_model", model);
+    shader_uniform_mat4(shader, "u_view", cam.view);
+    shader_uniform_mat4(shader, "u_projection", cam.projection);
+    shader_uniform_vec4(shader, "u_color", (vec4){1.0, 0.0, 0.0, 1.0});
     vertex_array_draw(va);
 
     // y axis (green)
     mnf_mat4_identity(model);
     mnf_mat4_scale(model, (vec3){200.0, 0.01, 0.01}, model);
     mnf_euler_rotate_y(model, MNF_RAD(90), model);
-    shader_uniform_mat4(shader, "model", model);
-    shader_uniform_mat4(shader, "view", cam.view);
-    shader_uniform_mat4(shader, "projection", cam.projection);
-    shader_uniform_vec4(shader, "color", (vec4){0.0, 1.0, 0.0, 1.0});
+    shader_uniform_mat4(shader, "u_model", model);
+    shader_uniform_mat4(shader, "u_view", cam.view);
+    shader_uniform_mat4(shader, "u_projection", cam.projection);
+    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 1.0, 0.0, 1.0});
     vertex_array_draw(va);
 
     // z axis (blue)
@@ -234,10 +247,10 @@ void world_grid_draw(struct vertex_array va,
     mnf_mat4_scale(model, (vec3){200.0, 0.01, 0.01}, model);
     mnf_euler_rotate_z(model, MNF_RAD(90), model);
     mnf_mat4_translate(model, (vec3){0.0, 100.0, 0.0}, model);
-    shader_uniform_mat4(shader, "model", model);
-    shader_uniform_mat4(shader, "view", cam.view);
-    shader_uniform_mat4(shader, "projection", cam.projection);
-    shader_uniform_vec4(shader, "color", (vec4){0.0, 0.0, 1.0, 1.0});
+    shader_uniform_mat4(shader, "u_model", model);
+    shader_uniform_mat4(shader, "u_view", cam.view);
+    shader_uniform_mat4(shader, "u_projection", cam.projection);
+    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 0.0, 1.0, 1.0});
     vertex_array_draw(va);
 }
 
@@ -287,6 +300,7 @@ int main(int argc, [[maybe_unused]] char **argv)
         LOG_FATAL("Failed to initialize OpenGL context");
         return -1;
     }
+
     LOG_INFO("Loaded OpenGL %d.%d\n", 
              GLAD_VERSION_MAJOR(version),
              GLAD_VERSION_MINOR(version));
@@ -295,6 +309,7 @@ int main(int argc, [[maybe_unused]] char **argv)
     glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
     glfwSwapInterval(SAGE_VSYNC_SETTING);
 
+    /* setup gl parameters */
     glViewport(0, 0, 640, 480);
     glDisable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -320,18 +335,18 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     struct shader basic_shader = shader_create("shaders/basic.glsl");
     struct shader light_shader = shader_create("shaders/light.glsl");
-    struct shader lit_shader = shader_create("shaders/lit.glsl");
+    struct shader lit_shader = shader_create("shaders/phong.glsl");
 
     // it's necessary to pass cube vertices size because arrays decay into 
     // pointers
     struct vertex_array cube = vertex_array_create(
-        CUBE_VERTICES,
-        sizeof(CUBE_VERTICES)
+        CUBE_VERTICES_W_NORM,
+        sizeof(CUBE_VERTICES_W_NORM)
     );
 
     struct vertex_array light_source = vertex_array_create(
-        CUBE_VERTICES,
-        sizeof(CUBE_VERTICES)
+        CUBE_VERTICES_W_NORM,
+        sizeof(CUBE_VERTICES_W_NORM)
     );
 
     struct texture base_texture = texture_create("res/textures/base.png");
@@ -353,7 +368,7 @@ int main(int argc, [[maybe_unused]] char **argv)
 
         camera_update(&cam);
 
-        // rendering
+        /* pre-rendering setup */
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -365,47 +380,33 @@ int main(int argc, [[maybe_unused]] char **argv)
         vec3 light_pos = {2.0, 3.0, -1.0};
         mat4 model;
         mnf_mat4_identity(model);
+        mnf_mat4_scale(model, (vec3){0.2, 0.2, 0.2}, model);
         mnf_mat4_translate(model, light_pos, model);
-        shader_uniform_mat4(light_shader, "model", model);
-        shader_uniform_mat4(light_shader, "view", cam.view);
-        shader_uniform_mat4(light_shader, "projection", cam.projection);
+        shader_uniform_mat4(light_shader, "u_model", model);
+        shader_uniform_mat4(light_shader, "u_view", cam.view);
+        shader_uniform_mat4(light_shader, "u_projection", cam.projection);
         vertex_array_draw(light_source);
 
         /* drawing lit object */
         shader_use(&lit_shader);
-        texture_bind(base_texture);
+        texture_bind(default_texture);
         mnf_mat4_identity(model);
-        shader_uniform_vec3(lit_shader, "object_color", (vec3){1.0, 0.5, 0.31});
-        shader_uniform_vec3(lit_shader, "light_color", (vec3){1.0, 1.0, 1.0});
-        shader_uniform_mat4(lit_shader, "model", model);
-        shader_uniform_mat4(lit_shader, "view", cam.view);
-        shader_uniform_mat4(lit_shader, "projection", cam.projection);
+        vec3 obj_pos = {1.0, 0.5, -0.6};
+        mnf_mat4_translate(model, obj_pos, model);
+        shader_uniform_vec3(lit_shader, "u_material.ambient", (vec3){1.0, 0.5, 0.31});
+        shader_uniform_vec3(lit_shader, "u_material.diffuse", (vec3){1.0, 0.5, 0.31});
+        shader_uniform_vec3(lit_shader, "u_material.specular", (vec3){0.5, 0.5, 0.5});
+        shader_uniform_float(lit_shader, "u_material.shininess", 32.0);
+        shader_uniform_vec3(lit_shader, "u_light.pos", light_pos);
+        shader_uniform_vec3(lit_shader, "u_light.ambient", (vec3){0.1, 0.1, 0.1});
+        shader_uniform_vec3(lit_shader, "u_light.diffuse", (vec3){0.5, 0.5, 0.5});
+        shader_uniform_vec3(lit_shader, "u_light.specular", (vec3){1.0, 1.0, 1.0});
+
+        shader_uniform_vec3(lit_shader, "u_view_pos", cam.pos);
+        shader_uniform_mat4(lit_shader, "u_model", model);
+        shader_uniform_mat4(lit_shader, "u_view", cam.view);
+        shader_uniform_mat4(lit_shader, "u_projection", cam.projection);
         vertex_array_draw(cube);
-
-        /*
-        for (size_t i = 0; i < 10; i++) {
-            for (size_t j = 0; j < 10; j++) {
-                texture_bind(base_texture);
-                shader_use(&basic_shader);
-                vertex_array_bind(cube);
-
-                mat4 model;
-
-                mnf_mat4_identity(model);
-                mnf_mat4_scale(model, (vec3){1.0, 1.0, 1.0}, model);
-
-                mnf_mat4_translate(model, (vec3) {(float) i, 0, -(float) j}, model);
-            
-                shader_uniform_mat4(basic_shader, "model", model);
-                shader_uniform_vec4(basic_shader, "color", (vec4){1.0, 1.0, 1.0, 1.0});
-                shader_uniform_mat4(basic_shader, "view", cam.view);
-                shader_uniform_mat4(basic_shader, "projection", cam.projection);
-
-                vertex_array_draw(cube);
-            }
-
-        }
-        */
 
         glfwSwapBuffers(window);
         glfwPollEvents();
