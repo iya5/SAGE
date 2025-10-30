@@ -1,4 +1,4 @@
-/* Texture header file for Sage
+/* Utilities for Manifold 
 
 This file is part of Sage
 
@@ -13,24 +13,19 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_TEXTURE_H__
-#define __SAGE_TEXTURE_H__
+#ifndef __MNF_UTIL_H__
+#define __MNF_UTIL_H__
 
-#include <stdint.h>
-#include "mnf/mnf_types.h"
+#define PI 3.14159f
+#define MNF_RAD(DEG) ((DEG) * (PI / 180.0f))
+#define MNF_DEG(RAD) ((RAD) * (180.0f / PI))
 
-struct texture {
-    uint32_t id;
-    ivec2 size;
-};
+#define WOLRD_UP (vec3){0.0f, 1.0f, 0.0f}
 
-struct texture texture_create_default(void);
-struct texture texture_create(const char *path);
-/* Wrapper around glBindTexture() */
-void texture_bind(struct texture t);
-void texture_destroy(struct texture *t);
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define CLAMP(value, min, max) ((min < max) \
+	? (value < min) ? min : ((value > max) ? max : value) \
+	: (value < max) ? max : ((value > min) ? min : value))
 
-struct texture cubemap_texture_create(char *cubemap_faces[6]);
-void cubemap_texture_bind(struct texture t);
-
-#endif /* __SAGE_TEXTURE_H__ */
+#endif /* __MNF_UTIL_H__ */

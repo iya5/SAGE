@@ -20,7 +20,7 @@ slog; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <string.h>
 #include <stdarg.h>
 
-#include "../include/slog/slog.h"
+#include "slog.h"
 #include "internal.h"
 
 #define TIME_FMT_BUFFER_SIZE 64

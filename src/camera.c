@@ -14,29 +14,40 @@ You should have received a copy of the GNU General Public License along with
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "camera.h"
-#include "math/math.h"
+#include <math.h>
 
 void camera_init(struct camera *cam, vec3 pos, vec3 forward, vec3 world_up)
 {
+    mnf_vec3_copy(pos, cam->pos);
+    mnf_vec3_copy(forward, cam->forward);
+    mnf_vec3_copy(world_up, cam->world_up);
+    mnf_vec3_normalize(cam->world_up, cam->world_up);
+    mnf_vec3_normalize(cam->forward, cam->forward);
 
-    glm_vec3_copy(pos, cam->pos);
-    glm_vec3_copy(forward, cam->forward);
-    glm_vec3_copy(world_up, cam->world_up);
-    glm_normalize(cam->world_up);
-    glm_normalize(cam->forward);
-
-    cam->speed = CAMERA_DEFAULT_SPEED;
-    cam->sensitivity = CAMERA_DEFAULT_SENSITIVITY;
+    cam->speed = CAM_DEFAULT_SPEED;
+    cam->sensitivity = CAM_DEFAULT_SENSITIVITY;
     // reason for -90 is because we're offset facing the left
-    cam->yaw = -90.0;
-    cam->pitch = 0;
+    cam->yaw = -90.0 - 45;
+    cam->pitch = 0 - 25;
+
+    /* recomputing the forward based on the yaw and pitch defaults */
+    mnf_vec3_copy(
+        (vec3) {
+            cos(MNF_RAD(cam->yaw)) * cos(MNF_RAD(cam->pitch)),
+            sin(MNF_RAD(cam->pitch)),
+            sin(MNF_RAD(cam->yaw)) * cos(MNF_RAD(cam->pitch))
+        },
+        cam->forward
+    );
+    mnf_vec3_normalize(cam->forward, cam->forward);
+
 
     cam->can_move = false;
 
-    glm_mat4_identity(cam->view);
-    glm_mat4_identity(cam->projection);
+    mnf_mat4_identity(cam->view);
+    mnf_mat4_identity(cam->projection);
     vec3 target;
-    glm_vec3_add(cam->pos, cam->forward, target);
+    mnf_vec3_add(cam->pos, cam->forward, target);
     view_lookat(cam->view, cam->pos, target, cam->world_up);
 }
 
@@ -50,37 +61,37 @@ void camera_perspective(struct camera *cam,
     cam->far = far;
     cam->aspect = aspect;
     cam->fov = fov;
-    projection_perspective(cam->projection, DEG_TO_RAD(fov), aspect, near, far);
+    projection_perspective(cam->projection, MNF_RAD(fov), aspect, near, far);
 }
 
 void camera_move(struct camera *cam, int command, double dt)
 {
     if (command == MOVE_FORWARD) {
         vec3 delta;
-        glm_vec3_scale(cam->forward, cam->speed * dt, delta);
-        glm_vec3_add(cam->pos, delta, cam->pos);
+        mnf_vec3_scale(cam->forward, cam->speed * dt, delta);
+        mnf_vec3_add(cam->pos, delta, cam->pos);
     }
 
     if (command == MOVE_BACKWARD) {
         vec3 delta;
-        glm_vec3_scale(cam->forward, -cam->speed * dt, delta);
-        glm_vec3_add(cam->pos, delta, cam->pos);
+        mnf_vec3_scale(cam->forward, -cam->speed * dt, delta);
+        mnf_vec3_add(cam->pos, delta, cam->pos);
     }
 
     if (command == STRAFE_LEFT) {
         vec3 right;
-        glm_vec3_cross(cam->forward, cam->world_up, right);
-        glm_vec3_normalize(right);
-        glm_vec3_scale(right, -cam->speed * dt, right);
-        glm_vec3_add(cam->pos, right, cam->pos);
+        mnf_vec3_cross(cam->forward, cam->world_up, right);
+        mnf_vec3_normalize(right, right);
+        mnf_vec3_scale(right, -cam->speed * dt, right);
+        mnf_vec3_add(cam->pos, right, cam->pos);
     }
 
     if (command == STRAFE_RIGHT) {
         vec3 right;
-        glm_vec3_cross(cam->forward, cam->world_up, right);
-        glm_vec3_normalize(right);
-        glm_vec3_scale(right, cam->speed * dt, right);
-        glm_vec3_add(cam->pos, right, cam->pos);
+        mnf_vec3_cross(cam->forward, cam->world_up, right);
+        mnf_vec3_normalize(right, right);
+        mnf_vec3_scale(right, cam->speed * dt, right);
+        mnf_vec3_add(cam->pos, right, cam->pos);
     }
 
     if (command == MOVE_UP)
@@ -99,15 +110,15 @@ void camera_mouse(struct camera *cam, float dx, float dy)
     cam->pitch = CLAMP(cam->pitch, CAM_PITCH_MIN, CAM_PITCH_MAX);
 
     // explanation of how in https://learnopengl.com/Getting-started/Camera
-    glm_vec3_copy(
+    mnf_vec3_copy(
         (vec3) {
-            cos(DEG_TO_RAD(cam->yaw)) * cos(DEG_TO_RAD(cam->pitch)),
-            sin(DEG_TO_RAD(cam->pitch)),
-            sin(DEG_TO_RAD(cam->yaw)) * cos(DEG_TO_RAD(cam->pitch))
+            cos(MNF_RAD(cam->yaw)) * cos(MNF_RAD(cam->pitch)),
+            sin(MNF_RAD(cam->pitch)),
+            sin(MNF_RAD(cam->yaw)) * cos(MNF_RAD(cam->pitch))
         },
         cam->forward
     );
-    glm_vec3_normalize(cam->forward);
+    mnf_vec3_normalize(cam->forward, cam->forward);
 
 }
 
@@ -120,9 +131,12 @@ void camera_scroll(struct camera *cam, float dy)
 void camera_update(struct camera *cam)
 {
     vec3 target;
-    glm_vec3_add(cam->pos, cam->forward, target);
+    mnf_vec3_add(cam->pos, cam->forward, target);
     view_lookat(cam->view, cam->pos, target, cam->world_up);
-    projection_perspective(cam->projection, DEG_TO_RAD(cam->fov), cam->aspect, cam->near, cam->far);
+    projection_perspective(cam->projection, 
+                           MNF_RAD(cam->fov), 
+                           cam->aspect, cam->near, 
+                           cam->far);
 }
 
 void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
@@ -203,18 +217,14 @@ void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
      *      (same arrow but whose length = 1 so simply the direction)
      */
 
-    vec3 distance;
-    glm_vec3_copy(
-        (vec3) {
-            target[X] - pos[X],
-            target[Y] - pos[Y],
-            target[Z] - pos[Z]
-        },
-        distance
-    );
+    vec3 distance = {
+        target[X] - pos[X],
+        target[Y] - pos[Y],
+        target[Z] - pos[Z]
+    };
 
     vec3 cam_forward;
-    glm_vec3_normalize_to(distance, cam_forward);
+    mnf_vec3_normalize(distance, cam_forward);
 
     /* 
      * Calculting the right vector means to find the vector perpendicular to both
@@ -248,34 +258,38 @@ void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
     
     // normalizing prevents some really weird distortions. Why? because they are
     // our basis vectors for the coordinate system and must be unit vectors
-    vec3 cam_right, cam_up, cam_translate;
-    glm_vec3_cross(cam_forward, up, cam_right);
-    glm_vec3_normalize(cam_right);
+    vec3 cam_right, cam_up;
+    mnf_vec3_cross(cam_forward, up, cam_right);
+    mnf_vec3_normalize(cam_right, cam_right);
 
     // recalculating the up vector for consistency
-    glm_vec3_cross(cam_right, cam_forward, cam_up);
-    glm_vec3_normalize(cam_up);
+    mnf_vec3_cross(cam_right, cam_forward, cam_up);
+    mnf_vec3_normalize(cam_up, cam_up);
 
     // before plugging it in, we must map the camera's position onto the basis
     // vectors of view space by using the dot product to project the former
     // onto the latter
-    glm_vec3_copy(
-        (vec3) {
-            glm_vec3_dot(cam_right, pos),
-            glm_vec3_dot(cam_up, pos),
-            glm_vec3_dot(cam_forward, pos),
-        }, 
-        cam_translate
-    );
+    vec3 cam_translate = {
+        mnf_vec3_dot(cam_right, pos),
+        mnf_vec3_dot(cam_up, pos),
+        mnf_vec3_dot(cam_forward, pos),
 
-    glm_mat4_identity(view);
+    };
+
+    /*
+     * [ Rx,  Ry,  Rz, -Px]
+     * [ Ux,  Uy,  Uv, -Py]
+     * [-Fx, -Fy, -Fz,  Pz]
+     * [  0,   0,   0,   1]
+     */
     mat4 temp = {
         {cam_right[X], cam_up[X], -cam_forward[X], 0},
         {cam_right[Y], cam_up[Y], -cam_forward[Y], 0},
         {cam_right[Z], cam_up[Z], -cam_forward[Z], 0},
         {-cam_translate[X], -cam_translate[Y], cam_translate[Z], 1}
     };
-    glm_mat4_copy(temp, view);
+
+    mnf_mat4_copy(temp, view);
 }
 
 
@@ -342,5 +356,5 @@ void projection_perspective(mat4 projection,
         {0, 0, Sz, -1},
         {0, 0, Pz, 0}
     };
-    glm_mat4_copy(temp, projection);
+    mnf_mat4_copy(temp, projection);
 }

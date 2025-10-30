@@ -1,4 +1,4 @@
-/* Texture header file for Sage
+/* Type definition for Manifold 
 
 This file is part of Sage
 
@@ -13,24 +13,27 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_TEXTURE_H__
-#define __SAGE_TEXTURE_H__
+#ifndef __MNF_TYPES_H__
+#define __MNF_TYPES_H__
 
-#include <stdint.h>
-#include "mnf/mnf_types.h"
-
-struct texture {
-    uint32_t id;
-    ivec2 size;
+enum MNF_COORD {
+    X = 0,
+    Y,
+    Z,
+    W,
 };
 
-struct texture texture_create_default(void);
-struct texture texture_create(const char *path);
-/* Wrapper around glBindTexture() */
-void texture_bind(struct texture t);
-void texture_destroy(struct texture *t);
 
-struct texture cubemap_texture_create(char *cubemap_faces[6]);
-void cubemap_texture_bind(struct texture t);
+typedef int     ivec2[2];
+typedef int     ivec3[3];
 
-#endif /* __SAGE_TEXTURE_H__ */
+typedef float   vec2[2];
+typedef float   vec3[3];
+typedef float   vec4[4];
+//typedef __attribute__((aligned(16))) float vec4[4];
+//typedef __attribute__((aligned(16))) vec4 mat4[4];
+
+typedef vec3    mat3[3];             /* column-major [col][row] */
+typedef vec4    mat4[4];
+
+#endif /* __MNF_TYPES_H__ */
