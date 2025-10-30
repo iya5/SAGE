@@ -25,7 +25,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-/*
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
 #define NK_INCLUDE_FIXED_TYPES
@@ -39,7 +38,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define NK_GLFW_GL4_IMPLEMENTATION
 #include <nuklear.h>
 #include <demo/glfw_opengl4/nuklear_glfw_gl4.h>
-*/
 
 #include "mnf/mnf.h" // IWYU pragma: keep
 #include "slog/slog.h"
@@ -288,7 +286,8 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     double previous_seconds = glfwGetTime();
 
-    /*
+
+    /* TODO: look up why nuklear is causing my rendering to be messed up */
     struct nk_context *context = nk_glfw3_init(
         window, 
         NK_GLFW3_INSTALL_CALLBACKS,
@@ -299,11 +298,8 @@ int main(int argc, [[maybe_unused]] char **argv)
     struct nk_font_atlas *atlas;
     nk_glfw3_font_stash_begin(&atlas);
     nk_glfw3_font_stash_end();
-    */
 
     // render loop
-    //mesh_set_scale(&skybox, (vec3){100.0, 100.0, 100.0,});
-    //mesh_update_transform(&skybox);
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -316,7 +312,6 @@ int main(int argc, [[maybe_unused]] char **argv)
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_hot_reload(&basic_shader);
 
-        /*
         nk_glfw3_new_frame();
 
         if (nk_begin(context, "Nuklear window", nk_rect(0, 0, 500, 500),
@@ -340,6 +335,7 @@ int main(int argc, [[maybe_unused]] char **argv)
             nk_layout_row_dynamic(context, 20, 1);
             nk_label(context, "background:", NK_TEXT_LEFT);
             nk_layout_row_dynamic(context, 25, 1);
+            /*
             if (nk_combo_begin_color(context, nk_rgb_cf(bg), nk_vec2(nk_widget_width(context),400))) {
                 nk_layout_row_dynamic(context, 120, 1);
                 bg = nk_color_picker(context, bg, NK_RGBA);
@@ -350,10 +346,10 @@ int main(int argc, [[maybe_unused]] char **argv)
                 bg.a = nk_propertyf(context, "#A:", 0, bg.a, 1.0f, 0.01f,0.005f);
                 nk_combo_end(context);
             }
+            */
 
         }
         nk_end(context);
-        */
 
 
         camera_update(&cam);
@@ -419,7 +415,7 @@ int main(int argc, [[maybe_unused]] char **argv)
         mesh_update_transform(&cube);
         mesh_draw(cube);
 
-        //nk_glfw3_render(NK_ANTI_ALIASING_ON);
+        nk_glfw3_render(NK_ANTI_ALIASING_ON);
         glfwSwapBuffers(window);
     }
 
@@ -427,7 +423,7 @@ int main(int argc, [[maybe_unused]] char **argv)
     mesh_destroy(&light_source);
     shader_destroy(&basic_shader);
 
-    //nk_glfw3_shutdown();
+    nk_glfw3_shutdown();
     glfwTerminate();
     window = NULL;
 
