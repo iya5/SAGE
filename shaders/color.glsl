@@ -23,12 +23,13 @@ void main()
 in vec2 vert_uv;
 
 uniform sampler2D u_texture;
+uniform vec4 u_color;
 
 out vec4 frag_color;
 
 void main()
 {
-    frag_color = texture(u_texture, vert_uv);
+    frag_color = texture(u_texture, vert_uv) * u_color;
 }
 
 #endif /* COMPILE_FS */

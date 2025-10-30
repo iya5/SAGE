@@ -15,7 +15,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "camera.h"
 #include <math.h>
-#include <slog/slog.h>
 
 void camera_init(struct camera *cam, vec3 pos, vec3 forward, vec3 world_up)
 {

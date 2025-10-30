@@ -81,6 +81,8 @@
 
 [   ]
 
+[   ] render a skybox
+
 [   ] render a scene
 
 [   ] setup pbr (physically-based rendering)

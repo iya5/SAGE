@@ -16,3 +16,11 @@ rendering.
 ```git
 git clone --recursive https://github.com/iya5/SAGE.git
 ```
+
+dependencies
+cmake
+make
+gcc
+
+art:
+https://opengameart.org/content/sky-box-sunny-day

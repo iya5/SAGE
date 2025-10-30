@@ -13,40 +13,44 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#include "mnf/mnf.h" // IWYU pragma: keep
-#define NK_IMPLEMENTATION
-#include <nuklear.h>
+#include "mnf/mnf_matrix.h"
+#ifndef VERSION
+#define VERSION "Something went wrong with VERSION"
+#endif
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-#include <slog/slog.h>
-
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+
+/*
+#define MAX_VERTEX_BUFFER 512 * 1024
+#define MAX_ELEMENT_BUFFER 128 * 1024
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_STANDARD_VARARGS
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+#define NK_INCLUDE_DEFAULT_FONT
+#define NK_IMPLEMENTATION
+#define NK_GLFW_GL4_IMPLEMENTATION
+#include <nuklear.h>
+#include <demo/glfw_opengl4/nuklear_glfw_gl4.h>
+*/
+
+#include "mnf/mnf.h" // IWYU pragma: keep
+#include "slog/slog.h"
 #include "config.h"
 #include "camera.h"
-#include "shader/shader.h"
+#include "shader.h"
 #include "geometry.h"
 #include "texture.h"
-
-struct vertex_array {
-    uint32_t vao;
-    uint32_t vbo;
-    uint32_t vertex_count;
-};
-
-struct transform {
-    vec3 rotate;
-    vec3 scale;
-    vec3 position;
-};
-
+#include "mesh.h"
 
 struct camera cam = {0};
-
 
 void error_callback(int32_t error, const char *description)
 {
@@ -88,100 +92,6 @@ void process_input(GLFWwindow *window, double dt)
     }
 }
 
-struct vertex_array vertex_array_create(const float *vertices,
-                                        size_t n_bytes)
-{
-    struct vertex_array va = {0};
-
-    uint32_t vao;
-    uint32_t vbo;
-
-    // generating buffers for vertex
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-
-    // bind vao
-    glBindVertexArray(vao);
-
-    // bind and copy data over to the buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, n_bytes, vertices, GL_STATIC_DRAW);
-
-    // configure the vbo to interpret the data
-    // stride is the offset between consecutive generic vertex attributes
-
-    size_t vertex_size = 8;
-    size_t stride = vertex_size * sizeof(float);
-    GLboolean normalized = GL_FALSE;
-
-    // bind position attributes
-    uint32_t pos_index = 0;
-    int32_t pos_size = 3;
-    void *pos_offset = (void *) 0;
-    glVertexAttribPointer(pos_index,
-                          pos_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          pos_offset);
-    glEnableVertexAttribArray(pos_index);
-
-    // bind texture uv attributes
-    uint32_t uv_index = 1;
-    int32_t uv_size = 2;
-    void *uv_offset = (void *) (pos_size * sizeof(float));
-    glVertexAttribPointer(uv_index,
-                          uv_size,
-                          GL_FLOAT,
-                          normalized, 
-                          stride,
-                          uv_offset);
-    glEnableVertexAttribArray(uv_index);
-
-    // bind normal uv attributes
-    uint32_t normal_index = 2;
-    int32_t normal_size = 3;
-    void *normal_offset = (void *) ((pos_size + uv_size) * sizeof(float));
-    glVertexAttribPointer(normal_index,
-                          normal_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          normal_offset);
-    glEnableVertexAttribArray(normal_index);
-
-    // safely unbinding
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    va.vao= vao;
-    va.vbo = vbo;
-    va.vertex_count = (uint32_t) ((n_bytes) / sizeof(float) / 8);
-    LOG_DEBUG("VA created, number of vertices: %d", va.vertex_count);
-
-    return va;
-}
-
-void vertex_array_free(struct vertex_array *va)
-{
-    LOG_INFO("Destroying vertex array buffers");
-    glDeleteVertexArrays(1, &(va->vao));
-    glDeleteBuffers(1, &(va->vbo));
-    va->vao = 0;
-    va->vbo = 0;
-    va->vertex_count = 0;
-}
-
-void vertex_array_bind(struct vertex_array va)
-{
-    glBindVertexArray(va.vao);
-}
-
-void vertex_array_draw(struct vertex_array va)
-{
-    glDrawArrays(GL_TRIANGLES, 0, va.vertex_count);
-}
-
 void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_pos)
 {
     static bool first_mouse = true;
@@ -199,6 +109,7 @@ void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_
 
     last_x = x_pos;
     last_y = y_pos;
+
     camera_mouse(&cam, dx, dy);
 }
 
@@ -209,7 +120,7 @@ void scroll_callback([[maybe_unused]] GLFWwindow *window,
     camera_scroll(&cam, dy);
 }
 
-void world_grid_draw(struct vertex_array va, 
+void world_grid_draw(struct mesh mesh,
                      struct shader shader, 
                      struct texture texture,
                      struct camera cam)
@@ -219,39 +130,40 @@ void world_grid_draw(struct vertex_array va,
     // cubes representing the cardinal axis
     shader_use(&shader);
     texture_bind(texture);
-    vertex_array_bind(va);
-
-    mat4 model;
+    mesh_bind(mesh);
 
     // x axis (red)
-    mnf_mat4_identity(model);
-    mnf_mat4_scale(model, (vec3){200.0, 0.01, 0.01}, model);
-    shader_uniform_mat4(shader, "u_model", model);
+    mesh_reset_transform(&mesh);
+    mesh_set_scale(&mesh, (vec3){200.0, 0.01, 0.01});
+    mesh_update_transform(&mesh);
+    shader_uniform_mat4(shader, "u_model", mesh.model);
     shader_uniform_mat4(shader, "u_view", cam.view);
     shader_uniform_mat4(shader, "u_projection", cam.projection);
     shader_uniform_vec4(shader, "u_color", (vec4){1.0, 0.0, 0.0, 1.0});
-    vertex_array_draw(va);
+    mesh_draw(mesh);
 
     // y axis (green)
-    mnf_mat4_identity(model);
-    mnf_mat4_scale(model, (vec3){200.0, 0.01, 0.01}, model);
-    mnf_euler_rotate_y(model, MNF_RAD(90), model);
-    shader_uniform_mat4(shader, "u_model", model);
+    mesh_reset_transform(&mesh);
+    mesh_set_scale(&mesh, (vec3){0.01, 200.0, 0.01});
+    mesh_set_rotation(&mesh, (vec3){0, MNF_RAD(90), 0});
+    mesh_set_position(&mesh, (vec3){0.0, 100.0, 0.0});
+    mesh_update_transform(&mesh);
+    shader_uniform_mat4(shader, "u_model", mesh.model);
     shader_uniform_mat4(shader, "u_view", cam.view);
     shader_uniform_mat4(shader, "u_projection", cam.projection);
     shader_uniform_vec4(shader, "u_color", (vec4){0.0, 1.0, 0.0, 1.0});
-    vertex_array_draw(va);
+    mesh_draw(mesh);
 
     // z axis (blue)
-    mnf_mat4_identity(model);
-    mnf_mat4_scale(model, (vec3){200.0, 0.01, 0.01}, model);
-    mnf_euler_rotate_z(model, MNF_RAD(90), model);
-    mnf_mat4_translate(model, (vec3){0.0, 100.0, 0.0}, model);
-    shader_uniform_mat4(shader, "u_model", model);
+    mesh_reset_transform(&mesh);
+    mesh_set_scale(&mesh, (vec3){0.01, 0.01, 200.0});
+    mesh_set_rotation(&mesh, (vec3){0, 0, MNF_RAD(90)});
+    mesh_update_transform(&mesh);
+    shader_uniform_mat4(shader, "u_model", mesh.model);
     shader_uniform_mat4(shader, "u_view", cam.view);
     shader_uniform_mat4(shader, "u_projection", cam.projection);
     shader_uniform_vec4(shader, "u_color", (vec4){0.0, 0.0, 1.0, 1.0});
-    vertex_array_draw(va);
+    mesh_draw(mesh);
 }
 
 int main(int argc, [[maybe_unused]] char **argv)
@@ -261,6 +173,7 @@ int main(int argc, [[maybe_unused]] char **argv)
         exit(1);
     }
 
+    LOG_INFO("Hello world from Sage '%s'!", VERSION);
 
     GLFWwindow *window = NULL;
 
@@ -311,9 +224,9 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     /* setup gl parameters */
     glViewport(0, 0, 640, 480);
-    glDisable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+    //glFrontFace(GL_CW);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
@@ -334,28 +247,66 @@ int main(int argc, [[maybe_unused]] char **argv)
     );
 
     struct shader basic_shader = shader_create("shaders/basic.glsl");
+    struct shader color_shader = shader_create("shaders/color.glsl");
+    struct shader skybox_shader = shader_create("shaders/skybox.glsl");
     struct shader light_shader = shader_create("shaders/light.glsl");
     struct shader lit_shader = shader_create("shaders/phong.glsl");
 
     // it's necessary to pass cube vertices size because arrays decay into 
     // pointers
-    struct vertex_array cube = vertex_array_create(
-        CUBE_VERTICES_W_NORM,
-        sizeof(CUBE_VERTICES_W_NORM)
-    );
-
-    struct vertex_array light_source = vertex_array_create(
-        CUBE_VERTICES_W_NORM,
-        sizeof(CUBE_VERTICES_W_NORM)
-    );
+    struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
+                                   sizeof(CUBE_VERTEX_ARRAY));
+    struct mesh light_source = mesh_create(CUBE_VERTEX_ARRAY,
+                                   sizeof(CUBE_VERTEX_ARRAY));
+    struct mesh skybox = mesh_create(CUBE_VERTEX_ARRAY,
+                                     sizeof(CUBE_VERTEX_ARRAY));
 
     struct texture base_texture = texture_create("res/textures/base.png");
+    //struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg");
     struct texture default_texture = texture_create_default();
+
+    /*
+    char *cubemap_faces[6] = {
+        "res/textures/daylight-cubemap/right.bmp",
+        "res/textures/daylight-cubemap/left.bmp",
+        "res/textures/daylight-cubemap/top.bmp",
+        "res/textures/daylight-cubemap/bottom.bmp",
+        "res/textures/daylight-cubemap/front.bmp",
+        "res/textures/daylight-cubemap/back.bmp",
+    };
+    */
+    char *cubemap_faces[6] = {
+        "res/textures/skybox/right.jpg",
+        "res/textures/skybox/left.jpg",
+        "res/textures/skybox/top.jpg",
+        "res/textures/skybox/bottom.jpg",
+        "res/textures/skybox/front.jpg",
+        "res/textures/skybox/back.jpg",
+    };
+
+    struct texture cubemap = cubemap_texture_create(cubemap_faces);
 
     double previous_seconds = glfwGetTime();
 
+    /*
+    struct nk_context *context = nk_glfw3_init(
+        window, 
+        NK_GLFW3_INSTALL_CALLBACKS,
+        MAX_VERTEX_BUFFER,
+        MAX_ELEMENT_BUFFER
+    );
+
+    struct nk_font_atlas *atlas;
+    nk_glfw3_font_stash_begin(&atlas);
+    nk_glfw3_font_stash_end();
+    */
+
     // render loop
+    //mesh_set_scale(&skybox, (vec3){100.0, 100.0, 100.0,});
+    //mesh_update_transform(&skybox);
     while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+
         double current_seconds = glfwGetTime();
         double dt = current_seconds - previous_seconds;
         previous_seconds = current_seconds;
@@ -365,6 +316,45 @@ int main(int argc, [[maybe_unused]] char **argv)
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_hot_reload(&basic_shader);
 
+        /*
+        nk_glfw3_new_frame();
+
+        if (nk_begin(context, "Nuklear window", nk_rect(0, 0, 500, 500),
+                     NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE)) {
+
+            enum {EASY, HARD};
+            static int op = EASY;
+            static int property = 20;
+
+            nk_layout_row_static(context, 30, 80, 1);
+            if (nk_button_label(context, "button"))
+                LOG_DEBUG("button pressed");
+
+            nk_layout_row_dynamic(context, 30, 2);
+            if (nk_option_label(context, "easy", op == EASY)) op = EASY;
+            if (nk_option_label(context, "hard", op == HARD)) op = HARD;
+
+            nk_layout_row_dynamic(context, 25, 1);
+            nk_property_int(context, "Compression:", 0, &property, 100, 10, 1);
+
+            nk_layout_row_dynamic(context, 20, 1);
+            nk_label(context, "background:", NK_TEXT_LEFT);
+            nk_layout_row_dynamic(context, 25, 1);
+            if (nk_combo_begin_color(context, nk_rgb_cf(bg), nk_vec2(nk_widget_width(context),400))) {
+                nk_layout_row_dynamic(context, 120, 1);
+                bg = nk_color_picker(context, bg, NK_RGBA);
+                nk_layout_row_dynamic(context, 25, 1);
+                bg.r = nk_propertyf(context, "#R:", 0, bg.r, 1.0f, 0.01f,0.005f);
+                bg.g = nk_propertyf(context, "#G:", 0, bg.g, 1.0f, 0.01f,0.005f);
+                bg.b = nk_propertyf(context, "#B:", 0, bg.b, 1.0f, 0.01f,0.005f);
+                bg.a = nk_propertyf(context, "#A:", 0, bg.a, 1.0f, 0.01f,0.005f);
+                nk_combo_end(context);
+            }
+
+        }
+        nk_end(context);
+        */
+
 
         camera_update(&cam);
 
@@ -372,50 +362,72 @@ int main(int argc, [[maybe_unused]] char **argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        world_grid_draw(cube, basic_shader, default_texture, cam);
+        /* draw skybox */
+        glDepthMask(GL_FALSE);
+        shader_use(&skybox_shader);
+        mesh_bind(skybox);
+        cubemap_texture_bind(cubemap);
+        /* remove translation */
+        mat4 cam_no_translation;
+        mnf_mat4_copy(cam.view, cam_no_translation);
+        cam_no_translation[3][0] = 0;
+        cam_no_translation[3][1] = 0;
+        cam_no_translation[3][2] = 0;
+        cam_no_translation[3][3] = 1;
+        //shader_uniform_mat4(skybox_shader, "u_model", skybox.model);
+        shader_uniform_mat4(skybox_shader, "u_view", cam_no_translation);
+        shader_uniform_mat4(skybox_shader, "u_projection", cam.projection);
+        mesh_draw(skybox);
+        glDepthMask(GL_TRUE);
+
+
+        world_grid_draw(cube, color_shader, default_texture, cam);
 
         /* drawing light source */
         shader_use(&light_shader);
+        mesh_bind(light_source);
         texture_bind(default_texture);
-        vec3 light_pos = {2.0, 3.0, -1.0};
-        mat4 model;
-        mnf_mat4_identity(model);
-        mnf_mat4_scale(model, (vec3){0.2, 0.2, 0.2}, model);
-        mnf_mat4_translate(model, light_pos, model);
-        shader_uniform_mat4(light_shader, "u_model", model);
+        vec3 light_pos = {5.0, 10.0, -8.0};
+        mesh_set_scale(&light_source, (vec3){0.2, 0.2, 0.2});
+        mesh_set_position(&light_source, light_pos);
+        mesh_update_transform(&light_source);
+        shader_uniform_mat4(light_shader, "u_model", light_source.model);
         shader_uniform_mat4(light_shader, "u_view", cam.view);
         shader_uniform_mat4(light_shader, "u_projection", cam.projection);
-        vertex_array_draw(light_source);
+        mesh_draw(light_source);
 
         /* drawing lit object */
         shader_use(&lit_shader);
+        mesh_bind(cube);
         texture_bind(default_texture);
-        mnf_mat4_identity(model);
         vec3 obj_pos = {1.0, 0.5, -0.6};
-        mnf_mat4_translate(model, obj_pos, model);
-        shader_uniform_vec3(lit_shader, "u_material.ambient", (vec3){1.0, 0.5, 0.31});
-        shader_uniform_vec3(lit_shader, "u_material.diffuse", (vec3){1.0, 0.5, 0.31});
+        mesh_set_scale(&cube, (vec3){5, 1, 7});
+        mesh_set_position(&cube, obj_pos);
+        shader_uniform_vec3(lit_shader, "u_material.ambient", (vec3){1.0, 1.0, 1.0});
+        shader_uniform_vec3(lit_shader, "u_material.diffuse", (vec3){1.0, 1.0, 1.0});
         shader_uniform_vec3(lit_shader, "u_material.specular", (vec3){0.5, 0.5, 0.5});
-        shader_uniform_float(lit_shader, "u_material.shininess", 32.0);
+        shader_uniform_float(lit_shader, "u_material.shininess", 16.0);
         shader_uniform_vec3(lit_shader, "u_light.pos", light_pos);
-        shader_uniform_vec3(lit_shader, "u_light.ambient", (vec3){0.1, 0.1, 0.1});
+        shader_uniform_vec3(lit_shader, "u_light.ambient", (vec3){0.2, 0.2, 0.2});
         shader_uniform_vec3(lit_shader, "u_light.diffuse", (vec3){0.5, 0.5, 0.5});
         shader_uniform_vec3(lit_shader, "u_light.specular", (vec3){1.0, 1.0, 1.0});
 
         shader_uniform_vec3(lit_shader, "u_view_pos", cam.pos);
-        shader_uniform_mat4(lit_shader, "u_model", model);
+        shader_uniform_mat4(lit_shader, "u_model", cube.model);
         shader_uniform_mat4(lit_shader, "u_view", cam.view);
         shader_uniform_mat4(lit_shader, "u_projection", cam.projection);
-        vertex_array_draw(cube);
+        mesh_update_transform(&cube);
+        mesh_draw(cube);
 
+        //nk_glfw3_render(NK_ANTI_ALIASING_ON);
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
-    vertex_array_free(&cube);
-
+    mesh_destroy(&cube);
+    mesh_destroy(&light_source);
     shader_destroy(&basic_shader);
 
+    //nk_glfw3_shutdown();
     glfwTerminate();
     window = NULL;
 

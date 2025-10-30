@@ -64,3 +64,18 @@ void mnf_mat4_mul(mat4 l, mat4 r, mat4 out)
     out[3][2] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33;
     out[3][3] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33;
 }
+
+void mnf_mat4_to_mat3(mat4 in, mat3 out)
+{
+    out[0][0] = in[0][0]; 
+    out[1][0] = in[1][0]; 
+    out[2][0] = in[2][0]; 
+
+    out[0][1] = in[0][1];
+    out[1][1] = in[1][1];
+    out[2][1] = in[2][1];
+
+    out[0][2] = in[0][2]; 
+    out[1][2] = in[1][2];
+    out[2][2] = in[2][2];
+}

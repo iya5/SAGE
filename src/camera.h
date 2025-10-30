@@ -22,12 +22,12 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define CAM_PITCH_MAX 89.0
 #define CAM_PITCH_MIN -89.0
 
-#define CAM_DEFAULT_POS (vec3) {5.0, 5.0, 5.0}
+#define CAM_DEFAULT_POS     (vec3) {5.0, 5.0, 5.0}
 #define CAM_DEFAULT_FORWARD (vec3) {0.0, 0.0, -1.0}
-#define CAM_DEFAULT_UP  (vec3) {0.0, 1.0, 0.0}
+#define CAM_DEFAULT_UP      (vec3) {0.0, 1.0, 0.0}
 
 #define CAM_DEFAULT_SENSITIVITY 0.2
-#define CAM_DEFAULT_SPEED 10.0
+#define CAM_DEFAULT_SPEED 5.0
 
 #define PERSPECTIVE_DEFAULT_NEAR 0.1
 #define PERSPECTIVE_DEFAULT_FAR 100.0

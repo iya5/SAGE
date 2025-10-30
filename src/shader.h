@@ -17,7 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define __SAGE_SHADER_H__
 
 #include <stdint.h>
-#include "../mnf/mnf_types.h"
+#include "mnf/mnf_types.h"
 
 #define SHADER_PATH_BUFFER_SIZE 1024
 

@@ -44,6 +44,8 @@ void mnf_mat4_identity(mat4 mat);
  */
 void mnf_mat4_mul(mat4 left, mat4 right, mat4 out);
 
+/* Retrieves the upper left 3x3 in a mat4 and writing it to 'out' */
+void mnf_mat4_to_mat3(mat4 in, mat3 out);
 
 
 #endif /* __MNF_MATRIX_H__ */

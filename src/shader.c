@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License along with
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include <glad/gl.h>
-#include <slog/slog.h>
+#include "slog/slog.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,60 +23,59 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "shader.h"
 
-#define DEF_VERSION "#version 410 core\n"
-#define DEF_VS      "#define COMPILE_VS\n"
-#define DEF_FS      "#define COMPILE_FS\n"
+#define DEFINE_VERSION      "#version 410 core\n"
+#define DEFINE_VS           "#define COMPILE_VS\n"
+#define DEFINE_FS           "#define COMPILE_FS\n"
+#define INJECT_DEFINE_VS    DEFINE_VERSION DEFINE_VS
+#define INJECT_DEFINE_FS    DEFINE_VERSION DEFINE_FS
+/* defines the number of strings passed to glShaderSource */
+#define SHADER_SRC_N_STR 2
 
 static char *shader_load_from_source(const char *path);
 
 struct shader shader_create(const char *path)
 {
     struct shader shader = {0};
-
     int32_t success = 0;
     char info[512] = {0};
 
-    // compiling the vertex shader
-    LOG_INFO("Compiling vertex shader '%s'", path);
-    char *vs_source[] = {
-        DEF_VERSION,
-        DEF_VS,
-        shader_load_from_source(path)
-    };
+    LOG_INFO("Compiling shader '%s'", path);
+
+    char *source = shader_load_from_source(path);
+    if (source == NULL) {
+        LOG_ERROR("Failed to load shader source '%s' to program", path);
+        exit(1);
+    }
+
+    /* compiling vertex shader */
     uint32_t vs_id = glCreateShader(GL_VERTEX_SHADER);
-
-    glShaderSource(vs_id, 3, (const GLchar * const *) &vs_source, NULL);
+    glShaderSource(vs_id, 
+                   SHADER_SRC_N_STR,
+                   (const GLchar * const []) {INJECT_DEFINE_VS, source},
+                   NULL);
     glCompileShader(vs_id);
-    free(vs_source[2]);
-    vs_source[2] = NULL;
-
     glGetShaderiv(vs_id, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vs_id, 512, NULL, info);
         LOG_ERROR("Failed to compile vertex shader '%s': %s", path, info);
     }
 
-    // compiling the fragment shader
-    LOG_INFO("Compiling fragment shader '%s'", path);
-    char *fs_source[] = {
-        DEF_VERSION,
-        DEF_FS,
-        shader_load_from_source(path)
-    };
+    /* compiling fragment shader */
     uint32_t fs_id = glCreateShader(GL_FRAGMENT_SHADER);
-
-    glShaderSource(fs_id, 3, (const GLchar * const *) &fs_source, NULL);
+    glShaderSource(fs_id,
+                   SHADER_SRC_N_STR,
+                   (const GLchar * const []) {INJECT_DEFINE_FS, source},
+                   NULL);
     glCompileShader(fs_id);
-    free(fs_source[2]);
-    fs_source[2] = NULL;
-
     glGetShaderiv(fs_id, GL_COMPILE_STATUS, &success);
     if(!success) {
         glGetShaderInfoLog(fs_id, 512, NULL, info);
         LOG_ERROR("Failed to compile fragment shader '%s': %s", path, info);
     }
 
-    // creating shader program
+    free(source);
+
+    /* creating shader program */
     uint32_t id = glCreateProgram();
     glAttachShader(id, vs_id);
     glAttachShader(id, fs_id);
@@ -104,13 +103,11 @@ struct shader shader_create(const char *path)
 
 void shader_hot_reload(struct shader *shader)
 {
-
     struct shader reloaded_shader = shader_create(shader->path);
     if (!reloaded_shader.handle) {
-        LOG_WARN("Failed to hot reload");
-        // glDeleteProgram(reloaded_shader.handle);
+        LOG_WARN("Failed to hot reload shader '%s'", shader->path);
     } else {
-        LOG_INFO("Hot reloading shader");
+        LOG_INFO("Hot reloading shader '%s'", shader->path);
         glDeleteProgram(shader->handle);
         shader->handle = reloaded_shader.handle;
     }
@@ -172,56 +169,32 @@ void shader_uniform_vec3(struct shader shader, const char *uniform, vec3 v)
 static char *shader_load_from_source(const char *path)
 {
     FILE *file = NULL;
+    char *source = NULL;
+    long length = 0;
+    size_t bytes_read = 0;
 
     file = fopen(path, "rb");
+    if (file == NULL) goto err;
 
-    if (file == NULL) {
-        fprintf(stderr, "Failed to open shader: %s\n", path);
-        exit(1);
-    }
+    if (fseek(file, 0, SEEK_END) == -1) goto err;
+    length = ftell(file);
+    if (length == -1) goto err;
+    if (fseek(file, 0, SEEK_SET) == -1) goto err;
 
-    // grabbing the total bytes of the shader
-    if (fseek(file, 0, SEEK_END) == -1) {
-        fprintf(stderr, "Failure during fseek\n");
-        fclose(file);
-        exit(1);
-    }
-    int64_t length = ftell(file);
-    if (length == -1) {
-        fprintf(stderr, "Failure during ftell\n");
-        fclose(file);
-        exit(1);
-    }
-    if (fseek(file, 0, SEEK_SET) == -1) {
-        fprintf(stderr, "Failure during fseek\n");
-        fclose(file);
-        exit(1);
-    }
+    source = (char *) malloc(length + 1);
+    if (source == NULL) goto err;
 
-    char *source = (char *) malloc(length + 1);
-    if (source == NULL) {
-        fprintf(stderr, "Failed to allocate memory during shader load\n");
-        fclose(file);
-        exit(1);
-    }
-    size_t bytes_read = fread(source, sizeof(char), length, file);
+    bytes_read = fread(source, sizeof(char), length, file);
+    if (bytes_read != (size_t) length) goto err;
 
-    if (ferror(file) != 0) {
-        fprintf(stderr, "Failed to fread shader\n");
-        fclose(file);
-        free(source);
-        exit(1);
-    }
-
-    if ((int32_t) bytes_read != length) {
-        fprintf(stderr, "could not read total bytes from the shader\n");
-        fclose(file);
-        free(source);
-        exit(1);
-    }
-    
     source[length] = '\0';
-
     fclose(file);
     return source;
+
+err:
+    LOG_FATAL("Failed to load shader source file: %s", path);
+    if (file) fclose(file);
+    free(source);
+    return NULL;
 }
+

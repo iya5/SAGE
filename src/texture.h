@@ -17,16 +17,20 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define __SAGE_TEXTURE_H__
 
 #include <stdint.h>
-#include "mnf/mnf.h"
+#include "mnf/mnf_types.h"
 
 struct texture {
     uint32_t id;
     ivec2 size;
 };
 
-void texture_bind(struct texture t);
 struct texture texture_create_default(void);
 struct texture texture_create(const char *path);
+/* Wrapper around glBindTexture() */
+void texture_bind(struct texture t);
 void texture_destroy(struct texture *t);
+
+struct texture cubemap_texture_create(char *cubemap_faces[6]);
+void cubemap_texture_bind(struct texture t);
 
 #endif /* __SAGE_TEXTURE_H__ */
