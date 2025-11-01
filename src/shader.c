@@ -113,9 +113,9 @@ void shader_hot_reload(struct shader *shader)
     }
 }
 
-void shader_use(struct shader *shader)
+void shader_use(struct shader shader)
 {
-    glUseProgram(shader->handle);
+    glUseProgram(shader.handle);
 }
 
 void shader_destroy(struct shader *shader)
@@ -145,7 +145,17 @@ void shader_uniform_mat4(struct shader shader, const char *uniform, mat4 m)
 
 }
 
-void shader_uniform_float(struct shader shader, const char *uniform, float f)
+void shader_uniform_1i(struct shader shader, const char *uniform, int32_t n)
+{
+    int32_t location = glGetUniformLocation(shader.handle, uniform);
+    if (location < 0) {
+        LOG_WARN("Uniform '%s' doesn't exist in %s", uniform, shader.path);
+    } else {
+        glUniform1i(location, n);
+    }
+
+}
+void shader_uniform_1f(struct shader shader, const char *uniform, float f)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);
     if (location < 0) {

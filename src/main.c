@@ -36,6 +36,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "texture.h"
 #include "mesh.h"
 #include "scene.h"
+#include "material.h"
+#include "light.h"
 
 struct camera cam = {0};
 
@@ -47,7 +49,7 @@ void skybox_draw(struct shader skybox_shader,
 {
     /* draw skybox */
     glDepthMask(GL_FALSE);
-    shader_use(&skybox_shader);
+    shader_use(skybox_shader);
     mesh_bind(skybox);
     cubemap_texture_bind(cubemap);
 
@@ -74,7 +76,7 @@ void scene_world_grid_draw(struct camera cam,
     /* prolly a naive approach at drawing a world grid, could do this instead
      * in the shaders. currently implemented as drawing 3 seperate strecthed out
      * cubes representing the cardinal axis */
-    shader_use(&shader);
+    shader_use(shader);
     texture_bind(texture);
     mesh_bind(mesh);
 
@@ -242,6 +244,27 @@ void scroll_callback([[maybe_unused]] GLFWwindow *window,
     //camera_scroll(&cam, dy);
 }
 
+void light_apply(struct light light, struct shader shader)
+{
+    if (light.type == LIGHT_POINT)
+        shader_uniform_1i(shader, "u_flat_shading", 1);
+    else
+        shader_uniform_1i(shader, "u_flat_shading", 0);
+
+    shader_uniform_vec3(shader, "u_light.pos", light.pos);
+    shader_uniform_vec3(shader, "u_light.ambient", light.ambient);
+    shader_uniform_vec3(shader, "u_light.diffuse", light.diffuse);
+    shader_uniform_vec3(shader, "u_light.specular", light.specular);
+}
+
+void material_apply(struct material material, struct shader shader)
+{
+    shader_uniform_vec3(shader, "u_material.ambient", material.ambient);
+    shader_uniform_vec3(shader, "u_material.diffuse", material.diffuse);
+    shader_uniform_vec3(shader, "u_material.specular", material.specular);
+    shader_uniform_1f(shader, "u_material.shininess", material.shininess);
+}
+
 
 int main(int argc, [[maybe_unused]] char **argv)
 {
@@ -323,11 +346,36 @@ int main(int argc, [[maybe_unused]] char **argv)
         PERSPECTIVE_DEFAULT_FAR
     );
 
-    struct shader basic_shader = shader_create("shaders/basic.glsl");
-    struct shader color_shader = shader_create("shaders/color.glsl");
-    struct shader skybox_shader = shader_create("shaders/skybox.glsl");
-    struct shader light_shader = shader_create("shaders/light.glsl");
-    struct shader lit_shader = shader_create("shaders/phong.glsl");
+    struct shader shaders[16] = {0};
+    shaders[SHADER_BASIC] = shader_create("shaders/basic.glsl");
+    shaders[SHADER_COLOR] = shader_create("shaders/color.glsl");
+    shaders[SHADER_SKYBOX] = shader_create("shaders/skybox.glsl");
+    shaders[SHADER_LIGHT] = shader_create("shaders/light.glsl");
+    shaders[SHADER_PHONG] = shader_create("shaders/phong.glsl");
+    shaders[SHADER_GOURAD] = shader_create("shaders/gourad.glsl");
+
+    struct material plastic_material = {
+        .ambient = {1.0, 1.0, 1.0},
+        .diffuse = {1.0, 1.0, 1.0},
+        .specular = {0.5, 0.5, 0.5},
+        .shininess = 16
+    };
+
+    struct light light = {
+        .type = LIGHT_POINT,
+        .pos = {2.0, 4.0, -4.0},
+        .ambient = {0.2, 0.2, 0.2},
+        .diffuse = {0.8, 0.8, 0.8},
+        .specular = {0.4, 0.4, 0.4}
+    };
+
+    struct light light_sun = {
+        .type = LIGHT_DIRECTIONAL,
+        .pos = {-25, 50, -25},
+        .ambient = {0.5, 0.5, 0.5},
+        .diffuse = {0.8, 0.8, 0.8},
+        .specular = {0.0, 0.0, 0.0}
+    };
 
     struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
                                    sizeof(CUBE_VERTEX_ARRAY));
@@ -362,27 +410,31 @@ int main(int argc, [[maybe_unused]] char **argv)
         glfwPollEvents();
         process_input(window, dt);
 
+        /*
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_hot_reload(&basic_shader);
+        */
 
         camera_update(&cam);
 
         scene_render();
 
-        skybox_draw(skybox_shader, skybox, cubemap, cam.view, cam.projection);
-        scene_world_grid_draw(cam, cube, color_shader, default_texture);
+        skybox_draw(shaders[SHADER_SKYBOX], skybox, cubemap, cam.view, cam.projection);
+        scene_world_grid_draw(cam, cube, shaders[SHADER_COLOR], default_texture);
 
         /* drawing light source */
-        shader_use(&light_shader);
+        shader_use(shaders[SHADER_LIGHT]);
         mesh_bind(light_source);
         texture_bind(default_texture);
-        vec3 light_pos = {5.0, 10.0, -8.0};
+
         mesh_set_scale(&light_source, (vec3){0.2, 0.2, 0.2});
-        mesh_set_position(&light_source, light_pos);
+        mesh_set_position(&light_source, light.pos);
         mesh_update_transform(&light_source);
-        shader_uniform_mat4(light_shader, "u_model", light_source.model);
-        shader_uniform_mat4(light_shader, "u_view", cam.view);
-        shader_uniform_mat4(light_shader, "u_projection", cam.projection);
+
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_model", light_source.model);
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_view", cam.view);
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_projection", cam.projection);
+
         mesh_draw(light_source);
 
         /* drawing lit object */
@@ -391,35 +443,32 @@ int main(int argc, [[maybe_unused]] char **argv)
          * for light (lit shader) in light sources
          *      render model in specific shader
          */
-        shader_use(&lit_shader);
+
+        shader_use(shaders[SHADER_PHONG]);
         mesh_bind(cube);
         texture_bind(uv_grid_texture);
         vec3 obj_pos = {1.0, 0.5, -0.6};
         mesh_set_scale(&cube, (vec3){5, 1, 7});
         mesh_set_position(&cube, obj_pos);
-        shader_uniform_vec3(lit_shader, "u_material.ambient", (vec3){1.0, 1.0, 1.0});
-        shader_uniform_vec3(lit_shader, "u_material.diffuse", (vec3){1.0, 1.0, 1.0});
-        shader_uniform_vec3(lit_shader, "u_material.specular", (vec3){0.5, 0.5, 0.5});
-        shader_uniform_float(lit_shader, "u_material.shininess", 16.0);
-        shader_uniform_vec3(lit_shader, "u_light.pos", light_pos);
-        shader_uniform_vec3(lit_shader, "u_light.ambient", (vec3){0.2, 0.2, 0.2});
-        shader_uniform_vec3(lit_shader, "u_light.diffuse", (vec3){0.5, 0.5, 0.5});
-        shader_uniform_vec3(lit_shader, "u_light.specular", (vec3){1.0, 1.0, 1.0});
 
-        shader_uniform_vec3(lit_shader, "u_view_pos", cam.pos);
-        shader_uniform_mat4(lit_shader, "u_model", cube.model);
-        shader_uniform_mat4(lit_shader, "u_view", cam.view);
-        shader_uniform_mat4(lit_shader, "u_projection", cam.projection);
+        light_apply(light_sun, shaders[SHADER_PHONG]);
+        material_apply(plastic_material, shaders[SHADER_PHONG]);
+
+        shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
+
         mesh_update_transform(&cube);
         mesh_draw(cube);
 
         glfwSwapBuffers(window);
     }
 
+    /* TODO: clean up resources */
     mesh_destroy(&cube);
     mesh_destroy(&skybox);
     mesh_destroy(&light_source);
-    shader_destroy(&basic_shader);
 
     glfwTerminate();
     window = NULL;
