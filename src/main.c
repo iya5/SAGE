@@ -1,4 +1,4 @@
-/* Entry point for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License along with
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "mnf/mnf_matrix.h"
+#include "mnf/mnf_vector.h"
+
 #ifndef VERSION
 #define VERSION "Something went wrong with VERSION"
 #endif
@@ -25,22 +27,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-/*
-#define MAX_VERTEX_BUFFER 512 * 1024
-#define MAX_ELEMENT_BUFFER 128 * 1024
-#define NK_INCLUDE_FIXED_TYPES
-#define NK_INCLUDE_STANDARD_IO
-#define NK_INCLUDE_STANDARD_VARARGS
-#define NK_INCLUDE_DEFAULT_ALLOCATOR
-#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
-#define NK_INCLUDE_FONT_BAKING
-#define NK_INCLUDE_DEFAULT_FONT
-#define NK_IMPLEMENTATION
-#define NK_GLFW_GL4_IMPLEMENTATION
-#include <nuklear.h>
-#include <demo/glfw_opengl4/nuklear_glfw_gl4.h>
-*/
-
 #include "mnf/mnf.h" // IWYU pragma: keep
 #include "slog/slog.h"
 #include "config.h"
@@ -49,8 +35,120 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "geometry.h"
 #include "texture.h"
 #include "mesh.h"
+#include "scene.h"
 
 struct camera cam = {0};
+
+void skybox_draw(struct shader skybox_shader, 
+                 struct mesh skybox, 
+                 struct texture cubemap,
+                 mat4 view, 
+                 mat4 projection)
+{
+    /* draw skybox */
+    glDepthMask(GL_FALSE);
+    shader_use(&skybox_shader);
+    mesh_bind(skybox);
+    cubemap_texture_bind(cubemap);
+
+    /* remove translation */
+    mat4 view_no_translation;
+    mnf_mat4_copy(view, view_no_translation);
+
+    view_no_translation[3][0] = 0;
+    view_no_translation[3][1] = 0;
+    view_no_translation[3][2] = 0;
+    view_no_translation[3][3] = 1;
+
+    shader_uniform_mat4(skybox_shader, "u_view", view_no_translation);
+    shader_uniform_mat4(skybox_shader, "u_projection", projection);
+    mesh_draw(skybox);
+    glDepthMask(GL_TRUE);
+}
+
+void scene_world_grid_draw(struct camera cam,
+                           struct mesh mesh,
+                           struct shader shader, 
+                           struct texture texture)
+{
+    /* prolly a naive approach at drawing a world grid, could do this instead
+     * in the shaders. currently implemented as drawing 3 seperate strecthed out
+     * cubes representing the cardinal axis */
+    shader_use(&shader);
+    texture_bind(texture);
+    mesh_bind(mesh);
+
+    /* x-axis */
+    mesh_reset_transform(&mesh);
+    mesh_set_scale(&mesh, (vec3){200.0, 0.01, 0.01});
+    mesh_update_transform(&mesh);
+    shader_uniform_mat4(shader, "u_model", mesh.model);
+    shader_uniform_mat4(shader, "u_view", cam.view);
+    shader_uniform_mat4(shader, "u_projection", cam.projection);
+    shader_uniform_vec4(shader, "u_color", (vec4){1.0, 0.0, 0.0, 1.0});
+    mesh_draw(mesh);
+
+    /* y-axis */
+    mesh_reset_transform(&mesh);
+    mesh_set_scale(&mesh, (vec3){0.01, 200.0, 0.01});
+    mesh_set_rotation(&mesh, (vec3){0, MNF_RAD(90), 0});
+    mesh_set_position(&mesh, (vec3){0.0, 100.0, 0.0});
+    mesh_update_transform(&mesh);
+    shader_uniform_mat4(shader, "u_model", mesh.model);
+    shader_uniform_mat4(shader, "u_view", cam.view);
+    shader_uniform_mat4(shader, "u_projection", cam.projection);
+    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 1.0, 0.0, 1.0});
+    mesh_draw(mesh);
+
+
+    /* z-axis */
+    mesh_reset_transform(&mesh);
+    mesh_set_scale(&mesh, (vec3){0.01, 0.01, 200.0});
+    mesh_set_rotation(&mesh, (vec3){0, 0, MNF_RAD(90)});
+    mesh_update_transform(&mesh);
+    shader_uniform_mat4(shader, "u_model", mesh.model);
+    shader_uniform_mat4(shader, "u_view", cam.view);
+    shader_uniform_mat4(shader, "u_projection", cam.projection);
+    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 0.0, 1.0, 1.0});
+    mesh_draw(mesh);
+}
+
+void ray_cast(double x_pos, 
+              double y_pos, 
+              int viewport_width,
+              int viewport_height,
+              mat4 projection,
+              mat4 view,
+              vec3 out)
+{
+
+    float x = (2.0 * x_pos) / viewport_width - 1.0f;
+    float y = 1.0 - (2.0 * y_pos) / viewport_height;
+    float z = 1.0;
+
+    /*
+     * no need to do reverse perspective division because this is a ray with
+     * with no intrinsic depth. this turns the ray into 4d homogenous clip
+     * coordinate space
+     */
+    vec4 ray = {x, y, -z, 1.0};
+
+    /* get inverse transformations until world space */
+    mat4 projection_inv;
+    mat4 view_inv;
+    mnf_mat4_inv(projection, projection_inv);
+    mnf_mat4_inv(view, view_inv);
+    mnf_mat4_mul_vec4(projection_inv, ray, ray);
+
+    ray[2] = -1.0;  /* point forward from camera */
+    ray[3] = 0.0;   /* remove translation component */
+
+    mnf_mat4_mul_vec4(view_inv, ray, ray);
+    vec3 ray_world = {ray[0], ray[1], ray[2]};
+    /* normalize the ray because it's a direction vector */
+    mnf_vec3_normalize(ray_world, ray_world);
+    mnf_vec3_copy(ray_world, out);
+}
 
 void error_callback(int32_t error, const char *description)
 {
@@ -90,6 +188,30 @@ void process_input(GLFWwindow *window, double dt)
     } else {
         cam.can_move = false;
     }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        double x_pos, y_pos;
+        glfwGetCursorPos(window, &x_pos, &y_pos);
+        /* cursor pos will be based on the window width and is relative to the
+         * top left of the window */
+        int viewport_width, viewport_height;
+        glfwGetFramebufferSize(window, &viewport_width, &viewport_height);
+
+        vec3 ray;
+        ray_cast(x_pos,
+                 y_pos,
+                 viewport_width,
+                 viewport_height,
+                 cam.projection,
+                 cam.view,
+                 ray);
+        LOG_DEBUG("click in world pos, (%f, %f, %f)", ray[0], ray[1], ray[2]);
+
+        /* get first object hit by ray */
+        /* for node in scene */
+        /* if ray intersects with node */
+        /* select object & break */
+    }
 }
 
 void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_pos)
@@ -117,54 +239,9 @@ void scroll_callback([[maybe_unused]] GLFWwindow *window,
                      [[maybe_unused]] double dx, 
                      double dy)
 {
-    camera_scroll(&cam, dy);
+    //camera_scroll(&cam, dy);
 }
 
-void world_grid_draw(struct mesh mesh,
-                     struct shader shader, 
-                     struct texture texture,
-                     struct camera cam)
-{
-    // prolly a naive approach at drawing a world grid, could do this instead
-    // in the shaders. currently implemented as drawing 3 seperate strecthed out
-    // cubes representing the cardinal axis
-    shader_use(&shader);
-    texture_bind(texture);
-    mesh_bind(mesh);
-
-    // x axis (red)
-    mesh_reset_transform(&mesh);
-    mesh_set_scale(&mesh, (vec3){200.0, 0.01, 0.01});
-    mesh_update_transform(&mesh);
-    shader_uniform_mat4(shader, "u_model", mesh.model);
-    shader_uniform_mat4(shader, "u_view", cam.view);
-    shader_uniform_mat4(shader, "u_projection", cam.projection);
-    shader_uniform_vec4(shader, "u_color", (vec4){1.0, 0.0, 0.0, 1.0});
-    mesh_draw(mesh);
-
-    // y axis (green)
-    mesh_reset_transform(&mesh);
-    mesh_set_scale(&mesh, (vec3){0.01, 200.0, 0.01});
-    mesh_set_rotation(&mesh, (vec3){0, MNF_RAD(90), 0});
-    mesh_set_position(&mesh, (vec3){0.0, 100.0, 0.0});
-    mesh_update_transform(&mesh);
-    shader_uniform_mat4(shader, "u_model", mesh.model);
-    shader_uniform_mat4(shader, "u_view", cam.view);
-    shader_uniform_mat4(shader, "u_projection", cam.projection);
-    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 1.0, 0.0, 1.0});
-    mesh_draw(mesh);
-
-    // z axis (blue)
-    mesh_reset_transform(&mesh);
-    mesh_set_scale(&mesh, (vec3){0.01, 0.01, 200.0});
-    mesh_set_rotation(&mesh, (vec3){0, 0, MNF_RAD(90)});
-    mesh_update_transform(&mesh);
-    shader_uniform_mat4(shader, "u_model", mesh.model);
-    shader_uniform_mat4(shader, "u_view", cam.view);
-    shader_uniform_mat4(shader, "u_projection", cam.projection);
-    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 0.0, 1.0, 1.0});
-    mesh_draw(mesh);
-}
 
 int main(int argc, [[maybe_unused]] char **argv)
 {
@@ -214,7 +291,7 @@ int main(int argc, [[maybe_unused]] char **argv)
         return -1;
     }
 
-    LOG_INFO("Loaded OpenGL %d.%d\n", 
+    LOG_INFO("Loaded OpenGL %d.%d", 
              GLAD_VERSION_MAJOR(version),
              GLAD_VERSION_MINOR(version));
 
@@ -252,8 +329,6 @@ int main(int argc, [[maybe_unused]] char **argv)
     struct shader light_shader = shader_create("shaders/light.glsl");
     struct shader lit_shader = shader_create("shaders/phong.glsl");
 
-    // it's necessary to pass cube vertices size because arrays decay into 
-    // pointers
     struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
                                    sizeof(CUBE_VERTEX_ARRAY));
     struct mesh light_source = mesh_create(CUBE_VERTEX_ARRAY,
@@ -262,19 +337,9 @@ int main(int argc, [[maybe_unused]] char **argv)
                                      sizeof(CUBE_VERTEX_ARRAY));
 
     struct texture base_texture = texture_create("res/textures/base.png");
-    //struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg");
+    struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg");
     struct texture default_texture = texture_create_default();
 
-    /*
-    char *cubemap_faces[6] = {
-        "res/textures/daylight-cubemap/right.bmp",
-        "res/textures/daylight-cubemap/left.bmp",
-        "res/textures/daylight-cubemap/top.bmp",
-        "res/textures/daylight-cubemap/bottom.bmp",
-        "res/textures/daylight-cubemap/front.bmp",
-        "res/textures/daylight-cubemap/back.bmp",
-    };
-    */
     char *cubemap_faces[6] = {
         "res/textures/skybox/right.jpg",
         "res/textures/skybox/left.jpg",
@@ -288,100 +353,24 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     double previous_seconds = glfwGetTime();
 
-    /*
-    struct nk_context *context = nk_glfw3_init(
-        window, 
-        NK_GLFW3_INSTALL_CALLBACKS,
-        MAX_VERTEX_BUFFER,
-        MAX_ELEMENT_BUFFER
-    );
-
-    struct nk_font_atlas *atlas;
-    nk_glfw3_font_stash_begin(&atlas);
-    nk_glfw3_font_stash_end();
-    */
-
-    // render loop
-    //mesh_set_scale(&skybox, (vec3){100.0, 100.0, 100.0,});
-    //mesh_update_transform(&skybox);
+    /* render loop */
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-
         double current_seconds = glfwGetTime();
         double dt = current_seconds - previous_seconds;
         previous_seconds = current_seconds;
 
+        glfwPollEvents();
         process_input(window, dt);
 
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             shader_hot_reload(&basic_shader);
 
-        /*
-        nk_glfw3_new_frame();
-
-        if (nk_begin(context, "Nuklear window", nk_rect(0, 0, 500, 500),
-                     NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE)) {
-
-            enum {EASY, HARD};
-            static int op = EASY;
-            static int property = 20;
-
-            nk_layout_row_static(context, 30, 80, 1);
-            if (nk_button_label(context, "button"))
-                LOG_DEBUG("button pressed");
-
-            nk_layout_row_dynamic(context, 30, 2);
-            if (nk_option_label(context, "easy", op == EASY)) op = EASY;
-            if (nk_option_label(context, "hard", op == HARD)) op = HARD;
-
-            nk_layout_row_dynamic(context, 25, 1);
-            nk_property_int(context, "Compression:", 0, &property, 100, 10, 1);
-
-            nk_layout_row_dynamic(context, 20, 1);
-            nk_label(context, "background:", NK_TEXT_LEFT);
-            nk_layout_row_dynamic(context, 25, 1);
-            if (nk_combo_begin_color(context, nk_rgb_cf(bg), nk_vec2(nk_widget_width(context),400))) {
-                nk_layout_row_dynamic(context, 120, 1);
-                bg = nk_color_picker(context, bg, NK_RGBA);
-                nk_layout_row_dynamic(context, 25, 1);
-                bg.r = nk_propertyf(context, "#R:", 0, bg.r, 1.0f, 0.01f,0.005f);
-                bg.g = nk_propertyf(context, "#G:", 0, bg.g, 1.0f, 0.01f,0.005f);
-                bg.b = nk_propertyf(context, "#B:", 0, bg.b, 1.0f, 0.01f,0.005f);
-                bg.a = nk_propertyf(context, "#A:", 0, bg.a, 1.0f, 0.01f,0.005f);
-                nk_combo_end(context);
-            }
-
-        }
-        nk_end(context);
-        */
-
-
         camera_update(&cam);
 
-        /* pre-rendering setup */
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        scene_render();
 
-        /* draw skybox */
-        glDepthMask(GL_FALSE);
-        shader_use(&skybox_shader);
-        mesh_bind(skybox);
-        cubemap_texture_bind(cubemap);
-        /* remove translation */
-        mat4 cam_no_translation;
-        mnf_mat4_copy(cam.view, cam_no_translation);
-        cam_no_translation[3][0] = 0;
-        cam_no_translation[3][1] = 0;
-        cam_no_translation[3][2] = 0;
-        cam_no_translation[3][3] = 1;
-        //shader_uniform_mat4(skybox_shader, "u_model", skybox.model);
-        shader_uniform_mat4(skybox_shader, "u_view", cam_no_translation);
-        shader_uniform_mat4(skybox_shader, "u_projection", cam.projection);
-        mesh_draw(skybox);
-        glDepthMask(GL_TRUE);
-
-
-        world_grid_draw(cube, color_shader, default_texture, cam);
+        skybox_draw(skybox_shader, skybox, cubemap, cam.view, cam.projection);
+        scene_world_grid_draw(cam, cube, color_shader, default_texture);
 
         /* drawing light source */
         shader_use(&light_shader);
@@ -397,9 +386,14 @@ int main(int argc, [[maybe_unused]] char **argv)
         mesh_draw(light_source);
 
         /* drawing lit object */
+        /* illuminating a scene only requires sum of light contributions */
+        /*
+         * for light (lit shader) in light sources
+         *      render model in specific shader
+         */
         shader_use(&lit_shader);
         mesh_bind(cube);
-        texture_bind(default_texture);
+        texture_bind(uv_grid_texture);
         vec3 obj_pos = {1.0, 0.5, -0.6};
         mesh_set_scale(&cube, (vec3){5, 1, 7});
         mesh_set_position(&cube, obj_pos);
@@ -419,15 +413,14 @@ int main(int argc, [[maybe_unused]] char **argv)
         mesh_update_transform(&cube);
         mesh_draw(cube);
 
-        //nk_glfw3_render(NK_ANTI_ALIASING_ON);
         glfwSwapBuffers(window);
     }
 
     mesh_destroy(&cube);
+    mesh_destroy(&skybox);
     mesh_destroy(&light_source);
     shader_destroy(&basic_shader);
 
-    //nk_glfw3_shutdown();
     glfwTerminate();
     window = NULL;
 

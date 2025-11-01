@@ -1,4 +1,4 @@
-/* Vector source code for Manifold 
+/* Manifold: Graphics Math Library for Sage.
 
 This file is part of Sage
 

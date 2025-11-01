@@ -1,4 +1,5 @@
-/* Transform header for Manifold 
+
+/* Manifold: Graphics Math Library for Sage.
 
 This file is part of Sage
 
@@ -13,8 +14,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __MNF_TRANSFORM_H__
-#define __MNF_TRANSFORM_H__
+#ifndef MANIFOLD_TRANSFORM_H
+#define MANIFOLD_TRANSFORM_H
 
 #include "mnf_types.h"
 
@@ -45,5 +46,5 @@ void mnf_mat4_translate(mat4 in, vec3 v, mat4 out);
 
 void mnf_mat4_scale(mat4 in, vec3 scalars, mat4 out);
 
-#endif /* __MNF_TRANSFORM_H__ */
+#endif /* MANIFOLD_TRANSFORM_H */
 

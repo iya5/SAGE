@@ -1,4 +1,4 @@
-/* Config header for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_CONFIG_H__
-#define __SAGE_CONFIG_H__
+#ifndef SAGE_CONFIG_H
+#define SAGE_CONFIG_H
 
 #define SAGE_WINDOW_TITLE   "Sage"
 
@@ -28,4 +28,4 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_OPENGL_MAJOR_VERSION 4
 #define SAGE_OPENGL_MINOR_VERSION 1
 
-#endif /* __SAGE_CONFIG_H__ */
+#endif /* SAGE_CONFIG_H */

@@ -1,4 +1,4 @@
-/* Texture source code for compiling and loading textures for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer
 
 This file is part of Sage
 
@@ -151,10 +151,10 @@ struct texture cubemap_texture_create(char *cubemap_faces[6])
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                      0,                /* level (lod)      */
                      GL_RGB,           /* color components */
-                     width,                /* width            */
-                     height,                /* height           */
+                     width,            /* width            */
+                     height,           /* height           */
                      0,                /* border           */
-                     GL_RGB,          /* pixel format     */
+                     GL_RGB,           /* pixel format     */
                      GL_UNSIGNED_BYTE, /* data type        */
                      data);            /* data in memory   */
     }

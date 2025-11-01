@@ -1,4 +1,4 @@
-/* Geometry header for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -12,6 +12,9 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+
+#ifndef SAGE_GEOMETRY_H
+#define SAGE_GEOMETRY_H
 
 static const float CUBE_VERTEX_ARRAY[] = {
 //  pos_x   pos_y   pos_z   tex_u   tex_v   norm_x  norm_y  norm_z
@@ -102,3 +105,5 @@ static const float SKYBOX_VERTICES[] = {
     -1.0f, -1.0f,  1.0f,
      1.0f, -1.0f,  1.0f
 };
+
+#endif /* SAGE_GEOMETRY_H */

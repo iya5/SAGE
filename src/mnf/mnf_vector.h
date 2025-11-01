@@ -1,4 +1,4 @@
-/* Vector header for Manifold 
+/* Manifold: Graphics Math Library for Sage.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __MNF_VECTOR_H__
-#define __MNF_VECTOR_H__
+#ifndef MANIFOLD_VECTOR_H
+#define MANIFOLD_VECTOR_H
 
 #include "mnf_types.h"
 
@@ -44,4 +44,4 @@ float mnf_vec3_dot(vec3 left, vec3 right);
 /* Gets the cross product (vector) of vec3 a and b, writing it to 'out'. */
 void mnf_vec3_cross(vec3 left, vec3 right, vec3 out);
 
-#endif /* __MNF_VECTOR_H__ */
+#endif /* MANIFOLD_VECTOR_H */

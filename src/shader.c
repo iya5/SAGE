@@ -1,4 +1,4 @@
-/* Shader source for compiling and creating shader programs for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer
 
 This file is part of Sage
 

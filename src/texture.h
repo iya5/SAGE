@@ -1,4 +1,4 @@
-/* Texture header file for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_TEXTURE_H__
-#define __SAGE_TEXTURE_H__
+#ifndef SAGE_TEXTURE_H
+#define SAGE_TEXTURE_H
 
 #include <stdint.h>
 #include "mnf/mnf_types.h"
@@ -26,6 +26,7 @@ struct texture {
 
 struct texture texture_create_default(void);
 struct texture texture_create(const char *path);
+
 /* Wrapper around glBindTexture() */
 void texture_bind(struct texture t);
 void texture_destroy(struct texture *t);
@@ -33,4 +34,4 @@ void texture_destroy(struct texture *t);
 struct texture cubemap_texture_create(char *cubemap_faces[6]);
 void cubemap_texture_bind(struct texture t);
 
-#endif /* __SAGE_TEXTURE_H__ */
+#endif /* SAGE_TEXTURE_H */

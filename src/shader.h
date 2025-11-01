@@ -1,4 +1,4 @@
-/* Shader header for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_SHADER_H__
-#define __SAGE_SHADER_H__
+#ifndef SAGE_SHADER_H
+#define SAGE_SHADER_H
 
 #include <stdint.h>
 #include "mnf/mnf_types.h"
@@ -59,4 +59,4 @@ void shader_uniform_vec3(struct shader shader, const char* uniform, vec3 v);
 void shader_uniform_vec4(struct shader shader, const char *uniform, vec4 v);
 void shader_uniform_mat4(struct shader shader, const char* uniform, mat4 m);
 
-#endif /* __SAGE_SHADER_H__ */
+#endif /* SAGE_SHADER_H */

@@ -1,4 +1,4 @@
-/* Mesh header for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_MESH_H__
-#define __SAGE_MESH_H__
+#ifndef SAGE_MESH_H
+#define SAGE_MESH_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -52,4 +52,4 @@ void mesh_set_rotation(struct mesh *mesh, vec3 euler_angles);
 void mesh_set_position(struct mesh *mesh, vec3 position);
 void mesh_update_transform(struct mesh *mesh);
 
-#endif /* __SAGE_MESH_H__ */
+#endif /* SAGE_MESH_H */

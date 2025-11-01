@@ -1,4 +1,4 @@
-/* Matrix header for Manifold 
+/* Manifold: Graphics Math Library for Sage.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __MNF_MATRIX_H__
-#define __MNF_MATRIX_H__
+#ifndef MANIFOLD_MATRIX_H
+#define MANIFOLD_MATRIX_H
 
 #include "mnf_types.h"
 
@@ -47,5 +47,17 @@ void mnf_mat4_mul(mat4 left, mat4 right, mat4 out);
 /* Retrieves the upper left 3x3 in a mat4 and writing it to 'out' */
 void mnf_mat4_to_mat3(mat4 in, mat3 out);
 
+/* Multiplioes a vec4 by a matrix and storing the result in 'out' */
+void mnf_mat4_mul_vec4(mat4 mat, vec4 in, vec4 out);
 
-#endif /* __MNF_MATRIX_H__ */
+/* 
+ * Gets the inverse of a 4x4 matrix and writes it to 'out'. However, if the
+ * matrix is singular, it writes an identity matrix instead.
+ */
+void mnf_mat4_inv(mat4 in, mat4 out);
+
+/* Returns the determinant of a mat4 */
+float mnf_mat4_det(mat4 mat);
+
+
+#endif /* MANIFOLD_MATRIX_H */

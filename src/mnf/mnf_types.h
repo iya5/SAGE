@@ -1,4 +1,4 @@
-/* Type definition for Manifold 
+/* Manifold: Graphics Math Library for Sage.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __MNF_TYPES_H__
-#define __MNF_TYPES_H__
+#ifndef MANIFOLD_TYPES_H
+#define MANIFOLD_TYPES_H
 
 enum MNF_COORD {
     X = 0,
@@ -36,4 +36,4 @@ typedef float   vec4[4];
 typedef vec3    mat3[3];             /* column-major [col][row] */
 typedef vec4    mat4[4];
 
-#endif /* __MNF_TYPES_H__ */
+#endif /* MANIFOLD_TYPES_H */

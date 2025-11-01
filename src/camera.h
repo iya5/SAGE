@@ -1,4 +1,4 @@
-/* Camera header for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -13,8 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef __SAGE_CAMERA_H__
-#define __SAGE_CAMERA_H__
+#ifndef SAGE_CAMERA_H
+#define SAGE_CAMERA_H
 
 #include <stdbool.h>
 #include "mnf/mnf.h"
@@ -146,4 +146,4 @@ void projection_perspective(mat4 projection,
                             float near,
                             float far);
 
-#endif /* __SAGE_CAMERA_H__ */
+#endif /* SAGE_CAMERA_H */

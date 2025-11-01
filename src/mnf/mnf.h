@@ -1,17 +1,17 @@
-/* manifold graphics math library for sage
+/* Manifold: Graphics Math Library for Sage.
 
-this file is part of sage
+This file is part of Sage
 
-sage is free software: you can redistribute it and/or modify it under the terms
-of the gnu general public license as published by the free software foundation,
-either version 3 of the license, or (at your option) any later version.
+Sage is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
 
-sage is distributed in the hope that it will be useful, but without any 
-warranty; without even the implied warranty of merchantability or fitness for a
-particular purpose. see the gnu general public license for more details.
+Sage is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-you should have received a copy of the gnu general public license along with 
-sage; see the file license. if not, see <https://www.gnu.org/licenses/>.    */
+You should have received a copy of the GNU General Public License along with 
+Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 /* 
  * this math header defines basic 3d graphics maths used in sage.
@@ -27,14 +27,12 @@ sage; see the file license. if not, see <https://www.gnu.org/licenses/>.    */
  *      v' = m(v)
  */
 
-#ifndef __mnf_h__
-#define __mnf_h__
-
+#ifndef MANIFOLD_H
+#define MANIFOLD_H
 
 #include "mnf_types.h"
 #include "mnf_matrix.h"
 #include "mnf_transform.h"
 #include "mnf_vector.h"
 #include "mnf_util.h"
-
-#endif /* __mnf_h__ */
+#endif /* MANIFOLD_H */
