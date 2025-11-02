@@ -13,23 +13,12 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_CONFIG_H
-#define SAGE_CONFIG_H
+#include "material.h"
 
-#ifndef SAGE_VERSION
-#define SAGE_VERSION "Something went wrong with VERSION"
-#endif
-
-#define SAGE_WINDOW_TITLE   "Sage"
-
-#define SAGE_MULTISAMPLE_ANTIALIASING 8
-
-// constants are based off glfwSwapInterval()
-#define SAGE_VSYNC_LOCK     1
-#define SAGE_VSYNC_UNLOCK   0
-#define SAGE_VSYNC_SETTING  SAGE_VSYNC_LOCK
-
-#define SAGE_OPENGL_MAJOR_VERSION 4
-#define SAGE_OPENGL_MINOR_VERSION 1
-
-#endif /* SAGE_CONFIG_H */
+void material_apply(struct material material, struct shader shader)
+{
+    shader_uniform_vec3(shader, "u_material.ambient", material.ambient);
+    shader_uniform_vec3(shader, "u_material.diffuse", material.diffuse);
+    shader_uniform_vec3(shader, "u_material.specular", material.specular);
+    shader_uniform_1f(shader, "u_material.shininess", material.shininess);
+}

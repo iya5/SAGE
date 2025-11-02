@@ -4,12 +4,14 @@ VERSION = 0.0.0
 
 CC = gcc
 
-CFLAGS = -Wall -Wextra -Wpedantic -g -DVERSION=\"$(VERSION)\"
+CFLAGS = -Wall -Wextra -Wpedantic -g -DSAGE_VERSION=\"$(VERSION)\"
 
 INCLUDES = -Ilib/glfw/include -Ilib/glad/include -Ilib/cglm/include \
 		   -Ilib/std -Ilib/nuklear/ -Ilib/stb
 
 LDFLAGS = -lm lib/glad/src/gl.o lib/glfw/src/libglfw3.a
+
+# add compile flag for defining SAGE_RELEASE as 1
 
 ifeq ($(UNAME), Linux)
 	CFLAGS += -std=c23

@@ -16,20 +16,12 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "mnf/mnf_matrix.h"
 #include "mnf/mnf_vector.h"
 
-#ifndef VERSION
-#define VERSION "Something went wrong with VERSION"
-#endif
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
 
-#include "mnf/mnf.h" // IWYU pragma: keep
-#include "slog/slog.h"
-#include "config.h"
 #include "camera.h"
 #include "shader.h"
 #include "geometry.h"
@@ -38,7 +30,10 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "scene.h"
 #include "material.h"
 #include "light.h"
+#include "logger.h"
+#include "platform.h"
 
+struct scene scene = {0};
 struct camera cam = {0};
 
 void skybox_draw(struct shader skybox_shader, 
@@ -152,97 +147,65 @@ void ray_cast(double x_pos,
     mnf_vec3_copy(ray_world, out);
 }
 
-void error_callback(int32_t error, const char *description)
+void process_input(struct platform *platform, double dt)
 {
-    LOG_FATAL("Error (%d): %s", error, description);
-}
-
-void framebuffer_size_callback([[maybe_unused]] GLFWwindow *window, int32_t width, int32_t height)
-{
-    glViewport(0, 0, width, height);
-}
-
-void process_input(GLFWwindow *window, double dt)
-{
+    /*
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    */
+    struct input_state *input = platform->input;
+    bool *keys = input->keys;
+    bool *mouse_buttons = input->mouse_buttons;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (keys[KEY_ESC])
+        platform->running = false;
+
+    if (keys[KEY_W])
         camera_move(&cam, MOVE_FORWARD, dt);
 
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_move(&cam, MOVE_BACKWARD, dt);
-
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (keys[KEY_A])
         camera_move(&cam, STRAFE_LEFT, dt);
 
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    if (keys[KEY_S])
+        camera_move(&cam, MOVE_BACKWARD, dt);
+
+    if (keys[KEY_D])
         camera_move(&cam, STRAFE_RIGHT, dt);
 
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    if (keys[KEY_SPACE])
         camera_move(&cam, MOVE_UP, dt);
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+    if (keys[KEY_LCTRL])
         camera_move(&cam, MOVE_DOWN, dt);
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+
+
+    if (mouse_buttons[MOUSE_RIGHT])
         cam.can_move = true;
-    } else {
+    else
         cam.can_move = false;
-    }
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        double x_pos, y_pos;
-        glfwGetCursorPos(window, &x_pos, &y_pos);
-        /* cursor pos will be based on the window width and is relative to the
-         * top left of the window */
-        int viewport_width, viewport_height;
-        glfwGetFramebufferSize(window, &viewport_width, &viewport_height);
+    camera_mouse(&cam, input->mouse_dx, input->mouse_dy);
 
+    /* POSSIBLE BUG: i don't think the ray works (haven't tested though)
+    if (mouse_buttons[MOUSE_LEFT]) {
         vec3 ray;
-        ray_cast(x_pos,
-                 y_pos,
-                 viewport_width,
-                 viewport_height,
+        ray_cast(input->mouse_x,
+                 input->mouse_y,
+                 platform->viewport_width,
+                 platform->viewport_height,
                  cam.projection,
                  cam.view,
                  ray);
-        LOG_DEBUG("click in world pos, (%f, %f, %f)", ray[0], ray[1], ray[2]);
-
-        /* get first object hit by ray */
-        /* for node in scene */
-        /* if ray intersects with node */
-        /* select object & break */
+        SDEBUG("click in world pos, (%f, %f, %f)", ray[0], ray[1], ray[2]);
     }
+    */
+    /* get first object hit by ray */
+    /* for node in scene */
+    /* if ray intersects with node */
+    /* select object & break */
 }
 
-void mouse_callback([[maybe_unused]] GLFWwindow *window, double x_pos, double y_pos)
-{
-    static bool first_mouse = true;
-    static float last_x = 640.0 / 2.0;
-    static float last_y = 480.0 / 2.0;
-
-    if (first_mouse) {
-        last_x = x_pos;
-        last_y = y_pos;
-        first_mouse = false;
-    }
-
-    float dx = x_pos - last_x;
-    float dy = last_y - y_pos;
-
-    last_x = x_pos;
-    last_y = y_pos;
-
-    camera_mouse(&cam, dx, dy);
-}
-
-void scroll_callback([[maybe_unused]] GLFWwindow *window, 
-                     [[maybe_unused]] double dx, 
-                     double dy)
-{
-    //camera_scroll(&cam, dy);
-}
 
 void light_apply(struct light light, struct shader shader)
 {
@@ -257,73 +220,20 @@ void light_apply(struct light light, struct shader shader)
     shader_uniform_vec3(shader, "u_light.specular", light.specular);
 }
 
-void material_apply(struct material material, struct shader shader)
-{
-    shader_uniform_vec3(shader, "u_material.ambient", material.ambient);
-    shader_uniform_vec3(shader, "u_material.diffuse", material.diffuse);
-    shader_uniform_vec3(shader, "u_material.specular", material.specular);
-    shader_uniform_1f(shader, "u_material.shininess", material.shininess);
-}
-
-
 int main(int argc, [[maybe_unused]] char **argv)
 {
     if (argc > 1) {
-        LOG_FATAL("usage: bin/sage");
+        SFATAL("Sage has no flags, run the binary by itself.");
         exit(1);
     }
 
-    LOG_INFO("Hello world from Sage '%s'!", VERSION);
+    logger_initialize();
 
-    GLFWwindow *window = NULL;
-
-    LOG_INFO("Starting GLFW: %s", glfwGetVersionString());
-    glfwSetErrorCallback(error_callback);
-
-    // GLFW Library initialization
-    if (!glfwInit()) {
-        return -1;
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SAGE_OPENGL_MAJOR_VERSION);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, SAGE_OPENGL_MINOR_VERSION);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    window = glfwCreateWindow(640, 480, SAGE_WINDOW_TITLE, NULL, NULL);
-    if (window == NULL) {
-        LOG_FATAL("GLFW failed to create a window");
-        glfwTerminate();
-        window = NULL;
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-
-    // setting up event callback
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-
-    int version = gladLoadGL(glfwGetProcAddress);
-    if (version == 0) {
-        LOG_FATAL("Failed to initialize OpenGL context");
-        return -1;
-    }
-
-    LOG_INFO("Loaded OpenGL %d.%d", 
-             GLAD_VERSION_MAJOR(version),
-             GLAD_VERSION_MINOR(version));
-
-    // setup MSAA
-    glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
-    glfwSwapInterval(SAGE_VSYNC_SETTING);
+    struct platform platform = {0};
+    platform_window_init(&platform, 640, 480, 640, 480);
 
     /* setup gl parameters */
-    glViewport(0, 0, 640, 480);
+    glViewport(0, 0, platform.viewport_width, platform.viewport_height);
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
     //glFrontFace(GL_CW);
@@ -332,16 +242,12 @@ int main(int argc, [[maybe_unused]] char **argv)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    int n_vertex_attributes;
-    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n_vertex_attributes);
-    LOG_INFO("Maximum vertex attributes supported: %d", n_vertex_attributes);
 
-    float aspect = 640.0 / 480.0;
-
+    float aspect = (float) platform.viewport_width / (float) platform.viewport_height;
     camera_init(&cam, CAM_DEFAULT_POS, CAM_DEFAULT_FORWARD, CAM_DEFAULT_UP);
     camera_perspective(&cam, 
         FOV_DEFAULT, 
-        aspect, 
+        aspect,
         PERSPECTIVE_DEFAULT_NEAR, 
         PERSPECTIVE_DEFAULT_FAR
     );
@@ -372,9 +278,9 @@ int main(int argc, [[maybe_unused]] char **argv)
     struct light light_sun = {
         .type = LIGHT_DIRECTIONAL,
         .pos = {-25, 50, -25},
-        .ambient = {0.5, 0.5, 0.5},
+        .ambient = {0.7, 0.7, 0.7},
         .diffuse = {0.8, 0.8, 0.8},
-        .specular = {0.0, 0.0, 0.0}
+        .specular = {0.2, 0.2, 0.2}
     };
 
     struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
@@ -388,6 +294,7 @@ int main(int argc, [[maybe_unused]] char **argv)
     struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg");
     struct texture default_texture = texture_create_default();
 
+
     char *cubemap_faces[6] = {
         "res/textures/skybox/right.jpg",
         "res/textures/skybox/left.jpg",
@@ -399,21 +306,18 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     struct texture cubemap = cubemap_texture_create(cubemap_faces);
 
-    double previous_seconds = glfwGetTime();
+    scene.cam = cam;
+
+    double previous_seconds = platform_get_time();
 
     /* render loop */
-    while (!glfwWindowShouldClose(window)) {
-        double current_seconds = glfwGetTime();
+    while (!platform_should_close(&platform)) {
+        double current_seconds = platform_get_time();
         double dt = current_seconds - previous_seconds;
         previous_seconds = current_seconds;
 
-        glfwPollEvents();
-        process_input(window, dt);
-
-        /*
-        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-            shader_hot_reload(&basic_shader);
-        */
+        platform_poll_input(&platform);
+        process_input(&platform, dt);
 
         camera_update(&cam);
 
@@ -447,8 +351,8 @@ int main(int argc, [[maybe_unused]] char **argv)
         shader_use(shaders[SHADER_PHONG]);
         mesh_bind(cube);
         texture_bind(uv_grid_texture);
-        vec3 obj_pos = {1.0, 0.5, -0.6};
-        mesh_set_scale(&cube, (vec3){5, 1, 7});
+        vec3 obj_pos = {4.0, 0.5, -8};
+        mesh_set_scale(&cube, (vec3){2, 2, 2});
         mesh_set_position(&cube, obj_pos);
 
         light_apply(light_sun, shaders[SHADER_PHONG]);
@@ -462,16 +366,17 @@ int main(int argc, [[maybe_unused]] char **argv)
         mesh_update_transform(&cube);
         mesh_draw(cube);
 
-        glfwSwapBuffers(window);
+        platform_swap_buffer(&platform);
     }
 
+    platform_window_shutdown(&platform);
     /* TODO: clean up resources */
     mesh_destroy(&cube);
     mesh_destroy(&skybox);
     mesh_destroy(&light_source);
 
-    glfwTerminate();
-    window = NULL;
+    logger_shutdown();
+
 
     return 0;
 }

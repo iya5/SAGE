@@ -14,11 +14,11 @@ You should have received a copy of the GNU General Public License along with
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include <glad/gl.h>
+
 #include "mnf/mnf_matrix.h"
 #include "mnf/mnf_transform.h"
 #include "mnf/mnf_vector.h"
-#include "slog/slog.h"
-
+#include "logger.h"
 #include "mesh.h"
 
 struct vertex_array vertex_array_create(const float *vertices, size_t n_bytes);
@@ -37,7 +37,7 @@ struct mesh mesh_create(const float *vertices, size_t n_bytes)
     mnf_euler_rotate_xyz(mesh.model, mesh.transform.rotate, mesh.model);
     mnf_mat4_translate(mesh.model, mesh.transform.position, mesh.model);
 
-    LOG_INFO("Created mesh with %d vertices", mesh.vertex_array.vertex_count);
+    SINFO("Mesh created with %d vertices", mesh.vertex_array.vertex_count);
 
     return mesh;
 }

@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_MATERIAL_H
 
 #include "mnf/mnf_types.h"
+#include "shader.h"
 
 /*
  * Materials are just properties of objects and how they react to light. These
@@ -26,6 +27,17 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  * ... Materials tell the render engine exactly how a surface should interact
  * with the light in your scene. Materials define every aspect of the surface
  * including color, reflectivity, bumpiness, transparency, and so on ...
+ *
+ * From shapernode
+ * Materials are collections of properties that define how a surface interacts
+ * with light. They encompass attributes like color, reflectivity, transparency,
+ * roughness, and more. Materials are responsible for giving objects their 
+ * physical characteristics and visual qualities.
+ * ...
+ * Material is a set of parameters that dictates how an object looks in a
+ * virtual environment. Those parameters can be defined by numeric values and by
+ * textures with per-pixel accuracy. For instance, a metallic material would
+ * reflect light differently than a rough, matte material.
  */
 
 struct material {
@@ -34,5 +46,7 @@ struct material {
     vec3 specular;
     float shininess;
 };
+
+void material_apply(struct material material, struct shader shader);
 
 #endif /* SAGE_MATERIAL_H */

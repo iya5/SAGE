@@ -19,13 +19,13 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <glad/gl.h>
-#include "slog/slog.h"
 
+#include "logger.h"
 #include "texture.h"
 
 struct texture texture_create(const char *path)
 {
-	LOG_INFO("Creating texture of %s", path);
+	SINFO("Creating texture of %s", path);
 	struct texture texture = {0};
 	int32_t width, height, channels;
 	width = height = channels = 0;
@@ -40,7 +40,7 @@ struct texture texture_create(const char *path)
 	);
 
 	if (data == NULL) {
-		LOG_ERROR("Failed to load texture '%s'", path);
+		SERROR("Texture '%s' failed to load", path);
         return texture;
 	}
 
@@ -86,7 +86,7 @@ struct texture texture_create(const char *path)
 
 struct texture texture_create_default(void)
 {
-	LOG_INFO("Creating default 1x1 texture");
+	SINFO("Creating a default 1x1 pixel texture");
 	struct texture texture = {0};
 
     /* single pixel of (255, 255, 255, 255) */
@@ -126,6 +126,14 @@ struct texture texture_create_default(void)
  */
 struct texture cubemap_texture_create(char *cubemap_faces[6])
 {
+    SINFO("Creating a cubemap texture for:");
+    SINFO("\t%s", cubemap_faces[0]);
+    SINFO("\t%s", cubemap_faces[1]);
+    SINFO("\t%s", cubemap_faces[2]);
+    SINFO("\t%s", cubemap_faces[3]);
+    SINFO("\t%s", cubemap_faces[4]);
+    SINFO("\t%s", cubemap_faces[5]);
+
 	struct texture cubemap = {0};
 
     /* single pixel of (255, 255, 255, 255) */
