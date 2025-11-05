@@ -1,0 +1,5 @@
+Why should i care about memory alignment? What is it about anyways? Does it have
+to do with the size of my variables? instruction sizes? What about the CPU and GPU?
+Why is there a difference with taking care of it? Is it about performance or is
+it important to do these? Is this something that is done but isn't explicit
+(in reference to higher-level languages like python)?

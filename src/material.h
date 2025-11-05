@@ -18,6 +18,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "mnf/mnf_types.h"
 #include "shader.h"
+#include "texture.h"
 
 /*
  * Materials are just properties of objects and how they react to light. These
@@ -38,15 +39,64 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  * virtual environment. Those parameters can be defined by numeric values and by
  * textures with per-pixel accuracy. For instance, a metallic material would
  * reflect light differently than a rough, matte material.
+ *
+ * More Information from stack overflow!
+ * https://stackoverflow.com/questions/4262503/whats-the-difference-between-material-and-texture
+ *
+ * In OpenGL, a material is a set of coefficients that define how the lighting
+ * model interacts with the surface. In particular, ambient, diffuse, and
+ * specular coefficients for each color component (R,G,B) are defined and
+ * applied to a surface and effectively multiplied by the amount of light of
+ * each kind/color that strikes the surface. A final emmisivity coefficient is
+ * then added to each color component that allows objects to appear luminous
+ * without actually interacting with other objects.
+ *
+ * A texture, on the other hand, is a set of 1-, 2-, 3-, or 4- dimensional
+ * bitmap (image) data that is applied and interpolated on to a surface
+ * according to texture coordinates at the vertices. Texture data alters the
+ * color of the surface whether or not lighting is enabled (and depending on the
+ * texture mode, e.g. decal, modulate, etc.). Textures are used frequently to
+ * provide sub-polygon level detail to a surface, e.g. applying a repeating
+ * brick and mortar texture to a quad to simulate a brick wall, rather than
+ * modeling the geometry of each individual brick.
+ *
+ * In the classical (fixed-pipeline) OpenGL model, textures and materials are
+ * somewhat orthogonal. In the new programmable shader world, the line has
+ * blurred quite a bit. Frequently textures are used to influence lighting in
+ * other ways. For example, bump maps are textures that are used to perturb
+ * surface normals to effect lighting, rather than modifying pixel color
+ * directly as a regular "image" texture would.
  */
 
 struct material {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    /* Ambient is not included because this is generally the same as diffuse.
+     * The reason for textures instead of coefficients is because we can make
+     * use of the fragment's colors directly to the lighting model.
+     */
+    struct texture diffuse;
+    struct texture specular;
     float shininess;
 };
 
-void material_apply(struct material material, struct shader shader);
+enum light_type {
+    LIGHT_DIRECTIONAL,
+    LIGHT_POINT
+};
+
+struct light {
+    enum light_type type;
+    vec3 pos;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+/*
+ * Sets coefficient parameters for a given lighting model defined in the shader,
+ * for example, a phong shader.
+ */
+void lighting_model_set_params(struct light light,
+                               struct material material,
+                               struct shader shader);
 
 #endif /* SAGE_MATERIAL_H */

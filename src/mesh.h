@@ -20,6 +20,13 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stddef.h>
 
 #include "mnf/mnf_types.h"
+#include "texture.h"
+
+struct vertex {
+    vec3 position;
+    vec3 normal;
+    vec3 uv;
+};
 
 struct vertex_array {
     uint32_t vao;
@@ -31,7 +38,6 @@ struct transform {
     vec3 rotate;
     vec3 scale;
     vec3 position;
-
 };
 
 struct mesh {

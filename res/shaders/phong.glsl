@@ -45,15 +45,13 @@ in vec3 vert_frag_pos;
 
 
 struct material {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    sampler2D diffuse;
+    sampler2D specular;
     float shininess;
 };
 
 struct light {
     vec3 pos;
-    vec3 direction;
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -74,13 +72,13 @@ void main()
     if (u_flat_shading == 1) {
         light_direction = normalize(u_light.pos - vert_frag_pos);
     } else {
-        light_direction = normalize(u_light.pos);
+        light_direction = normalize(-u_light.pos);
     }
 
     /* Ambient:
      *      ka*ki
      */
-    vec3 ambient = u_light.ambient * u_material.ambient;
+    vec3 ambient = u_light.ambient * vec3(texture(u_material.diffuse, vert_uv));
 
     /* Diffuse:
      *      kd * (Lm * N) * imd
@@ -90,7 +88,7 @@ void main()
 
     /* Max at zero since Lm is behind the surface */
     float diffuse_scalar = max(dot(normal, light_direction), 0.0);
-    vec3 diffuse = u_light.diffuse * (diffuse_scalar * u_material.diffuse);
+    vec3 diffuse = u_light.diffuse * diffuse_scalar * vec3(texture(u_material.diffuse, vert_uv));
 
     /* Specular:
      *      ks * (Rm + V)^a * ims
@@ -104,7 +102,7 @@ void main()
     /* vec3 reflect_direction = reflect(-light_direction, normal); */
     vec3 reflect_direction = (2 * dot(light_direction, normal) * normal) - light_direction;
     float specular_scalar = pow(max(dot(reflect_direction, view_direction), 0.0), u_material.shininess);
-    vec3 specular = u_light.specular * (specular_scalar * u_material.specular);
+    vec3 specular = u_light.specular * specular_scalar * vec3(texture(u_material.specular, vert_uv));
 
     vec3 result_color = ambient + diffuse + specular;
     frag_color = texture(u_texture, vert_uv) * vec4(result_color, 1.0);

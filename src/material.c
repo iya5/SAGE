@@ -15,10 +15,25 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "material.h"
 
-void material_apply(struct material material, struct shader shader)
+void lighting_model_set_params(struct light light,
+                               struct material material,
+                               struct shader shader)
 {
-    shader_uniform_vec3(shader, "u_material.ambient", material.ambient);
-    shader_uniform_vec3(shader, "u_material.diffuse", material.diffuse);
-    shader_uniform_vec3(shader, "u_material.specular", material.specular);
+    if (light.type == LIGHT_POINT)
+        shader_uniform_1i(shader, "u_flat_shading", 1);
+    else
+        shader_uniform_1i(shader, "u_flat_shading", 0);
+
+    /* set light parameters of the light equation */
+    shader_uniform_vec3(shader, "u_light.pos", light.pos);
+    shader_uniform_vec3(shader, "u_light.ambient", light.ambient);
+    shader_uniform_vec3(shader, "u_light.diffuse", light.diffuse);
+    shader_uniform_vec3(shader, "u_light.specular", light.specular);
+
+
+    /* set surface parameters of the light equation */
+    //shader_uniform_vec3(shader, "u_material.ambient", material.ambient);
+    //shader_uniform_vec3(shader, "u_material.diffuse", material.diffuse);
+    //shader_uniform_vec3(shader, "u_material.specular", material.specular);
     shader_uniform_1f(shader, "u_material.shininess", material.shininess);
 }

@@ -30,7 +30,7 @@ void error_callback(int32_t error, const char *description)
     SERROR("Error (%d): %s", error, description);
 }
 
-void framebuffer_size_callback([[maybe_unused]] GLFWwindow *window, int32_t width, int32_t height)
+void framebuffer_size_callback(GLFWwindow *window, int32_t width, int32_t height)
 {
     glViewport(0, 0, width, height);
     struct platform *platform = glfwGetWindowUserPointer(window);
@@ -39,7 +39,7 @@ void framebuffer_size_callback([[maybe_unused]] GLFWwindow *window, int32_t widt
     platform->viewport_height = height;
 }
 
-void scroll_callback([[maybe_unused]] GLFWwindow *window, [[maybe_unused]] double dx, [[maybe_unused]] double dy)
+void scroll_callback(GLFWwindow *window, double dx, double dy)
 {
     /* camera_scroll(&cam, dy); */
 }
@@ -155,6 +155,26 @@ bool platform_window_init(struct platform *platform,
         goto err_platform;
     }
     memset(input, 0, sizeof(struct input_state));
+
+    /* fetching GPU specs */
+    int n_vertex_attributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n_vertex_attributes);
+
+    int32_t max_vertex_texture_units;
+    int32_t max_fragment_texture_units;
+    int32_t max_geometry_texture_units;
+    int32_t max_combined_texture_units;
+    glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &max_vertex_texture_units);
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_fragment_texture_units);
+    glGetIntegerv(GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS, &max_geometry_texture_units);
+    glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_combined_texture_units);
+
+    SINFO("GPU specifications provided by OpenGL:");
+    SINFO("\tMax vertex shader texture units: %d", max_vertex_texture_units);
+    SINFO("\tMax fragment shader texture units: %d", max_fragment_texture_units);
+    SINFO("\tMax geometry shader texture units: %d", max_geometry_texture_units);
+    SINFO("\tMax combined shader texture units: %d", max_combined_texture_units);
+    SINFO("\tMax vertex shader attributes: %d", n_vertex_attributes);
 
     platform->input = input;
     platform->context = context;

@@ -156,8 +156,8 @@ void shader_uniform_1i(struct shader shader, const char *uniform, int32_t n)
     } else {
         glUniform1i(location, n);
     }
-
 }
+
 void shader_uniform_1f(struct shader shader, const char *uniform, float f)
 {
     int32_t location = glGetUniformLocation(shader.handle, uniform);

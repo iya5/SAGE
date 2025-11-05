@@ -66,6 +66,8 @@
     [   ] setup shader for multiple light casters
 
 [   ] render materials
+    [   ] diffuse map
+    [   ] specular map
 
 
 [   ] render a model

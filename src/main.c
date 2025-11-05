@@ -19,6 +19,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <glad/gl.h>
 
@@ -29,9 +30,10 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "mesh.h"
 #include "scene.h"
 #include "material.h"
-#include "light.h"
 #include "logger.h"
 #include "platform.h"
+#include "darray.h"
+#include "assert.h"
 
 struct scene scene = {0};
 struct camera cam = {0};
@@ -72,7 +74,8 @@ void scene_world_grid_draw(struct camera cam,
      * in the shaders. currently implemented as drawing 3 seperate strecthed out
      * cubes representing the cardinal axis */
     shader_use(shader);
-    texture_bind(texture);
+    shader_uniform_1i(shader, "u_texture", 0);
+    texture_bind(texture, 0);
     mesh_bind(mesh);
 
     /* x-axis */
@@ -149,10 +152,6 @@ void ray_cast(double x_pos,
 
 void process_input(struct platform *platform, double dt)
 {
-    /*
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    */
     struct input_state *input = platform->input;
     bool *keys = input->keys;
     bool *mouse_buttons = input->mouse_buttons;
@@ -206,28 +205,12 @@ void process_input(struct platform *platform, double dt)
     /* select object & break */
 }
 
-
-void light_apply(struct light light, struct shader shader)
-{
-    if (light.type == LIGHT_POINT)
-        shader_uniform_1i(shader, "u_flat_shading", 1);
-    else
-        shader_uniform_1i(shader, "u_flat_shading", 0);
-
-    shader_uniform_vec3(shader, "u_light.pos", light.pos);
-    shader_uniform_vec3(shader, "u_light.ambient", light.ambient);
-    shader_uniform_vec3(shader, "u_light.diffuse", light.diffuse);
-    shader_uniform_vec3(shader, "u_light.specular", light.specular);
-}
-
-int main(int argc, [[maybe_unused]] char **argv)
+int main(int argc, char **argv)
 {
     if (argc > 1) {
         SFATAL("Sage has no flags, run the binary by itself.");
         exit(1);
     }
-
-    logger_initialize();
 
     struct platform platform = {0};
     platform_window_init(&platform, 640, 480, 640, 480);
@@ -245,7 +228,8 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     float aspect = (float) platform.viewport_width / (float) platform.viewport_height;
     camera_init(&cam, CAM_DEFAULT_POS, CAM_DEFAULT_FORWARD, CAM_DEFAULT_UP);
-    camera_perspective(&cam, 
+    camera_perspective(
+        &cam,
         FOV_DEFAULT, 
         aspect,
         PERSPECTIVE_DEFAULT_NEAR, 
@@ -253,34 +237,31 @@ int main(int argc, [[maybe_unused]] char **argv)
     );
 
     struct shader shaders[16] = {0};
-    shaders[SHADER_BASIC] = shader_create("shaders/basic.glsl");
-    shaders[SHADER_COLOR] = shader_create("shaders/color.glsl");
-    shaders[SHADER_SKYBOX] = shader_create("shaders/skybox.glsl");
-    shaders[SHADER_LIGHT] = shader_create("shaders/light.glsl");
-    shaders[SHADER_PHONG] = shader_create("shaders/phong.glsl");
-    shaders[SHADER_GOURAD] = shader_create("shaders/gourad.glsl");
+    shaders[SHADER_BASIC] = shader_create("res/shaders/basic.glsl");
+    shaders[SHADER_COLOR] = shader_create("res/shaders/color.glsl");
+    shaders[SHADER_SKYBOX] = shader_create("res/shaders/skybox.glsl");
+    shaders[SHADER_LIGHT] = shader_create("res/shaders/light.glsl");
+    shaders[SHADER_PHONG] = shader_create("res/shaders/phong.glsl");
+    shaders[SHADER_GOURAD] = shader_create("res/shaders/gourad.glsl");
 
     struct material plastic_material = {
-        .ambient = {1.0, 1.0, 1.0},
-        .diffuse = {1.0, 1.0, 1.0},
-        .specular = {0.5, 0.5, 0.5},
-        .shininess = 16
+        .shininess = 100
     };
 
     struct light light = {
         .type = LIGHT_POINT,
-        .pos = {2.0, 4.0, -4.0},
-        .ambient = {0.2, 0.2, 0.2},
-        .diffuse = {0.8, 0.8, 0.8},
-        .specular = {0.4, 0.4, 0.4}
+        .pos = {1.5, 2.7, -2.3},
+        .ambient = {0.5, 0.5, 0.5},
+        .diffuse = {1, 1, 1},
+        .specular = {1.0, 1.0, 1.0}
     };
 
     struct light light_sun = {
         .type = LIGHT_DIRECTIONAL,
-        .pos = {-25, 50, -25},
+        .pos = {25, -30, 25},
         .ambient = {0.7, 0.7, 0.7},
-        .diffuse = {0.8, 0.8, 0.8},
-        .specular = {0.2, 0.2, 0.2}
+        .diffuse = {1.0, 1.0, 1.0},
+        .specular = {0.8, 0.9, 0.8}
     };
 
     struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
@@ -290,8 +271,10 @@ int main(int argc, [[maybe_unused]] char **argv)
     struct mesh skybox = mesh_create(CUBE_VERTEX_ARRAY,
                                      sizeof(CUBE_VERTEX_ARRAY));
 
-    struct texture base_texture = texture_create("res/textures/base.png");
-    struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg");
+    struct texture base_texture = texture_create("res/textures/base.png", TEXTURE_DIFFUSE);
+    struct texture container_diffuse = texture_create("res/textures/container-diffuse.png", TEXTURE_DIFFUSE);
+    struct texture container_specular = texture_create("res/textures/container-specular.png", TEXTURE_SPECULAR);
+    struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg", TEXTURE_DIFFUSE);
     struct texture default_texture = texture_create_default();
 
 
@@ -306,9 +289,15 @@ int main(int argc, [[maybe_unused]] char **argv)
 
     struct texture cubemap = cubemap_texture_create(cubemap_faces);
 
-    scene.cam = cam;
+    scene.cam = &cam;
 
     double previous_seconds = platform_get_time();
+
+    /* Configure shaders using uniform samplers to tell OpenGL which texture
+     * unit will take which slot. This only needs to be done once. */
+    shader_use(shaders[SHADER_PHONG]);
+    shader_uniform_1i(shaders[SHADER_PHONG], "u_material.diffuse", 0);
+    shader_uniform_1i(shaders[SHADER_PHONG], "u_material.specular", 1);
 
     /* render loop */
     while (!platform_should_close(&platform)) {
@@ -319,9 +308,7 @@ int main(int argc, [[maybe_unused]] char **argv)
         platform_poll_input(&platform);
         process_input(&platform, dt);
 
-        camera_update(&cam);
-
-        scene_render();
+        scene_render(&scene);
 
         skybox_draw(shaders[SHADER_SKYBOX], skybox, cubemap, cam.view, cam.projection);
         scene_world_grid_draw(cam, cube, shaders[SHADER_COLOR], default_texture);
@@ -329,9 +316,10 @@ int main(int argc, [[maybe_unused]] char **argv)
         /* drawing light source */
         shader_use(shaders[SHADER_LIGHT]);
         mesh_bind(light_source);
-        texture_bind(default_texture);
+        texture_bind(default_texture, 0);
 
         mesh_set_scale(&light_source, (vec3){0.2, 0.2, 0.2});
+        mnf_vec3_copy((vec3){cos(current_seconds) * 1.3 + 2, 2.0, -1.0}, light.pos);
         mesh_set_position(&light_source, light.pos);
         mesh_update_transform(&light_source);
 
@@ -341,22 +329,17 @@ int main(int argc, [[maybe_unused]] char **argv)
 
         mesh_draw(light_source);
 
-        /* drawing lit object */
-        /* illuminating a scene only requires sum of light contributions */
-        /*
-         * for light (lit shader) in light sources
-         *      render model in specific shader
-         */
-
         shader_use(shaders[SHADER_PHONG]);
         mesh_bind(cube);
-        texture_bind(uv_grid_texture);
+        texture_bind(container_diffuse, 0);
+        texture_bind(container_specular, 1);
+
         vec3 obj_pos = {4.0, 0.5, -8};
         mesh_set_scale(&cube, (vec3){2, 2, 2});
+        //mesh_set_rotation(&cube, (vec3){cos(current_seconds), sin(current_seconds), 0.0});
         mesh_set_position(&cube, obj_pos);
 
-        light_apply(light_sun, shaders[SHADER_PHONG]);
-        material_apply(plastic_material, shaders[SHADER_PHONG]);
+        lighting_model_set_params(light, plastic_material, shaders[SHADER_PHONG]);
 
         shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
@@ -374,9 +357,6 @@ int main(int argc, [[maybe_unused]] char **argv)
     mesh_destroy(&cube);
     mesh_destroy(&skybox);
     mesh_destroy(&light_source);
-
-    logger_shutdown();
-
 
     return 0;
 }

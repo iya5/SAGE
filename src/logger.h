@@ -40,10 +40,6 @@ enum log_level {
     LOG_LEVEL_TRACE,  /* Verbose version of debugs                        */
 };
 
-/* returns a 0 on success and a 1 on failure */
-int32_t logger_initialize();
-void logger_shutdown();
-
 void sage_log_output(enum log_level level, const char *fmt, ...);
 
 #ifdef SAGE_LOG_FATAL_ENABLE

@@ -13,22 +13,25 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_LIGHT_H
-#define SAGE_LIGHT_H
+#ifndef SAGE_DARRAY_H
+#define SAGE_DARRAY_H
 
-#include "mnf/mnf_types.h"
+#include <stddef.h>
 
-enum light_type {
-    LIGHT_DIRECTIONAL,
-    LIGHT_POINT
-};
+#define DARRAY_RESIZE_FACTOR 2
 
-struct light {
-    enum light_type type;
-    vec3 pos;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
+typedef struct darray {
+    size_t len;
+    size_t capacity;
+    size_t item_size;
+    void *items;
+} darray;
 
-#endif /* SAGE_LIGHT_H */
+darray *darray_alloc(size_t n_size, size_t initial_size);
+size_t darray_push(darray *arr, void *item);
+void *darray_pop_at(darray *arr,  size_t index);
+void *darray_pop(darray *arr);
+void *darray_at(darray *arr, size_t index);
+void darray_free(darray *arr);
+
+#endif /* SAGE_DARRAY_H */

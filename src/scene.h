@@ -16,8 +16,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #ifndef SAGE_SCENE_H
 #define SAGE_SCENE_H
 
-#include "camera.h"
-
 /*
  * From scratch a pixel
  * However, a 3D scene encompasses more than just geometry. While geometry is a
@@ -32,13 +30,20 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  * camera) directly to the renderer. Additionally, the renderer requires certain
  * extra information, such as the resolution of the final image, typically
  * referred to as global render settings or options.
- *
  */
 
+#include "camera.h"
+#include "material.h"
+
+#define SCENE_MAX_LIGHTS 6
+#define SCENE_MAX_MATERIALS 6
+
 struct scene {
-    struct camera cam;
+    struct light lights[SCENE_MAX_LIGHTS];
+    struct material materials[SCENE_MAX_MATERIALS];
+    struct camera *cam; 
 };
 
-void scene_render(void);
+void scene_render(struct scene *scene);
 
 #endif /* SAGE_SCENE_H */

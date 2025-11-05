@@ -35,17 +35,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 static int32_t timef_get(char time_fmt[LOG_TIME_FMT_BUFFER_SIZE]);
 
-int32_t logger_initialize()
-{
-    /* TODO: cleanup loggers */
-    return 0;
-}
-
-void logger_shutdown()
-{
-    /* TODO: cleanup loggers */
-}
-
 void sage_log_output(enum log_level level, const char *fmt, ...)
 {
     const char *log_level_strings[6] = {

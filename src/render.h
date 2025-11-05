@@ -13,17 +13,11 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#include <glad/gl.h>
+#ifndef SAGE_RENDER_H
+#define SAGE_RENDER_H
 
-#include "scene.h"
+struct renderer {
 
-void scene_render(struct scene *scene)
-{
-    /* pre-rendering (clearing buffers) */
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    camera_update(scene->cam);
+};
 
-    /* swap back buffer with front buffer */
-}
+#endif /* SAGE_RENDER_H */
