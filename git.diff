@@ -1,0 +1,406 @@
+diff --git a/docs/TODO.md b/docs/TODO.md
+index 568b6a1..3a5bfb2 100644
+--- a/docs/TODO.md
++++ b/docs/TODO.md
+@@ -55,20 +55,19 @@
+     [   ] create gizmo manipulator (some help in ddiakoppoulos/tinygizmo)
+ 
+ [...] render basic lighting
+-    [...] create shaders for lighting (phong)
+-        [ x ] ambient
+-        [...] diffuse
+-        [   ] specular
+-    [   ] reconfigure memory buffers and vertex arrays to take in normals
+-    [   ] setup vertex array parser
+-        [   ] setup function for normal calculation (if needed)
+-    [   ] create gouraud shader
+-    [   ] setup shader for multiple light casters
++    [ x ] create shader to calculate phong lighting model
++        [ x ] ambient reflection
++        [ x ] diffuse / lambertian reflection
++        [ x ] specular reflection
++    [ x ] reconfigure memory buffers and vertex arrays to take in normals
++    [ x ] create gouraud shader
++    [...] shade multiple light casters
+ 
+-[   ] render materials
+-    [   ] diffuse map
+-    [   ] specular map
++[...] render simple materials
++    [ x ] diffuse map
++    [ x ] specular map
+ 
++[ x ] render a skybox
+ 
+ [   ] render a model
+     [   ] setup a model loader
+@@ -81,11 +80,7 @@
+         [   ] load files
+         [   ] save files
+ 
+-[   ]
+-
+-[   ] render a skybox
+-
+-[   ] render a scene
++[...] render a scene
+ 
+ [   ] setup pbr (physically-based rendering)
+ 
+diff --git a/docs/references b/docs/references
+index ec02533..ca50243 100644
+--- a/docs/references
++++ b/docs/references
+@@ -41,3 +41,28 @@ This is not the only function of textures. You could just as easily vary the spe
+ Textures are tools. Materials are just a group of light equation parameters.
+ 
+ https://stackoverflow.com/a/8573097
++
++---
++
++Donald E. Knuth Literate Programming
++
++I believe that the time is ripe
++for significantly better documentation of programs, and
++that we can best achieve this by considering programs
++to be works of literature. Hence, my title: “Literate
++Programming.”
++Let us change our traditional attitude to the con-
++struction of programs: Instead of imagining that our
++main task is to instruct a computer what to do, let us
++concentrate rather on explaining to human beings what
++we want a computer to do.
++The practitioner of literate programming can be re-
++garded as an essayist, whose main concern is with ex-
++position and excellence of style. Such an author, with
++thesaurus in hand, chooses the names of variables care-
++fully and explains what each variable means. He or she
++strives for a program that is comprehensible because its
++concepts have been introduced in an order that is best
++for human understanding, using a mixture of formal
++and informal methods that re¨ınforce each other.
++I dare to suggest that such
+diff --git a/src/main.c b/src/main.c
+index 49ba0f2..d9dc3b1 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -38,6 +38,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+ struct scene scene = {0};
+ struct camera cam = {0};
+ 
++bool SAGE_DRAW_SKYBOX = false;
++
+ void skybox_draw(struct shader skybox_shader, 
+                  struct mesh skybox, 
+                  struct texture cubemap,
+@@ -85,22 +87,20 @@ void scene_world_grid_draw(struct camera cam,
+     shader_uniform_mat4(shader, "u_model", mesh.model);
+     shader_uniform_mat4(shader, "u_view", cam.view);
+     shader_uniform_mat4(shader, "u_projection", cam.projection);
+-    shader_uniform_vec4(shader, "u_color", (vec4){1.0, 0.0, 0.0, 1.0});
++    shader_uniform_vec4(shader, "u_color", (vec4){0.8, 0.20, 0.4, 1.0});
+     mesh_draw(mesh);
+ 
+     /* y-axis */
+     mesh_reset_transform(&mesh);
+     mesh_set_scale(&mesh, (vec3){0.01, 200.0, 0.01});
+     mesh_set_rotation(&mesh, (vec3){0, MNF_RAD(90), 0});
+-    mesh_set_position(&mesh, (vec3){0.0, 100.0, 0.0});
++    //mesh_set_position(&mesh, (vec3){0.0, 100.0, 0.0});
+     mesh_update_transform(&mesh);
+     shader_uniform_mat4(shader, "u_model", mesh.model);
+     shader_uniform_mat4(shader, "u_view", cam.view);
+     shader_uniform_mat4(shader, "u_projection", cam.projection);
+-    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 1.0, 0.0, 1.0});
++    shader_uniform_vec4(shader, "u_color", (vec4){0.5, 0.7, 0.25, 1.0});
+     mesh_draw(mesh);
+-
+-
+     /* z-axis */
+     mesh_reset_transform(&mesh);
+     mesh_set_scale(&mesh, (vec3){0.01, 0.01, 200.0});
+@@ -109,7 +109,7 @@ void scene_world_grid_draw(struct camera cam,
+     shader_uniform_mat4(shader, "u_model", mesh.model);
+     shader_uniform_mat4(shader, "u_view", cam.view);
+     shader_uniform_mat4(shader, "u_projection", cam.projection);
+-    shader_uniform_vec4(shader, "u_color", (vec4){0.0, 0.0, 1.0, 1.0});
++    shader_uniform_vec4(shader, "u_color", (vec4){0.3, 0.5, 0.7, 1.0});
+     mesh_draw(mesh);
+ }
+ 
+@@ -177,7 +177,17 @@ void process_input(struct platform *platform, double dt)
+     if (keys[KEY_LCTRL])
+         camera_move(&cam, MOVE_DOWN, dt);
+ 
++    if (keys[KEY_1])
++        SAGE_DRAW_SKYBOX = true;
++
++    if (keys[KEY_2])
++        SAGE_DRAW_SKYBOX = false;
++
++    if (keys[KEY_3])
++        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+ 
++    if (keys[KEY_4])
++        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+ 
+     if (mouse_buttons[MOUSE_RIGHT])
+         cam.can_move = true;
+@@ -251,7 +261,6 @@ int main(int argc, char **argv)
+     struct light light = {
+         .type = LIGHT_POINT,
+         .pos = {1.5, 2.7, -2.3},
+-        .ambient = {0.5, 0.5, 0.5},
+         .diffuse = {1, 1, 1},
+         .specular = {1.0, 1.0, 1.0}
+     };
+@@ -259,7 +268,6 @@ int main(int argc, char **argv)
+     struct light light_sun = {
+         .type = LIGHT_DIRECTIONAL,
+         .pos = {25, -30, 25},
+-        .ambient = {0.7, 0.7, 0.7},
+         .diffuse = {1.0, 1.0, 1.0},
+         .specular = {0.8, 0.9, 0.8}
+     };
+@@ -299,6 +307,8 @@ int main(int argc, char **argv)
+     shader_uniform_1i(shaders[SHADER_PHONG], "u_material.diffuse", 0);
+     shader_uniform_1i(shaders[SHADER_PHONG], "u_material.specular", 1);
+ 
++    mnf_vec3_copy((vec3) {0.4, 0.4, 0.4}, scene.ambient);
++
+     /* render loop */
+     while (!platform_should_close(&platform)) {
+         double current_seconds = platform_get_time();
+@@ -310,7 +320,7 @@ int main(int argc, char **argv)
+ 
+         scene_render(&scene);
+ 
+-        skybox_draw(shaders[SHADER_SKYBOX], skybox, cubemap, cam.view, cam.projection);
++        if (SAGE_DRAW_SKYBOX) skybox_draw(shaders[SHADER_SKYBOX], skybox, cubemap, cam.view, cam.projection);
+         scene_world_grid_draw(cam, cube, shaders[SHADER_COLOR], default_texture);
+ 
+         /* drawing light source */
+@@ -319,18 +329,22 @@ int main(int argc, char **argv)
+         texture_bind(default_texture, 0);
+ 
+         mesh_set_scale(&light_source, (vec3){0.2, 0.2, 0.2});
+-        mnf_vec3_copy((vec3){cos(current_seconds) * 1.3 + 2, 2.0, -1.0}, light.pos);
++        mnf_vec3_copy((vec3){
++            cos(current_seconds) * 6 + 2,
++            sin(current_seconds) *8.0,
++            sin(current_seconds) * cos(current_seconds) * 16}, light.pos);
+         mesh_set_position(&light_source, light.pos);
+         mesh_update_transform(&light_source);
+ 
+         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_model", light_source.model);
+         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_view", cam.view);
+         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_projection", cam.projection);
+-
+         mesh_draw(light_source);
+ 
++        /* draw lit cube */
+         shader_use(shaders[SHADER_PHONG]);
+         mesh_bind(cube);
++        //mesh_reset_transform(&cube);
+         texture_bind(container_diffuse, 0);
+         texture_bind(container_specular, 1);
+ 
+@@ -339,7 +353,36 @@ int main(int argc, char **argv)
+         //mesh_set_rotation(&cube, (vec3){cos(current_seconds), sin(current_seconds), 0.0});
+         mesh_set_position(&cube, obj_pos);
+ 
+-        lighting_model_set_params(light, plastic_material, shaders[SHADER_PHONG]);
++        lighting_model_set_params(scene.ambient,
++                                  light,
++                                  plastic_material,
++                                  shaders[SHADER_PHONG]);
++
++        shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
++        shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
++        shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
++        shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
++
++        mesh_update_transform(&cube);
++        mesh_draw(cube);
++        
++        /* BUG. THIS SHOULD NOT BE AFFECTING THE CUBE AFTER DRAW CALL YET IT DOES */
++        //mesh_reset_transform(&cube);
++        /* IT IS ALSO PREVENTING THE ABOVE TRANSFORMATIONS FROM WORKING */
++
++        /* drawing this one also swaps the above cube's texture with this one */
++        mesh_bind(cube);
++        texture_bind(base_texture, 0);
++        texture_bind(default_texture, 1);
++        vec3 obj2_pos = {6.0, -4, -6};
++        mesh_set_scale(&cube, (vec3){10, 2, 10});
++        //mesh_set_rotation(&cube, (vec3){cos(current_seconds), sin(current_seconds), 0.0});
++        mesh_set_position(&cube, obj2_pos);
++
++        lighting_model_set_params(scene.ambient,
++                                  light,
++                                  plastic_material,
++                                  shaders[SHADER_PHONG]);
+ 
+         shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
+         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
+diff --git a/src/material.c b/src/material.c
+index 8cff235..73b97b5 100644
+--- a/src/material.c
++++ b/src/material.c
+@@ -15,7 +15,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+ 
+ #include "material.h"
+ 
+-void lighting_model_set_params(struct light light,
++void lighting_model_set_params(vec3 ambient,
++                               struct light light,
+                                struct material material,
+                                struct shader shader)
+ {
+@@ -26,7 +27,7 @@ void lighting_model_set_params(struct light light,
+ 
+     /* set light parameters of the light equation */
+     shader_uniform_vec3(shader, "u_light.pos", light.pos);
+-    shader_uniform_vec3(shader, "u_light.ambient", light.ambient);
++    shader_uniform_vec3(shader, "u_light.ambient", ambient);
+     shader_uniform_vec3(shader, "u_light.diffuse", light.diffuse);
+     shader_uniform_vec3(shader, "u_light.specular", light.specular);
+ 
+diff --git a/src/material.h b/src/material.h
+index 8aa81cc..58a62b4 100644
+--- a/src/material.h
++++ b/src/material.h
+@@ -86,7 +86,6 @@ enum light_type {
+ struct light {
+     enum light_type type;
+     vec3 pos;
+-    vec3 ambient;
+     vec3 diffuse;
+     vec3 specular;
+ };
+@@ -95,7 +94,8 @@ struct light {
+  * Sets coefficient parameters for a given lighting model defined in the shader,
+  * for example, a phong shader.
+  */
+-void lighting_model_set_params(struct light light,
++void lighting_model_set_params(vec3 ambient,
++                               struct light light,
+                                struct material material,
+                                struct shader shader);
+ 
+diff --git a/src/mesh.c b/src/mesh.c
+index 4cde517..b0ceaec 100644
+--- a/src/mesh.c
++++ b/src/mesh.c
+@@ -48,6 +48,7 @@ void mesh_reset_transform(struct mesh *mesh)
+     mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.rotate);
+     mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.position);
+     mnf_mat4_identity(mesh->model);
++    mesh_update_transform(mesh);
+ }
+ 
+ void mesh_set_scale(struct mesh *mesh, vec3 scalars)
+diff --git a/src/platform.c b/src/platform.c
+index 25e20e3..eaedfd8 100644
+--- a/src/platform.c
++++ b/src/platform.c
+@@ -69,6 +69,11 @@ void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t act
+         if (key == GLFW_KEY_SPACE) keys[KEY_SPACE] = GET_KPD(action);
+         if (key == GLFW_KEY_LEFT_CONTROL) keys[KEY_LCTRL] = GET_KPD(action);
+         if (key == GLFW_KEY_ESCAPE) keys[KEY_ESC] = GET_KPD(action);
++        if (key == GLFW_KEY_0) keys[KEY_0] = GET_KPD(action);
++        if (key == GLFW_KEY_1) keys[KEY_1] = GET_KPD(action);
++        if (key == GLFW_KEY_2) keys[KEY_2] = GET_KPD(action);
++        if (key == GLFW_KEY_3) keys[KEY_3] = GET_KPD(action);
++        if (key == GLFW_KEY_4) keys[KEY_4] = GET_KPD(action);
+     }
+ }
+ 
+diff --git a/src/platform.h b/src/platform.h
+index e46c624..6254abd 100644
+--- a/src/platform.h
++++ b/src/platform.h
+@@ -20,10 +20,44 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+ #include <stdbool.h>
+ 
+ enum key_code {
+-    KEY_W,
++    KEY_0,
++    KEY_1,
++    KEY_2,
++    KEY_3,
++    KEY_4,
++    KEY_5,
++    KEY_6,
++    KEY_7,
++    KEY_8,
++    KEY_9,
++
+     KEY_A,
+-    KEY_S,
++    KEY_B,
++    KEY_C,
+     KEY_D,
++    KEY_E,
++    KEY_F,
++    KEY_G,
++    KEY_H,
++    KEY_I,
++    KEY_J,
++    KEY_K,
++    KEY_L,
++    KEY_M,
++    KEY_N,
++    KEY_O,
++    KEY_P,
++    KEY_Q,
++    KEY_R,
++    KEY_S,
++    KEY_T,
++    KEY_U,
++    KEY_V,
++    KEY_W,
++    KEY_X,
++    KEY_Y,
++    KEY_Z,
++
+     KEY_SPACE,
+     KEY_LCTRL,
+     KEY_ESC,
+diff --git a/src/scene.c b/src/scene.c
+index b883a8e..ad126eb 100644
+--- a/src/scene.c
++++ b/src/scene.c
+@@ -20,7 +20,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+ void scene_render(struct scene *scene)
+ {
+     /* pre-rendering (clearing buffers) */
+-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
++    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+     
+     camera_update(scene->cam);
+diff --git a/src/scene.h b/src/scene.h
+index 330b17d..dfe7fc7 100644
+--- a/src/scene.h
++++ b/src/scene.h
+@@ -40,6 +40,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+ 
+ struct scene {
+     struct light lights[SCENE_MAX_LIGHTS];
++    vec3 ambient;
+     struct material materials[SCENE_MAX_MATERIALS];
+     struct camera *cam; 
+ };
+diff --git a/src/texture.h b/src/texture.h
+index d5f7a52..62c7877 100644
+--- a/src/texture.h
++++ b/src/texture.h
+@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
+ #define SAGE_TEXTURE_H
+ 
+ #include <stdint.h>
++#include <stddef.h>
+ 
+ enum texture_type {
+     /*

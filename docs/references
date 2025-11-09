@@ -41,3 +41,28 @@ This is not the only function of textures. You could just as easily vary the spe
 Textures are tools. Materials are just a group of light equation parameters.
 
 https://stackoverflow.com/a/8573097
+
+---
+
+Donald E. Knuth Literate Programming
+
+I believe that the time is ripe
+for significantly better documentation of programs, and
+that we can best achieve this by considering programs
+to be works of literature. Hence, my title: “Literate
+Programming.”
+Let us change our traditional attitude to the con-
+struction of programs: Instead of imagining that our
+main task is to instruct a computer what to do, let us
+concentrate rather on explaining to human beings what
+we want a computer to do.
+The practitioner of literate programming can be re-
+garded as an essayist, whose main concern is with ex-
+position and excellence of style. Such an author, with
+thesaurus in hand, chooses the names of variables care-
+fully and explains what each variable means. He or she
+strives for a program that is comprehensible because its
+concepts have been introduced in an order that is best
+for human understanding, using a mixture of formal
+and informal methods that re¨ınforce each other.
+I dare to suggest that such

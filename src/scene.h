@@ -40,6 +40,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 struct scene {
     struct light lights[SCENE_MAX_LIGHTS];
+    vec3 ambient;
     struct material materials[SCENE_MAX_MATERIALS];
     struct camera *cam; 
 };

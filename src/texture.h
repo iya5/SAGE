@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_TEXTURE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 enum texture_type {
     /*

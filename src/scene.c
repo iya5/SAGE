@@ -20,7 +20,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 void scene_render(struct scene *scene)
 {
     /* pre-rendering (clearing buffers) */
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     camera_update(scene->cam);

@@ -69,6 +69,11 @@ void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t act
         if (key == GLFW_KEY_SPACE) keys[KEY_SPACE] = GET_KPD(action);
         if (key == GLFW_KEY_LEFT_CONTROL) keys[KEY_LCTRL] = GET_KPD(action);
         if (key == GLFW_KEY_ESCAPE) keys[KEY_ESC] = GET_KPD(action);
+        if (key == GLFW_KEY_0) keys[KEY_0] = GET_KPD(action);
+        if (key == GLFW_KEY_1) keys[KEY_1] = GET_KPD(action);
+        if (key == GLFW_KEY_2) keys[KEY_2] = GET_KPD(action);
+        if (key == GLFW_KEY_3) keys[KEY_3] = GET_KPD(action);
+        if (key == GLFW_KEY_4) keys[KEY_4] = GET_KPD(action);
     }
 }
 

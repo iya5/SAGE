@@ -15,7 +15,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "material.h"
 
-void lighting_model_set_params(struct light light,
+void lighting_model_set_params(vec3 ambient,
+                               struct light light,
                                struct material material,
                                struct shader shader)
 {
@@ -26,7 +27,7 @@ void lighting_model_set_params(struct light light,
 
     /* set light parameters of the light equation */
     shader_uniform_vec3(shader, "u_light.pos", light.pos);
-    shader_uniform_vec3(shader, "u_light.ambient", light.ambient);
+    shader_uniform_vec3(shader, "u_light.ambient", ambient);
     shader_uniform_vec3(shader, "u_light.diffuse", light.diffuse);
     shader_uniform_vec3(shader, "u_light.specular", light.specular);
 

@@ -48,6 +48,7 @@ void mesh_reset_transform(struct mesh *mesh)
     mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.rotate);
     mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.position);
     mnf_mat4_identity(mesh->model);
+    mesh_update_transform(mesh);
 }
 
 void mesh_set_scale(struct mesh *mesh, vec3 scalars)

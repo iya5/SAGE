@@ -86,7 +86,6 @@ enum light_type {
 struct light {
     enum light_type type;
     vec3 pos;
-    vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 };
@@ -95,7 +94,8 @@ struct light {
  * Sets coefficient parameters for a given lighting model defined in the shader,
  * for example, a phong shader.
  */
-void lighting_model_set_params(struct light light,
+void lighting_model_set_params(vec3 ambient,
+                               struct light light,
                                struct material material,
                                struct shader shader);
 
