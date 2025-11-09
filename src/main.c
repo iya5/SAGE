@@ -46,6 +46,8 @@ void skybox_draw(struct shader skybox_shader,
                  mat4 view, 
                  mat4 projection)
 {
+    /* disable culling because we're inside the box */
+    glDisable(GL_CULL_FACE);
     /* draw skybox */
     glDepthMask(GL_FALSE);
     shader_use(skybox_shader);
@@ -65,6 +67,7 @@ void skybox_draw(struct shader skybox_shader,
     shader_uniform_mat4(skybox_shader, "u_projection", projection);
     mesh_draw(skybox);
     glDepthMask(GL_TRUE);
+    glEnable(GL_CULL_FACE);
 }
 
 void scene_world_grid_draw(struct camera cam,
@@ -80,10 +83,13 @@ void scene_world_grid_draw(struct camera cam,
     texture_bind(texture, 0);
     mesh_bind(mesh);
 
+    struct transform transform;
+
     /* x-axis */
-    mesh_reset_transform(&mesh);
-    mesh_set_scale(&mesh, (vec3){200.0, 0.01, 0.01});
-    mesh_update_transform(&mesh);
+    transform_reset(&transform);
+    transform_scale(&transform, (vec3){200.0, 0.01, 0.01});
+    transform_model(transform, mesh.model);
+
     shader_uniform_mat4(shader, "u_model", mesh.model);
     shader_uniform_mat4(shader, "u_view", cam.view);
     shader_uniform_mat4(shader, "u_projection", cam.projection);
@@ -91,21 +97,21 @@ void scene_world_grid_draw(struct camera cam,
     mesh_draw(mesh);
 
     /* y-axis */
-    mesh_reset_transform(&mesh);
-    mesh_set_scale(&mesh, (vec3){0.01, 200.0, 0.01});
-    mesh_set_rotation(&mesh, (vec3){0, MNF_RAD(90), 0});
-    //mesh_set_position(&mesh, (vec3){0.0, 100.0, 0.0});
-    mesh_update_transform(&mesh);
+    transform_reset(&transform);
+    transform_scale(&transform, (vec3){0.01, 200.0, 0.01});
+    transform_rotation(&transform, (vec3){0, MNF_RAD(90), 0});
+    transform_model(transform, mesh.model);
     shader_uniform_mat4(shader, "u_model", mesh.model);
     shader_uniform_mat4(shader, "u_view", cam.view);
     shader_uniform_mat4(shader, "u_projection", cam.projection);
     shader_uniform_vec4(shader, "u_color", (vec4){0.5, 0.7, 0.25, 1.0});
     mesh_draw(mesh);
+
     /* z-axis */
-    mesh_reset_transform(&mesh);
-    mesh_set_scale(&mesh, (vec3){0.01, 0.01, 200.0});
-    mesh_set_rotation(&mesh, (vec3){0, 0, MNF_RAD(90)});
-    mesh_update_transform(&mesh);
+    transform_reset(&transform);
+    transform_scale(&transform, (vec3){0.01, 0.01, 200.0});
+    transform_rotation(&transform, (vec3){0, 0, MNF_RAD(90)});
+    transform_model(transform, mesh.model);
     shader_uniform_mat4(shader, "u_model", mesh.model);
     shader_uniform_mat4(shader, "u_view", cam.view);
     shader_uniform_mat4(shader, "u_projection", cam.projection);
@@ -227,9 +233,9 @@ int main(int argc, char **argv)
 
     /* setup gl parameters */
     glViewport(0, 0, platform.viewport_width, platform.viewport_height);
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
-    //glFrontFace(GL_CW);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
@@ -323,19 +329,23 @@ int main(int argc, char **argv)
         if (SAGE_DRAW_SKYBOX) skybox_draw(shaders[SHADER_SKYBOX], skybox, cubemap, cam.view, cam.projection);
         scene_world_grid_draw(cam, cube, shaders[SHADER_COLOR], default_texture);
 
+        struct transform transform;
+
         /* drawing light source */
         shader_use(shaders[SHADER_LIGHT]);
         mesh_bind(light_source);
         texture_bind(default_texture, 0);
+        transform_reset(&transform);
 
-        mesh_set_scale(&light_source, (vec3){0.2, 0.2, 0.2});
+        transform_scale(&transform, (vec3){0.2, 0.2, 0.2});
         mnf_vec3_copy((vec3){
             cos(current_seconds) * 6 + 2,
             sin(current_seconds) *8.0,
             sin(current_seconds) * cos(current_seconds) * 16}, light.pos);
-        mesh_set_position(&light_source, light.pos);
-        mesh_update_transform(&light_source);
+        transform_position(&transform, light.pos);
+        transform_model(transform, light_source.model);
 
+        /* IMPORTANT NOTE, ALWAYS SEND TRANSFORMATION MATRICES BEFORE DRAW CALL */
         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_model", light_source.model);
         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_view", cam.view);
         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_projection", cam.projection);
@@ -344,52 +354,49 @@ int main(int argc, char **argv)
         /* draw lit cube */
         shader_use(shaders[SHADER_PHONG]);
         mesh_bind(cube);
-        //mesh_reset_transform(&cube);
         texture_bind(container_diffuse, 0);
         texture_bind(container_specular, 1);
+        transform_reset(&transform);
 
         vec3 obj_pos = {4.0, 0.5, -8};
-        mesh_set_scale(&cube, (vec3){2, 2, 2});
-        //mesh_set_rotation(&cube, (vec3){cos(current_seconds), sin(current_seconds), 0.0});
-        mesh_set_position(&cube, obj_pos);
+        transform_scale(&transform, (vec3){2, 2, 2});
+        transform_position(&transform, obj_pos);
 
         lighting_model_set_params(scene.ambient,
                                   light,
                                   plastic_material,
                                   shaders[SHADER_PHONG]);
 
+        transform_model(transform, cube.model);
         shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
 
-        mesh_update_transform(&cube);
         mesh_draw(cube);
         
-        /* BUG. THIS SHOULD NOT BE AFFECTING THE CUBE AFTER DRAW CALL YET IT DOES */
-        //mesh_reset_transform(&cube);
-        /* IT IS ALSO PREVENTING THE ABOVE TRANSFORMATIONS FROM WORKING */
-
-        /* drawing this one also swaps the above cube's texture with this one */
+        /* draw second object in scene */
+        shader_use(shaders[SHADER_PHONG]);
         mesh_bind(cube);
         texture_bind(base_texture, 0);
         texture_bind(default_texture, 1);
+        transform_reset(&transform);
+
         vec3 obj2_pos = {6.0, -4, -6};
-        mesh_set_scale(&cube, (vec3){10, 2, 10});
-        //mesh_set_rotation(&cube, (vec3){cos(current_seconds), sin(current_seconds), 0.0});
-        mesh_set_position(&cube, obj2_pos);
+        transform_scale(&transform, (vec3){10, 2, 10});
+        transform_position(&transform, obj2_pos);
 
         lighting_model_set_params(scene.ambient,
                                   light,
                                   plastic_material,
                                   shaders[SHADER_PHONG]);
 
+        transform_model(transform, cube.model);
         shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
 
-        mesh_update_transform(&cube);
         mesh_draw(cube);
 
         platform_swap_buffer(&platform);

@@ -27,51 +27,43 @@ void vertex_array_free(struct vertex_array *va);
 struct mesh mesh_create(const float *vertices, size_t n_bytes)
 {
     struct mesh mesh = {0};
-
     mesh.vertex_array = vertex_array_create(vertices, n_bytes);
-
-    mesh_reset_transform(&mesh);
-
-    /* calculating local transform of mesh */
-    mnf_mat4_scale(mesh.model, mesh.transform.scale, mesh.model);
-    mnf_euler_rotate_xyz(mesh.model, mesh.transform.rotate, mesh.model);
-    mnf_mat4_translate(mesh.model, mesh.transform.position, mesh.model);
-
+    mnf_mat4_identity(mesh.model);
     SINFO("Mesh created with %d vertices", mesh.vertex_array.vertex_count);
 
     return mesh;
 }
 
-void mesh_reset_transform(struct mesh *mesh)
+void transform_reset(struct transform *transform)
 {
-    mnf_vec3_copy((vec3) {1, 1, 1}, mesh->transform.scale);
-    mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.rotate);
-    mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.position);
-    mnf_mat4_identity(mesh->model);
-    mesh_update_transform(mesh);
+    mnf_vec3_copy((vec3) {1, 1, 1}, transform->scale);
+    mnf_vec3_copy(MNF_ZERO_VECTOR, transform->rotation);
+    mnf_vec3_copy(MNF_ZERO_VECTOR, transform->position);
 }
 
-void mesh_set_scale(struct mesh *mesh, vec3 scalars)
+void transform_scale(struct transform *transform, vec3 scalars)
 {
-    mnf_vec3_copy(scalars, mesh->transform.scale);
+    mnf_vec3_copy(scalars, transform->scale);
 }
 
-void mesh_set_position(struct mesh *mesh, vec3 position)
+void transform_rotation(struct transform *transform, vec3 euler_angles)
 {
-    mnf_vec3_copy(position, mesh->transform.position);
+    mnf_vec3_copy(euler_angles, transform->rotation);
 }
 
-void mesh_set_rotation(struct mesh *mesh, vec3 euler_angles)
+void transform_position(struct transform *transform, vec3 position)
 {
-    mnf_vec3_copy(euler_angles, mesh->transform.rotate);
+    mnf_vec3_copy(position, transform->position);
 }
 
-void mesh_update_transform(struct mesh *mesh)
+void transform_model(struct transform transform, mat4 out)
 {
-    mnf_mat4_identity(mesh->model);
-    mnf_mat4_scale(mesh->model, mesh->transform.scale, mesh->model);
-    mnf_euler_rotate_xyz(mesh->model, mesh->transform.rotate, mesh->model);
-    mnf_mat4_translate(mesh->model, mesh->transform.position, mesh->model);
+    mnf_mat4_identity(out);
+    mnf_mat4_scale(out, transform.scale, out);
+    mnf_euler_rotate_x(out, transform.rotation[0], out);
+    mnf_euler_rotate_y(out, transform.rotation[1], out);
+    mnf_euler_rotate_z(out, transform.rotation[2], out);
+    mnf_mat4_translate(out, transform.position, out);
 }
 
 void mesh_destroy(struct mesh *mesh)
