@@ -18,7 +18,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 static const float CUBE_VERTEX_ARRAY[] = {
 //  pos_x   pos_y   pos_z   tex_u   tex_v   norm_x  norm_y  norm_z
-
     // Back face (Z-)
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f,  0.0f, -1.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f,  0.0f, -1.0f,

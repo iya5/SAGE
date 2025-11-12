@@ -43,69 +43,112 @@ in vec2 vert_uv;
 in vec3 vert_normal;
 in vec3 vert_frag_pos;
 
-
 struct material {
     sampler2D diffuse;
     sampler2D specular;
     float shininess;
 };
 
-struct light {
-    vec3 pos;
+/* This is almost like the sun */
+struct directional_light {
+    vec3 direction;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 };
+uniform directional_light u_directional_light;
+
+struct point_light {
+    vec3 pos;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+#define N_POINT_LIGHT 1
+uniform point_light u_point_lights[N_POINT_LIGHT];
 
 uniform material u_material;
-uniform light u_light;
-uniform int u_flat_shading;
 uniform vec3 u_view_pos;
 uniform sampler2D u_texture;
 
 out vec4 frag_color;
 
+vec3 point_light_calculate(point_light light, vec3 normal, vec3 view_direction);
+vec3 directional_light_calculate(directional_light light);
+
+vec3 point_light_calculate(point_light light, vec3 normal, vec3 view_direction)
+{
+    vec3 result_color = vec3(0.0, 0.0, 0.0);
+
+    /* determine the type of light */
+    vec3 light_direction = normalize(light.pos - vert_frag_pos);
+
+    /* attenuation */
+    float distance = length(light.pos - vert_frag_pos);
+    float attenuation = 1.0 / (light.constant
+        + light.linear
+        * distance
+        + light.quadratic
+        * (distance * distance));
+
+    vec3 ambient = light.ambient * vec3(texture(u_material.diffuse, vert_uv));
+
+    float diffuse_scalar = max(dot(normal, light_direction), 0.0);
+    vec3 diffuse = light.diffuse * diffuse_scalar * vec3(texture(u_material.diffuse, vert_uv));
+
+    vec3 reflect_direction = reflect(-light_direction, normal);
+    //vec3 reflect_direction = (2 * dot(light_direction, normal) * normal) - light_direction;
+    float specular_scalar = pow(max(dot(reflect_direction, view_direction), 0.0), u_material.shininess);
+    vec3 specular = light.specular * specular_scalar * vec3(texture(u_material.specular, vert_uv));
+
+    /* applying attenuatation */
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+
+    return (ambient + diffuse + specular);
+}
+
+vec3 directional_light_calculate(directional_light light, vec3 normal, vec3 view_direction)
+{
+    /* normalizing just in case */
+    vec3 light_direction = normalize(-light.direction);
+
+    vec3 result_color = vec3(0.0, 0.0, 0.0);
+
+    vec3 ambient = light.ambient * vec3(texture(u_material.diffuse, vert_uv));
+
+    float diffuse_scalar = max(dot(normal, light_direction), 0.0);
+    vec3 diffuse = light.diffuse * diffuse_scalar * vec3(texture(u_material.diffuse, vert_uv));
+
+    vec3 reflect_direction = reflect(-light_direction, normal);
+    float specular_scalar = pow(max(dot(reflect_direction, view_direction), 0.0), u_material.shininess);
+    vec3 specular = light.specular * specular_scalar * vec3(texture(u_material.specular, vert_uv));
+
+    return (ambient + diffuse + specular);
+}
+
 void main()
 {
-    /* determine the type of light */
-    vec3 light_direction;
-    if (u_flat_shading == 1) {
-        light_direction = normalize(u_light.pos - vert_frag_pos);
-    } else {
-        light_direction = normalize(-u_light.pos);
+    vec3 output_color = vec3(0.0, 0.0, 0.0);
+
+    vec3 normal = normalize(vert_normal);
+    vec3 view_direction = normalize(u_view_pos - vert_frag_pos);
+
+    output_color += directional_light_calculate(u_directional_light, normal, view_direction);
+
+    for (int i = 0; i < N_POINT_LIGHT; i++) {
+        output_color += point_light_calculate(u_point_lights[i], normal, view_direction);
     }
 
-    /* Ambient:
-     *      ka*ki
-     */
-    vec3 ambient = u_light.ambient * vec3(texture(u_material.diffuse, vert_uv));
-
-    /* Diffuse:
-     *      kd * (Lm * N) * imd
-     */
-    vec3 normal = normalize(vert_normal);
-
-
-    /* Max at zero since Lm is behind the surface */
-    float diffuse_scalar = max(dot(normal, light_direction), 0.0);
-    vec3 diffuse = u_light.diffuse * diffuse_scalar * vec3(texture(u_material.diffuse, vert_uv));
-
-    /* Specular:
-     *      ks * (Rm + V)^a * ims
-     * Where Rm is calculated as:
-     *      Rm = 2 * (Lm dot N) * N - Lm
-     *
-     * GLSL provides a function for reflection a vector across a normal:
-     * reflect(vec3 v, vec3 normal) and it returns a reflected vector.
-     */
-    vec3 view_direction = normalize(u_view_pos - vert_frag_pos);
-    /* vec3 reflect_direction = reflect(-light_direction, normal); */
-    vec3 reflect_direction = (2 * dot(light_direction, normal) * normal) - light_direction;
-    float specular_scalar = pow(max(dot(reflect_direction, view_direction), 0.0), u_material.shininess);
-    vec3 specular = u_light.specular * specular_scalar * vec3(texture(u_material.specular, vert_uv));
-
-    vec3 result_color = ambient + diffuse + specular;
-    frag_color = texture(u_texture, vert_uv) * vec4(result_color, 1.0);
+    frag_color = vec4(output_color, 1.0);
 }
 
 #endif /* COMPILE_FS */

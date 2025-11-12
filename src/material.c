@@ -13,28 +13,59 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "material.h"
+#include "shader.h"
 
-void lighting_model_set_params(vec3 ambient,
-                               struct light light,
-                               struct material material,
-                               struct shader shader)
+#define MAX_UNIFORM_NAME_LEN 64
+
+void set_light_params(struct shader shader,
+                      struct directional_light directional_light,
+                      struct material material,
+                      struct point_light point_lights[],
+                      size_t n_point_lights)
 {
-    if (light.type == LIGHT_POINT)
-        shader_uniform_1i(shader, "u_flat_shading", 1);
-    else
-        shader_uniform_1i(shader, "u_flat_shading", 0);
+    /* setting directional light */
+    shader_uniform_vec3(shader, "u_directional_light.direction", directional_light.direction);
+    shader_uniform_vec3(shader, "u_directional_light.ambient", directional_light.ambient);
+    shader_uniform_vec3(shader, "u_directional_light.diffuse", directional_light.diffuse);
+    shader_uniform_vec3(shader, "u_directional_light.specular", directional_light.specular);
 
-    /* set light parameters of the light equation */
-    shader_uniform_vec3(shader, "u_light.pos", light.pos);
-    shader_uniform_vec3(shader, "u_light.ambient", ambient);
-    shader_uniform_vec3(shader, "u_light.diffuse", light.diffuse);
-    shader_uniform_vec3(shader, "u_light.specular", light.specular);
+    /* setting point lights */
+    for (size_t i = 0; i < n_point_lights; i++) {
+        struct point_light point_light = point_lights[i];
+        char uniform_name[MAX_UNIFORM_NAME_LEN] = {0};
 
+        /* position */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].pos", i);
+        shader_uniform_vec3(shader, uniform_name, point_light.pos);
+        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
 
-    /* set surface parameters of the light equation */
-    //shader_uniform_vec3(shader, "u_material.ambient", material.ambient);
-    //shader_uniform_vec3(shader, "u_material.diffuse", material.diffuse);
-    //shader_uniform_vec3(shader, "u_material.specular", material.specular);
+        /* diffuse */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].diffuse", i);
+        shader_uniform_vec3(shader, uniform_name, point_light.diffuse);
+        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
+
+        /* specular */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].specular", i);
+        shader_uniform_vec3(shader, uniform_name, point_light.specular);
+        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
+
+        /* constant */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].constant", i);
+        shader_uniform_1f(shader, uniform_name, point_light.constant);
+        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
+        /* linear */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].linear", i);
+        shader_uniform_1f(shader, uniform_name, point_light.linear);
+        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
+
+        /* quadratic */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].quadratic", i);
+        shader_uniform_1f(shader, uniform_name, point_light.quadratic);
+        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
+    }
     shader_uniform_1f(shader, "u_material.shininess", material.shininess);
 }

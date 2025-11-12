@@ -260,23 +260,28 @@ int main(int argc, char **argv)
     shaders[SHADER_PHONG] = shader_create("res/shaders/phong.glsl");
     shaders[SHADER_GOURAD] = shader_create("res/shaders/gourad.glsl");
 
-    struct material plastic_material = {
+    struct material material = {
         .shininess = 100
     };
 
-    struct light light = {
-        .type = LIGHT_POINT,
-        .pos = {1.5, 2.7, -2.3},
-        .diffuse = {1, 1, 1},
-        .specular = {1.0, 1.0, 1.0}
+    struct directional_light environment_light = {
+        .direction = {0.5, -0.3, 0.5},
+        .ambient = {0.3, 0.3, 0.3},
+        .diffuse = {0.83, 0.83, 0.83},
+        .specular = {0.01, 0.01, 0.01}
     };
 
-    struct light light_sun = {
-        .type = LIGHT_DIRECTIONAL,
-        .pos = {25, -30, 25},
-        .diffuse = {1.0, 1.0, 1.0},
-        .specular = {0.8, 0.9, 0.8}
+    struct point_light point_light = {
+        .pos = {1.5, 2.7, -2.3},
+        .diffuse = {1, 1, 1},
+        .specular = {1.0, 1.0, 1.0},
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032,
     };
+
+    scene.point_lights[0] = point_light;
+    scene.n_point_lights++;
 
     struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
                                    sizeof(CUBE_VERTEX_ARRAY));
@@ -313,8 +318,6 @@ int main(int argc, char **argv)
     shader_uniform_1i(shaders[SHADER_PHONG], "u_material.diffuse", 0);
     shader_uniform_1i(shaders[SHADER_PHONG], "u_material.specular", 1);
 
-    mnf_vec3_copy((vec3) {0.4, 0.4, 0.4}, scene.ambient);
-
     /* render loop */
     while (!platform_should_close(&platform)) {
         double current_seconds = platform_get_time();
@@ -339,10 +342,10 @@ int main(int argc, char **argv)
 
         transform_scale(&transform, (vec3){0.2, 0.2, 0.2});
         mnf_vec3_copy((vec3){
-            cos(current_seconds) * 6 + 2,
+            (cos(current_seconds) * 10) + 10,
             sin(current_seconds) *8.0,
-            sin(current_seconds) * cos(current_seconds) * 16}, light.pos);
-        transform_position(&transform, light.pos);
+            sin(current_seconds) * cos(current_seconds) * 16}, scene.point_lights[0].pos);
+        transform_position(&transform, scene.point_lights[0].pos);
         transform_model(transform, light_source.model);
 
         /* IMPORTANT NOTE, ALWAYS SEND TRANSFORMATION MATRICES BEFORE DRAW CALL */
@@ -362,15 +365,17 @@ int main(int argc, char **argv)
         transform_scale(&transform, (vec3){2, 2, 2});
         transform_position(&transform, obj_pos);
 
-        lighting_model_set_params(scene.ambient,
-                                  light,
-                                  plastic_material,
-                                  shaders[SHADER_PHONG]);
+        /* set light parameters of the light equation */
+        set_light_params(shaders[SHADER_PHONG],
+                         environment_light,
+                         material,
+                         scene.point_lights,
+                         scene.n_point_lights);
 
         transform_model(transform, cube.model);
-        shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
+        shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
 
         mesh_draw(cube);
@@ -386,10 +391,12 @@ int main(int argc, char **argv)
         transform_scale(&transform, (vec3){10, 2, 10});
         transform_position(&transform, obj2_pos);
 
-        lighting_model_set_params(scene.ambient,
-                                  light,
-                                  plastic_material,
-                                  shaders[SHADER_PHONG]);
+        /* set light parameters of the light equation */
+        set_light_params(shaders[SHADER_PHONG],
+                         environment_light,
+                         material,
+                         scene.point_lights,
+                         scene.n_point_lights);
 
         transform_model(transform, cube.model);
         shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);

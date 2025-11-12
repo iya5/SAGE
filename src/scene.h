@@ -35,12 +35,14 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "camera.h"
 #include "material.h"
 
-#define SCENE_MAX_LIGHTS 6
+#define SCENE_MAX_POINT_LIGHTS 4
 #define SCENE_MAX_MATERIALS 6
 
 struct scene {
-    struct light lights[SCENE_MAX_LIGHTS];
-    vec3 ambient;
+    struct directional_light environment_light;
+    struct point_light point_lights[SCENE_MAX_POINT_LIGHTS];
+    size_t n_point_lights;
+
     struct material materials[SCENE_MAX_MATERIALS];
     struct camera *cam; 
 };

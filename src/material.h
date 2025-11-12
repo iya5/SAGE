@@ -78,25 +78,36 @@ struct material {
     float shininess;
 };
 
-enum light_type {
-    LIGHT_DIRECTIONAL,
-    LIGHT_POINT
-};
 
-struct light {
-    enum light_type type;
-    vec3 pos;
+/* Although conceptually the same as a point light, it differs by not having an
+ * "actual position", and only having a direction, thus every object in a scene
+ * is shaded by the same direction of this light. It can be thought of as a point
+ * light whose position is infinitely far away and whose rays illuminate parallel,
+ * in the same direction everywhere
+ */
+struct directional_light {
+    vec3 direction;
+    vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 };
 
-/*
- * Sets coefficient parameters for a given lighting model defined in the shader,
- * for example, a phong shader.
- */
-void lighting_model_set_params(vec3 ambient,
-                               struct light light,
-                               struct material material,
-                               struct shader shader);
+struct point_light {
+    vec3 pos;
+    vec3 diffuse;
+    vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+
+void set_light_params(struct shader shader,
+                      struct directional_light directional_light,
+                      struct material material,
+                      struct point_light point_lights[],
+                      size_t n_point_lights);
+
 
 #endif /* SAGE_MATERIAL_H */
