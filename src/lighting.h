@@ -13,12 +13,13 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_MATERIAL_H
-#define SAGE_MATERIAL_H
+#ifndef SAGE_LIGHTING_H
+#define SAGE_LIGHTING_H
 
 #include "mnf/mnf_types.h"
 #include "shader.h"
 #include "texture.h"
+#include "darray.h"
 
 /*
  * Materials are just properties of objects and how they react to light. These
@@ -93,6 +94,7 @@ struct directional_light {
 };
 
 struct point_light {
+    vec3 color;
     vec3 pos;
     vec3 diffuse;
     vec3 specular;
@@ -102,12 +104,10 @@ struct point_light {
     float quadratic;
 };
 
-
 void set_light_params(struct shader shader,
                       struct directional_light directional_light,
                       struct material material,
-                      struct point_light point_lights[],
-                      size_t n_point_lights);
+                      darray *point_lights);
 
 
-#endif /* SAGE_MATERIAL_H */
+#endif /* SAGE_LIGHTING_H */

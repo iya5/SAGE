@@ -184,15 +184,11 @@ void cubemap_texture_bind(struct texture t)
     glBindTexture(GL_TEXTURE_CUBE_MAP, t.id);
 }
 
-/* n should be defaulted to 0 if only using 1 uniform texture */
-void texture_active(uint32_t n)
-{
-    SASSERT(n < 16);
-    glActiveTexture(GL_TEXTURE0 + n);
-}
 
+/* n should be defaulted to 0 if only using 1 uniform texture */
 void texture_bind(struct texture t, size_t n_texture_unit)
 {
+    SASSERT(n_texture_unit < 16);
     glActiveTexture(GL_TEXTURE0 + n_texture_unit);
     glBindTexture(GL_TEXTURE_2D, t.id);
 }

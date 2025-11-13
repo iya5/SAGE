@@ -21,17 +21,20 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "mnf/mnf_types.h"
 #include "texture.h"
+#include "darray.h"
 
 struct vertex {
-    vec3 position;
+    vec3 pos;
     vec3 normal;
-    vec3 uv;
+    vec2 uv;
 };
 
-struct vertex_array {
+struct mesh_gpu {
     uint32_t vao;
     uint32_t vbo;
+    uint32_t ibo;
     uint32_t vertex_count;
+    uint32_t index_count;
 };
 
 struct transform {
@@ -41,11 +44,16 @@ struct transform {
 };
 
 struct mesh {
-    struct vertex_array vertex_array;
+    struct mesh_gpu buffer;
+    darray *vertices;
+    darray *indices;
+    darray *textures;
     mat4 model;
 };
 
-struct mesh mesh_create(const float *vertices, size_t n_bytes);
+struct mesh mesh_geometry_create_2d_triangle(void);
+struct mesh mesh_geometry_create_quad(void);
+struct mesh mesh_geometry_create_cube(void);
 void mesh_destroy(struct mesh *mesh);
 void mesh_bind(struct mesh mesh);
 void mesh_draw(struct mesh mesh);

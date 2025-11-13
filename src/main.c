@@ -25,15 +25,12 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "camera.h"
 #include "shader.h"
-#include "geometry.h"
 #include "texture.h"
 #include "mesh.h"
 #include "scene.h"
-#include "material.h"
 #include "logger.h"
 #include "platform.h"
 #include "darray.h"
-#include "assert.h"
 
 struct scene scene = {0};
 struct camera cam = {0};
@@ -47,7 +44,7 @@ void skybox_draw(struct shader skybox_shader,
                  mat4 projection)
 {
     /* disable culling because we're inside the box */
-    glDisable(GL_CULL_FACE);
+    //glDisable(GL_CULL_FACE);
     /* draw skybox */
     glDepthMask(GL_FALSE);
     shader_use(skybox_shader);
@@ -67,7 +64,7 @@ void skybox_draw(struct shader skybox_shader,
     shader_uniform_mat4(skybox_shader, "u_projection", projection);
     mesh_draw(skybox);
     glDepthMask(GL_TRUE);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
 }
 
 void scene_world_grid_draw(struct camera cam,
@@ -233,8 +230,8 @@ int main(int argc, char **argv)
 
     /* setup gl parameters */
     glViewport(0, 0, platform.viewport_width, platform.viewport_height);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -258,7 +255,6 @@ int main(int argc, char **argv)
     shaders[SHADER_SKYBOX] = shader_create("res/shaders/skybox.glsl");
     shaders[SHADER_LIGHT] = shader_create("res/shaders/light.glsl");
     shaders[SHADER_PHONG] = shader_create("res/shaders/phong.glsl");
-    shaders[SHADER_GOURAD] = shader_create("res/shaders/gourad.glsl");
 
     struct material material = {
         .shininess = 100
@@ -267,35 +263,44 @@ int main(int argc, char **argv)
     struct directional_light environment_light = {
         .direction = {0.5, -0.3, 0.5},
         .ambient = {0.3, 0.3, 0.3},
-        .diffuse = {0.83, 0.83, 0.83},
-        .specular = {0.01, 0.01, 0.01}
+        .diffuse = {0.0, 0.0, 0.0},
+        .specular = {0.0, 0.0, 0.0}
     };
 
     struct point_light point_light = {
+        .color = {0.0, 1.0, 0.0},
         .pos = {1.5, 2.7, -2.3},
-        .diffuse = {1, 1, 1},
-        .specular = {1.0, 1.0, 1.0},
+        .diffuse = {0, 1, 0},
+        .specular = {0.0, 1.0, 0.0},
         .constant = 1.0f,
         .linear = 0.09f,
         .quadratic = 0.032,
     };
 
-    scene.point_lights[0] = point_light;
-    scene.n_point_lights++;
 
-    struct mesh cube = mesh_create(CUBE_VERTEX_ARRAY,
-                                   sizeof(CUBE_VERTEX_ARRAY));
-    struct mesh light_source = mesh_create(CUBE_VERTEX_ARRAY,
-                                   sizeof(CUBE_VERTEX_ARRAY));
-    struct mesh skybox = mesh_create(CUBE_VERTEX_ARRAY,
-                                     sizeof(CUBE_VERTEX_ARRAY));
+    struct point_light point_light2 = {
+        .color = {1.0, 0.0, 0.0},
+        .pos = {1.5, 2.7, -2.3},
+        .diffuse = {1, 0, 0},
+        .specular = {1.0, 0.0, 0.0},
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032,
+    };
+
+    scene.point_lights = darray_alloc(sizeof(struct point_light), 8);
+    darray_push(scene.point_lights, &point_light);
+    darray_push(scene.point_lights, &point_light2);
+
+    struct mesh triangle2d = mesh_geometry_create_2d_triangle();
+    struct mesh quad = mesh_geometry_create_quad();
+    struct mesh cube = mesh_geometry_create_cube();
 
     struct texture base_texture = texture_create("res/textures/base.png", TEXTURE_DIFFUSE);
     struct texture container_diffuse = texture_create("res/textures/container-diffuse.png", TEXTURE_DIFFUSE);
     struct texture container_specular = texture_create("res/textures/container-specular.png", TEXTURE_SPECULAR);
     struct texture uv_grid_texture = texture_create("res/textures/uv-grid.jpg", TEXTURE_DIFFUSE);
     struct texture default_texture = texture_create_default();
-
 
     char *cubemap_faces[6] = {
         "res/textures/skybox/right.jpg",
@@ -312,12 +317,6 @@ int main(int argc, char **argv)
 
     double previous_seconds = platform_get_time();
 
-    /* Configure shaders using uniform samplers to tell OpenGL which texture
-     * unit will take which slot. This only needs to be done once. */
-    shader_use(shaders[SHADER_PHONG]);
-    shader_uniform_1i(shaders[SHADER_PHONG], "u_material.diffuse", 0);
-    shader_uniform_1i(shaders[SHADER_PHONG], "u_material.specular", 1);
-
     /* render loop */
     while (!platform_should_close(&platform)) {
         double current_seconds = platform_get_time();
@@ -329,31 +328,60 @@ int main(int argc, char **argv)
 
         scene_render(&scene);
 
-        if (SAGE_DRAW_SKYBOX) skybox_draw(shaders[SHADER_SKYBOX], skybox, cubemap, cam.view, cam.projection);
+        if (SAGE_DRAW_SKYBOX) skybox_draw(shaders[SHADER_SKYBOX], cube, cubemap, cam.view, cam.projection);
         scene_world_grid_draw(cam, cube, shaders[SHADER_COLOR], default_texture);
+        struct transform transform = {0};
+        transform_reset(&transform);
 
-        struct transform transform;
-
-        /* drawing light source */
+        /* draw light */
         shader_use(shaders[SHADER_LIGHT]);
-        mesh_bind(light_source);
+        mesh_bind(cube);
         texture_bind(default_texture, 0);
         transform_reset(&transform);
 
         transform_scale(&transform, (vec3){0.2, 0.2, 0.2});
-        mnf_vec3_copy((vec3){
-            (cos(current_seconds) * 10) + 10,
-            sin(current_seconds) *8.0,
-            sin(current_seconds) * cos(current_seconds) * 16}, scene.point_lights[0].pos);
-        transform_position(&transform, scene.point_lights[0].pos);
-        transform_model(transform, light_source.model);
+        struct point_light *light = darray_at(scene.point_lights, 0);
+        mnf_vec3_copy(
+            (vec3){
+                (cos(current_seconds) * 10) + 10,
+                4,
+                14, 
+            }, light->pos
+        );
+        transform_position(&transform, light->pos);
+        transform_model(transform, cube.model);
 
         /* IMPORTANT NOTE, ALWAYS SEND TRANSFORMATION MATRICES BEFORE DRAW CALL */
-        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_model", light_source.model);
+        shader_uniform_vec3(shaders[SHADER_LIGHT], "u_color", light->color);
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_model", cube.model);
         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_view", cam.view);
         shader_uniform_mat4(shaders[SHADER_LIGHT], "u_projection", cam.projection);
-        mesh_draw(light_source);
+        mesh_draw(cube);
 
+        /* draw second light */
+        shader_use(shaders[SHADER_LIGHT]);
+        mesh_bind(cube);
+        texture_bind(default_texture, 0);
+        transform_reset(&transform);
+
+        transform_scale(&transform, (vec3){0.2, 0.2, 0.2});
+        struct point_light *light_2 = darray_at(scene.point_lights, 1);
+        mnf_vec3_copy(
+            (vec3){
+                (sin(current_seconds) * 10) + 10,
+                4,
+                7, 
+            }, light_2->pos
+        );
+        transform_position(&transform, light_2->pos);
+        transform_model(transform, cube.model);
+
+        /* IMPORTANT NOTE, ALWAYS SEND TRANSFORMATION MATRICES BEFORE DRAW CALL */
+        shader_uniform_vec3(shaders[SHADER_LIGHT], "u_color", light_2->color);
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_model", cube.model);
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_view", cam.view);
+        shader_uniform_mat4(shaders[SHADER_LIGHT], "u_projection", cam.projection);
+        mesh_draw(cube);
         /* draw lit cube */
         shader_use(shaders[SHADER_PHONG]);
         mesh_bind(cube);
@@ -361,7 +389,7 @@ int main(int argc, char **argv)
         texture_bind(container_specular, 1);
         transform_reset(&transform);
 
-        vec3 obj_pos = {4.0, 0.5, -8};
+        vec3 obj_pos = {4.0, 1, 10};
         transform_scale(&transform, (vec3){2, 2, 2});
         transform_position(&transform, obj_pos);
 
@@ -369,13 +397,12 @@ int main(int argc, char **argv)
         set_light_params(shaders[SHADER_PHONG],
                          environment_light,
                          material,
-                         scene.point_lights,
-                         scene.n_point_lights);
+                         scene.point_lights);
 
         transform_model(transform, cube.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
-        shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
+        //shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
 
         mesh_draw(cube);
@@ -387,19 +414,43 @@ int main(int argc, char **argv)
         texture_bind(default_texture, 1);
         transform_reset(&transform);
 
-        vec3 obj2_pos = {6.0, -4, -6};
-        transform_scale(&transform, (vec3){10, 2, 10});
+        vec3 obj2_pos = {10, -0.5, 10};
+        transform_scale(&transform, (vec3){20, 1, 20});
         transform_position(&transform, obj2_pos);
 
         /* set light parameters of the light equation */
         set_light_params(shaders[SHADER_PHONG],
                          environment_light,
                          material,
-                         scene.point_lights,
-                         scene.n_point_lights);
+                         scene.point_lights);
 
         transform_model(transform, cube.model);
-        shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
+        //shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
+
+        mesh_draw(cube);
+
+        /* draw third object */
+        shader_use(shaders[SHADER_PHONG]);
+        mesh_bind(cube);
+        texture_bind(uv_grid_texture, 0);
+        texture_bind(default_texture, 1);
+        transform_reset(&transform);
+
+        vec3 obj3_pos = {13, 1.5, 8};
+        transform_scale(&transform, (vec3){4, 4, 4});
+        transform_position(&transform, obj3_pos);
+
+        /* set light parameters of the light equation */
+        set_light_params(shaders[SHADER_PHONG],
+                         environment_light,
+                         material,
+                         scene.point_lights);
+
+        transform_model(transform, cube.model);
+        //shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
@@ -408,12 +459,9 @@ int main(int argc, char **argv)
 
         platform_swap_buffer(&platform);
     }
+    scene_destroy(&scene);
 
     platform_window_shutdown(&platform);
-    /* TODO: clean up resources */
-    mesh_destroy(&cube);
-    mesh_destroy(&skybox);
-    mesh_destroy(&light_source);
 
     return 0;
 }

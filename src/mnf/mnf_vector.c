@@ -23,6 +23,13 @@ void mnf_vec3_copy(vec3 src, vec3 dest)
     dest[Z] = src[Z];
 }
 
+
+void mnf_vec2_copy(vec2 src, vec2 dest)
+{
+    dest[X] = src[X];
+    dest[Y] = src[Y];
+}
+
 void mnf_vec3_add(vec3 left, vec3 right, vec3 out)
 {
     out[X] = left[X] + right[X];

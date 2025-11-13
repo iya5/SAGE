@@ -16,14 +16,21 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <glad/gl.h>
 
 #include "scene.h"
+#include "darray.h"
 
 void scene_render(struct scene *scene)
 {
     /* pre-rendering (clearing buffers) */
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     camera_update(scene->cam);
 
     /* swap back buffer with front buffer */
+}
+
+void scene_destroy(struct scene *scene)
+{
+    darray_free(scene->point_lights);
 }
