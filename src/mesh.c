@@ -24,6 +24,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "mnf/mnf_types.h"
 #include "mnf/mnf_vector.h"
 #include "logger.h"
+#include "texture.h"
 #include "mesh.h"
 
 #define N_VERTICES_2D_TRIANGLE 3
@@ -37,19 +38,18 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices);
 void mesh_gpu_free(struct mesh_gpu *buffer);
 
-
-/*
-struct mesh mesh_create(const float *vertices, size_t n_bytes)
+struct mesh mesh_create_from_vertices(darray *vertices)
 {
     struct mesh mesh = {0};
-    mesh.buffer = mesh_gpu_create(vertices, n_bytes);
+    mesh.buffer = mesh_gpu_create(vertices, NULL);
+
+    mesh.vertices = vertices;
+    mesh.indices = NULL;
+
     mnf_mat4_identity(mesh.model);
-    SINFO("Mesh created with %d vertices", mesh.buffer.vertex_count);
 
     return mesh;
 }
-*/
-
 struct mesh mesh_geometry_create_2d_triangle(void)
 {
     struct mesh mesh = {0};
@@ -297,6 +297,11 @@ err:
     exit(1);
 }
 
+void mesh_add_texture(struct mesh *mesh, struct texture texture)
+{
+    darray_push(mesh->textures, &texture);
+}
+
 void transform_reset(struct transform *transform)
 {
     mnf_vec3_copy((vec3) {1, 1, 1}, transform->scale);
@@ -349,6 +354,23 @@ void mesh_draw(struct mesh mesh)
     int32_t bounded_vao = 0;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bounded_vao);
     SASSERT_MSG((int32_t) mesh.buffer.vao == bounded_vao, "Attempted to draw a mesh without binding it first");
+
+    /*
+    uint32_t num_diffuse = 1;
+    uint32_t num_specular = 1;
+
+    for (size_t i = 0; i < mesh.textures->len; i++) {
+        struct texture *texture = darray_at(mesh.textures, i);
+
+        if (texture->type == TEXTURE_DIFFUSE) {
+
+        } else if (texture->type == TEXTURE_SPECULAR) {
+
+        }
+
+        texture_bind(*texture, i);
+    }
+    */
 
     if (mesh.indices) {
         SDEBUG("Drawing with indices");

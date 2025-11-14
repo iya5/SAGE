@@ -54,6 +54,8 @@ struct mesh {
 struct mesh mesh_geometry_create_2d_triangle(void);
 struct mesh mesh_geometry_create_quad(void);
 struct mesh mesh_geometry_create_cube(void);
+struct mesh mesh_create_from_vertices(darray *vertices);
+void mesh_add_texture(struct mesh *mesh, struct texture texture);
 void mesh_destroy(struct mesh *mesh);
 void mesh_bind(struct mesh mesh);
 void mesh_draw(struct mesh mesh);

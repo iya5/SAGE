@@ -24,6 +24,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <glad/gl.h>
 
 #include "camera.h"
+#include "obj_loader.h"
 #include "shader.h"
 #include "texture.h"
 #include "mesh.h"
@@ -260,6 +261,10 @@ int main(int argc, char **argv)
         .shininess = 100
     };
 
+    struct material glass = {
+        .shininess = 1024
+    };
+
     struct directional_light environment_light = {
         .direction = {0.5, -0.3, 0.5},
         .ambient = {0.3, 0.3, 0.3},
@@ -296,6 +301,17 @@ int main(int argc, char **argv)
     struct mesh quad = mesh_geometry_create_quad();
     struct mesh cube = mesh_geometry_create_cube();
 
+    struct mesh crab = mesh_create_from_vertices(
+        obj_load_from_file("res/crab.obj")
+    );
+    struct texture crab_texture = texture_create("res/crab.png", TEXTURE_DIFFUSE);
+
+
+    struct mesh sphere = mesh_create_from_vertices(
+        obj_load_from_file("res/sphere.obj")
+    );
+
+
     struct texture base_texture = texture_create("res/textures/base.png", TEXTURE_DIFFUSE);
     struct texture container_diffuse = texture_create("res/textures/container-diffuse.png", TEXTURE_DIFFUSE);
     struct texture container_specular = texture_create("res/textures/container-specular.png", TEXTURE_SPECULAR);
@@ -316,6 +332,7 @@ int main(int argc, char **argv)
     scene.cam = &cam;
 
     double previous_seconds = platform_get_time();
+
 
     /* render loop */
     while (!platform_should_close(&platform)) {
@@ -434,13 +451,13 @@ int main(int argc, char **argv)
 
         /* draw third object */
         shader_use(shaders[SHADER_PHONG]);
-        mesh_bind(cube);
-        texture_bind(uv_grid_texture, 0);
-        texture_bind(default_texture, 1);
+        mesh_bind(crab);
+        texture_bind(crab_texture, 0);
+        texture_bind(crab_texture, 1);
         transform_reset(&transform);
 
-        vec3 obj3_pos = {13, 1.5, 8};
-        transform_scale(&transform, (vec3){4, 4, 4});
+        vec3 obj3_pos = {13, 3.4, 8};
+        transform_scale(&transform, (vec3){2, 2, 2});
         transform_position(&transform, obj3_pos);
 
         /* set light parameters of the light equation */
@@ -449,13 +466,39 @@ int main(int argc, char **argv)
                          material,
                          scene.point_lights);
 
-        transform_model(transform, cube.model);
+        transform_model(transform, crab.model);
         //shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
-        shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", cube.model);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", crab.model);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
         shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
 
-        mesh_draw(cube);
+        mesh_draw(crab);
+
+        /* draw fourth object */
+        shader_use(shaders[SHADER_PHONG]);
+        mesh_bind(sphere);
+        texture_bind(uv_grid_texture, 0);
+        texture_bind(uv_grid_texture, 1);
+        transform_reset(&transform);
+
+        vec3 obj4_pos = {8, 2, 17};
+        transform_scale(&transform, (vec3){1, 1, 1});
+        transform_rotation(&transform, (vec3){MNF_RAD(20), MNF_RAD(34), MNF_RAD(90)});
+        transform_position(&transform, obj4_pos);
+
+        /* set light parameters of the light equation */
+        set_light_params(shaders[SHADER_PHONG],
+                         environment_light,
+                         glass,
+                         scene.point_lights);
+
+        transform_model(transform, sphere.model);
+        //shader_uniform_vec3(shaders[SHADER_PHONG], "u_view_pos", cam.pos);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_model", sphere.model);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_view", cam.view);
+        shader_uniform_mat4(shaders[SHADER_PHONG], "u_projection", cam.projection);
+
+        mesh_draw(sphere);
 
         platform_swap_buffer(&platform);
     }

@@ -73,7 +73,6 @@ uniform int u_num_point_lights;
 uniform point_light u_point_lights[MAX_SCENE_POINT_LIGHT];
 
 uniform vec3 u_view_pos;
-uniform sampler2D u_texture;
 
 out vec4 out_color;
 
