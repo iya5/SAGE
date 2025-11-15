@@ -29,6 +29,7 @@ enum shader_type {
     SHADER_LIGHT,
     SHADER_PHONG,
     SHADER_GOURAD,
+    SHADER_COUNT /* sentinel value */
 };
 
 /* Represents an OpenGL shader program containing:

@@ -69,15 +69,15 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  * directly as a regular "image" texture would.
  */
 
-struct material {
+//struct material { 
     /* Ambient is not included because this is generally the same as diffuse.
      * The reason for textures instead of coefficients is because we can make
      * use of the fragment's colors directly to the lighting model.
      */
-    struct texture diffuse;
-    struct texture specular;
-    float shininess;
-};
+    //struct texture diffuse;
+    //struct texture specular;
+    //float shininess;
+//};
 
 
 /* Although conceptually the same as a point light, it differs by not having an
@@ -103,11 +103,11 @@ struct point_light {
     float linear;
     float quadratic;
 };
-
+/*
 void set_light_params(struct shader shader,
                       struct directional_light directional_light,
                       struct material material,
                       darray *point_lights);
-
+*/
 
 #endif /* SAGE_LIGHTING_H */

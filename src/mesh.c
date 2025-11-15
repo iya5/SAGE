@@ -1,4 +1,4 @@
-/* Mesh source code for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -19,12 +19,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "assert.h"
 #include "darray.h"
-#include "mnf/mnf_matrix.h"
-#include "mnf/mnf_transform.h"
 #include "mnf/mnf_types.h"
 #include "mnf/mnf_vector.h"
 #include "logger.h"
-#include "texture.h"
 #include "mesh.h"
 
 #define N_VERTICES_2D_TRIANGLE 3
@@ -35,241 +32,77 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #define N_VERTICES_CUBE 36
 
-struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices);
-void mesh_gpu_free(struct mesh_gpu *buffer);
+static struct mesh_gpu mesh_gpu_create(const darray *vertices, 
+                                       const darray *indices);
+static void mesh_gpu_free(struct mesh_gpu *buffer);
 
 struct mesh mesh_create_from_vertices(darray *vertices)
 {
-    struct mesh mesh = {0};
+    struct mesh mesh;
     mesh.buffer = mesh_gpu_create(vertices, NULL);
-
     mesh.vertices = vertices;
     mesh.indices = NULL;
 
-    mnf_mat4_identity(mesh.model);
+    SINFO("Created a mesh with %d vertices", mesh.vertices->len);
 
     return mesh;
-}
-struct mesh mesh_geometry_create_2d_triangle(void)
-{
-    struct mesh mesh = {0};
-
-    darray *vertices = darray_alloc(sizeof(struct vertex), 3);
-    darray *indices = darray_alloc(sizeof(uint32_t), 3);
-
-    if (vertices == NULL) goto err;
-    if (indices == NULL) goto err;
-
-    vec3 pos[] = {
-        {-0.5,  -0.5,   0.0},
-        {0.5,   -0.5,   0.0},
-        {0.0,   0.5,    0.0},
-    };
-
-    uint32_t index[] = {0, 1, 2};
-
-    vec3 normal[] = {
-        {0.0,   0.0,    1.0},
-        {0.0,   0.0,    1.0},
-        {0.0,   0.0,    1.0}
-    };
-
-    vec2 uv[] = {
-        {0.0,   0.0},
-        {1.0,   0.0},
-        {0.5,   1.0}
-    };
-
-    for (int i = 0; i < N_VERTICES_2D_TRIANGLE; i++) {
-        struct vertex vertex = {0};
-        mnf_vec3_copy(pos[i], vertex.pos);
-        mnf_vec3_copy(normal[i], vertex.normal);
-        mnf_vec2_copy(uv[i], vertex.uv);
-        darray_push(vertices, &vertex);
-    }
-
-    for (int i = 0; i < N_INDICES_2D_TRIANGLE; i++)
-        darray_push(indices, &index[i]);
-
-    mesh.buffer = mesh_gpu_create(vertices, indices);
-
-    mesh.vertices = vertices;
-    mesh.indices = indices;
-
-    mnf_mat4_identity(mesh.model);
-
-    return mesh;
-
-err:
-    if (vertices) darray_free(vertices);
-    if (indices) darray_free(indices);
-    SFATAL("Failed to alloc memory for mesh darray");
-    exit(1);
-}
-
-struct mesh mesh_geometry_create_quad(void)
-{
-    struct mesh mesh = {0};
-
-    darray *vertices = darray_alloc(sizeof(struct vertex), 3);
-    darray *indices = darray_alloc(sizeof(uint32_t), 3);
-
-    if (vertices == NULL) goto err;
-    if (indices == NULL) goto err;
-
-    vec3 pos[] = {
-        {-0.5,  -0.5,   0.0}, // bottom left
-        {0.5,   -0.5,   0.0}, // bottom right
-        {0.5,   0.5,    0.0}, // top right
-        {-0.5,  0.5,    0.0}, // top left
-    };
-
-    uint32_t index[] = {
-        0, 1, 3,
-        1, 2, 3
-    };
-
-    vec3 normal[] = {
-        {0.0,   0.0,    1.0},
-        {0.0,   0.0,    1.0},
-        {0.0,   0.0,    1.0},
-        {0.0,   0.0,    1.0}
-    };
-
-    vec2 uv[] = {
-        {0.0,   0.0},
-        {1.0,   0.0},
-        {1.0,   1.0},
-        {0.0,   1.0}
-    };
-
-    for (int i = 0; i < N_VERTICES_QUAD; i++) {
-        struct vertex vertex = {0};
-        mnf_vec3_copy(pos[i], vertex.pos);
-        mnf_vec3_copy(normal[i], vertex.normal);
-        mnf_vec2_copy(uv[i], vertex.uv);
-        darray_push(vertices, &vertex);
-    }
-
-    for (int i = 0; i < N_INDICES_QUAD; i++)
-        darray_push(indices, &index[i]);
-
-    mesh.buffer = mesh_gpu_create(vertices, indices);
-
-    mesh.vertices = vertices;
-    mesh.indices = indices;
-
-    mnf_mat4_identity(mesh.model);
-
-    return mesh;
-
-err:
-    if (vertices) darray_free(vertices);
-    if (indices) darray_free(indices);
-    SFATAL("Failed to alloc memory for mesh darray");
-    exit(1);
 }
 
 struct mesh mesh_geometry_create_cube(void)
 {
-    struct mesh mesh = {0};
+    struct mesh mesh;
 
     darray *vertices = darray_alloc(sizeof(struct vertex), 3);
 
     if (vertices == NULL) goto err;
 
     vec3 pos[] = {
-        {-0.5f, -0.5f, -0.5f},
-        { 0.5f, -0.5f, -0.5f},
-        { 0.5f,  0.5f, -0.5f},
-        { 0.5f,  0.5f, -0.5f},
-        {-0.5f,  0.5f, -0.5f},
-        {-0.5f, -0.5f, -0.5f},
-
-        {-0.5f, -0.5f,  0.5f},
-        { 0.5f, -0.5f,  0.5f},
-        { 0.5f,  0.5f,  0.5f},
-        { 0.5f,  0.5f,  0.5f},
-        {-0.5f,  0.5f,  0.5f},
-        {-0.5f, -0.5f,  0.5f},
-
-        {-0.5f,  0.5f,  0.5f},
-        {-0.5f,  0.5f, -0.5f},
-        {-0.5f, -0.5f, -0.5f},
-        {-0.5f, -0.5f, -0.5f},
-        {-0.5f, -0.5f,  0.5f},
-        {-0.5f,  0.5f,  0.5f},
-
-        { 0.5f,  0.5f,  0.5f},
-        { 0.5f,  0.5f, -0.5f},
-        { 0.5f, -0.5f, -0.5f},
-        { 0.5f, -0.5f, -0.5f},
-        { 0.5f, -0.5f,  0.5f},
-        { 0.5f,  0.5f,  0.5f},
-
-        {-0.5f, -0.5f, -0.5f},
-        { 0.5f, -0.5f, -0.5f},
-        { 0.5f, -0.5f,  0.5f},
-        { 0.5f, -0.5f,  0.5f},
-        {-0.5f, -0.5f,  0.5f},
-        {-0.5f, -0.5f, -0.5f},
-
-        {-0.5f,  0.5f, -0.5f},
-        { 0.5f,  0.5f, -0.5f},
-        { 0.5f,  0.5f,  0.5f},
-        { 0.5f,  0.5f,  0.5f},
-        {-0.5f,  0.5f,  0.5f},
-        {-0.5f,  0.5f, -0.5f}
+        {-0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f},
+        { 0.5f,  0.5f, -0.5f}, { 0.5f,  0.5f, -0.5f},
+        {-0.5f,  0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f,  0.5f}, { 0.5f, -0.5f,  0.5f},
+        { 0.5f,  0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}, {-0.5f, -0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}, {-0.5f,  0.5f, -0.5f},
+        {-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f,  0.5f}, {-0.5f,  0.5f,  0.5f},
+        { 0.5f,  0.5f,  0.5f}, { 0.5f,  0.5f, -0.5f},
+        { 0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f},
+        { 0.5f, -0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f},
+        {-0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f},
+        { 0.5f, -0.5f,  0.5f}, { 0.5f, -0.5f,  0.5f},
+        {-0.5f, -0.5f,  0.5f}, {-0.5f, -0.5f, -0.5f},
+        {-0.5f,  0.5f, -0.5f}, { 0.5f,  0.5f, -0.5f},
+        { 0.5f,  0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}, {-0.5f,  0.5f, -0.5f}
     };
 
     vec3 normal[] = {
-        // Back face (-Z)
         { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f},
         { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f},
-
-        // Front face (+Z)
         { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f},
         { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f},
-
-        // Left face (-X)
         {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f},
         {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f},
-
-        // Right face (+X)
         { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f},
         { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f},
-
-        // Bottom face (-Y)
         { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f},
         { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f},
-
-        // Top face (+Y)
         { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f},
         { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f}
     };
 
     vec2 uv[] = {
-        // Back face
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
-
-        // Front face
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
-
-        // Left face
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
-
-        // Right face
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
-
-        // Bottom face
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
-
-        // Top face
         {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}
     };
@@ -283,11 +116,8 @@ struct mesh mesh_geometry_create_cube(void)
     }
 
     mesh.buffer = mesh_gpu_create(vertices, NULL);
-
     mesh.vertices = vertices;
     mesh.indices = NULL;
-
-    mnf_mat4_identity(mesh.model);
 
     return mesh;
 
@@ -297,48 +127,19 @@ err:
     exit(1);
 }
 
-void mesh_add_texture(struct mesh *mesh, struct texture texture)
-{
-    darray_push(mesh->textures, &texture);
-}
-
-void transform_reset(struct transform *transform)
-{
-    mnf_vec3_copy((vec3) {1, 1, 1}, transform->scale);
-    mnf_vec3_copy(MNF_ZERO_VECTOR, transform->rotation);
-    mnf_vec3_copy(MNF_ZERO_VECTOR, transform->position);
-}
-
-void transform_scale(struct transform *transform, vec3 scalars)
-{
-    mnf_vec3_copy(scalars, transform->scale);
-}
-
-void transform_rotation(struct transform *transform, vec3 euler_angles)
-{
-    mnf_vec3_copy(euler_angles, transform->rotation);
-}
-
-void transform_position(struct transform *transform, vec3 position)
-{
-    mnf_vec3_copy(position, transform->position);
-}
-
-void transform_model(struct transform transform, mat4 out)
-{
-    mnf_mat4_identity(out);
-    mnf_mat4_scale(out, transform.scale, out);
-    mnf_euler_rotate_x(out, transform.rotation[0], out);
-    mnf_euler_rotate_y(out, transform.rotation[1], out);
-    mnf_euler_rotate_z(out, transform.rotation[2], out);
-    mnf_mat4_translate(out, transform.position, out);
-}
-
 void mesh_destroy(struct mesh *mesh)
 {
     mesh_gpu_free(&(mesh->buffer));
-    darray_free(mesh->vertices);
-    darray_free(mesh->indices);
+
+    if (mesh->vertices) {
+        darray_free(mesh->vertices);
+        mesh->vertices = NULL;
+    }
+
+    if (mesh->indices) {
+        darray_free(mesh->indices);
+        mesh->indices = NULL;
+    }
 }
 
 void mesh_bind(struct mesh mesh)
@@ -355,25 +156,7 @@ void mesh_draw(struct mesh mesh)
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bounded_vao);
     SASSERT_MSG((int32_t) mesh.buffer.vao == bounded_vao, "Attempted to draw a mesh without binding it first");
 
-    /*
-    uint32_t num_diffuse = 1;
-    uint32_t num_specular = 1;
-
-    for (size_t i = 0; i < mesh.textures->len; i++) {
-        struct texture *texture = darray_at(mesh.textures, i);
-
-        if (texture->type == TEXTURE_DIFFUSE) {
-
-        } else if (texture->type == TEXTURE_SPECULAR) {
-
-        }
-
-        texture_bind(*texture, i);
-    }
-    */
-
     if (mesh.indices) {
-        SDEBUG("Drawing with indices");
         glDrawElements(GL_TRIANGLES, 
                        mesh.buffer.index_count,
                        GL_UNSIGNED_INT,
@@ -383,9 +166,9 @@ void mesh_draw(struct mesh mesh)
     }
 }
 
-struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices)
+static struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices)
 {
-    struct mesh_gpu buffer = {0};
+    struct mesh_gpu buffer;
     
     uint32_t vao;
     uint32_t vbo;
@@ -477,7 +260,7 @@ struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices)
     return buffer;
 }
 
-void mesh_gpu_free(struct mesh_gpu *buffer)
+static void mesh_gpu_free(struct mesh_gpu *buffer)
 {
     glDeleteVertexArrays(1, &(buffer->vao));
     glDeleteBuffers(1, &(buffer->vbo));

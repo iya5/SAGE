@@ -18,7 +18,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "mnf_types.h"
 
-#define MNF_ZERO_VECTOR (vec3){0, 0, 0}
+#define MNF_ZERO_VECTOR (vec3){0.0, 0.0, 0.0}
+#define MNF_ONE_VECTOR (vec3){1.0, 1.0, 1.0}
 
 /* Copies a vec3 src to vec3 dest */
 void mnf_vec3_copy(vec3 src, vec3 dest);

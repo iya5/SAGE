@@ -25,7 +25,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #define LINE_INITIAL_SIZE 512
 
-darray *obj_load_from_file(char *path)
+darray *obj_load_from_file(const char *path)
 {
     FILE *file = fopen(path, "r");
 

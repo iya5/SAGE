@@ -1,3 +1,6 @@
+/* This shader is just a reference to the general structure of the shader
+   programs and shouldn't be used */
+
 #ifdef COMPILE_VS
 
 layout (location = 0) in vec3 attr_pos;
@@ -15,6 +18,7 @@ void main()
 {
     gl_Position = u_projection * u_view * u_model * vec4(attr_pos, 1.0);
 
+    frag_normal = attr_normal;
     frag_uv = attr_uv;
 }
 
@@ -25,13 +29,12 @@ void main()
 in vec2 frag_uv;
 
 uniform sampler2D u_texture;
-uniform vec4 u_color;
 
 out vec4 out_color;
 
 void main()
 {
-    out_color = texture(u_texture, frag_uv) * u_color;
+    out_color = texture(u_texture, frag_uv);
 }
 
 #endif /* COMPILE_FS */

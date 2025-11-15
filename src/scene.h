@@ -33,22 +33,36 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  */
 
 #include "camera.h"
+#include "material.h"
 #include "lighting.h"
+#include "mesh.h"
 #include "darray.h"
+#include "shader.h"
 
 #define SCENE_MAX_POINT_LIGHTS 4
 #define SCENE_MAX_MATERIALS 6
 
 struct scene {
+    struct camera cam; 
     struct directional_light environment_light;
-    //struct point_light point_lights[SCENE_MAX_POINT_LIGHTS];
-    darray *point_lights;
 
-    struct material materials[SCENE_MAX_MATERIALS];
-    struct camera *cam; 
+    darray *models;
+    darray *point_lights;
 };
 
+void scene_init(struct scene *scene, float viewport_width, float viewport_height);
 void scene_render(struct scene *scene);
 void scene_destroy(struct scene *scene);
 
+void world_grid_draw(mat4 view,
+                     mat4 projection,
+                     struct mesh mesh,
+                     struct shader shader, 
+                     struct texture texture);
+
+void skybox_draw(struct shader skybox_shader, 
+                 struct mesh skybox, 
+                 struct texture cubemap,
+                 mat4 view, 
+                 mat4 projection);
 #endif /* SAGE_SCENE_H */

@@ -32,4 +32,10 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_OPENGL_MAJOR_VERSION 4
 #define SAGE_OPENGL_MINOR_VERSION 1
 
+#define SAGE_INITIAL_WINDOW_WIDTH 640
+#define SAGE_INITIAL_WINDOW_HEIGHT 480
+
+#define SAGE_INITIAL_VIEWPORT_WIDTH 640
+#define SAGE_INITIAL_VIEWPORT_HEIGHT 480
+
 #endif /* SAGE_CONFIG_H */

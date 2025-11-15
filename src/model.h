@@ -13,11 +13,27 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_RENDER_H
-#define SAGE_RENDER_H
+#ifndef SAGE_MODEL_H
+#define SAGE_MODEL_H
 
-struct renderer {
+#include "texture.h"
+#include "material.h"
+#include "shader.h"
+#include "mesh.h"
 
+struct model {
+    struct mesh mesh;
+    struct texture texture;
+    struct material material;
+    struct transform transform;
 };
 
-#endif /* SAGE_RENDER_H */
+struct model model_load_from_file(const char *path);
+void model_draw(struct model model, struct shader shader);
+
+void model_reset_transform(struct model *model);
+void model_scale(struct model *model, vec3 scalars);
+void model_rotation(struct model *model, vec3 euler_angles);
+void model_translate(struct model *model, vec3 position);
+
+#endif /* SAGE_MODEL_H */

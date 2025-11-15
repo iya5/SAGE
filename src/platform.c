@@ -181,6 +181,18 @@ bool platform_window_init(struct platform *platform,
     SINFO("\tMax combined shader texture units: %d", max_combined_texture_units);
     SINFO("\tMax vertex shader attributes: %d", n_vertex_attributes);
 
+
+
+    /* Set OpenGL parameters */
+    glViewport(0, 0, viewport_width, viewport_height);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     platform->input = input;
     platform->context = context;
     platform->running = true;
@@ -199,7 +211,7 @@ err_platform:
     return false;
 }
 
-double platform_get_time(void)
+double platform_get_time_seconds(void)
 {
     return glfwGetTime();
 }
@@ -223,4 +235,19 @@ void platform_window_shutdown(struct platform *platform)
     platform->running = false;
     platform->viewport_width = 0;
     platform->viewport_height = 0;
+}
+
+void gl_polygon_mode(enum polygon_mode mode) {
+    GLenum gl_mode;
+
+    switch (mode) {
+        case (POLYGON_FILL): 
+            gl_mode = GL_FILL;
+            break;
+        case (POLYGON_LINE):
+            gl_mode = GL_LINE;
+            break;
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, gl_mode);
 }

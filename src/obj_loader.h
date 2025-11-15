@@ -18,6 +18,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "darray.h"
 
-darray *obj_load_from_file(char *path);
+darray *obj_load_from_file(const char *path);
 
 #endif /* SAGE_OBJ_LOADER_H */

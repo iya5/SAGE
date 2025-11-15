@@ -23,8 +23,8 @@ enum texture_type {
     /*
      * Clearing some confusion and a personal note, a diffuse map or texture map
      * is really just the actual image attached to a mesh, and it's called
-     * diffuse because the texture is used directly for the diffuse shading
-     * model in the fragment shader. I was always wondering what a "normal"
+     * diffuse the texture is used directly for the diffuse reflection 
+     * in the fragment shader. I was always wondering what a "normal"
      * texture is called---"normal" relating to just a plain texture attached to
      * a mesh, but it's really just called a diffuse map.
      *

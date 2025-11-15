@@ -47,23 +47,12 @@ struct mesh {
     struct mesh_gpu buffer;
     darray *vertices;
     darray *indices;
-    darray *textures;
-    mat4 model;
 };
 
-struct mesh mesh_geometry_create_2d_triangle(void);
-struct mesh mesh_geometry_create_quad(void);
 struct mesh mesh_geometry_create_cube(void);
 struct mesh mesh_create_from_vertices(darray *vertices);
-void mesh_add_texture(struct mesh *mesh, struct texture texture);
 void mesh_destroy(struct mesh *mesh);
 void mesh_bind(struct mesh mesh);
 void mesh_draw(struct mesh mesh);
-
-void transform_reset(struct transform *transform);
-void transform_scale(struct transform *transform, vec3 scalars);
-void transform_rotation(struct transform *transform, vec3 euler_angles);
-void transform_position(struct transform *transform, vec3 position);
-void transform_model(struct transform transform, mat4 out);
 
 #endif /* SAGE_MESH_H */

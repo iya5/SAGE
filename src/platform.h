@@ -71,6 +71,11 @@ enum mouse_button_code {
     MOUSE_COUNT
 };
 
+enum polygon_mode {
+    POLYGON_LINE,
+    POLYGON_FILL
+};
+
 struct input_state {
     float mouse_x;
     float mouse_y;
@@ -107,12 +112,15 @@ void platform_poll_input(struct platform *platform);
 
 /* Returns the time via GLFW
  */
-double platform_get_time(void);
+double platform_get_time_seconds(void);
 
 /* Swaps the back buffer with the front buffer */
 void platform_swap_buffer(struct platform *platform);
 
 /* Wrapper around glfwSetWindowShouldClose() */
 bool platform_should_close(struct platform *platform);
+
+/* Wrapper around glPolygonMode() */
+void gl_polygon_mode(enum polygon_mode mode);
 
 #endif /* SAGE_PLATFORM_H */
