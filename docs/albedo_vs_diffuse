@@ -1,0 +1,6 @@
+Diffuse / Albedo / base color . Are all basically the same thing . They all handle mainly color data on the object . Diffuse refers to older generation ( pre_PBR ) where we used to bake down AO . Or shading on it . Then with PBR the name changed to Albedo because it works a little bit differently . As with Albedo you want only color data on the map . Any baked shading on it will look wrong . As for base color from what I know this is the UE4 term for either of them ( diffuse or Albedo ) I could be wrong on that one . But i haven't seen the term base color anywhere but UE4 
+https://www.reddit.com/r/unrealengine/comments/evrpfn/what_is_the_difference_between/
+
+https://developer.valvesoftware.com/wiki/Albedo
+An albedo, often interchangeably referred to as diffuse map, is a term used to describe reflection coefficient of a material surface containing view-independent Base Color information without any additional lighting or shadow information. Often stored into a Image Texture.
+It's used to tell which color tint and initially add basic details for a Diffuse surface. And defines what we normally think of a texture as being before enhanced by other "treatment" textures like bump maps or specular masks.

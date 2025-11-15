@@ -4,20 +4,23 @@ VERSION = 0.0.0
 
 CC = gcc
 
-CFLAGS = -Wall -Wextra -Wpedantic -g -DVERSION=\"$(VERSION)\"
+CFLAGS = -Wall -Wextra -Wpedantic -g -Wno-variadic-macros \
+		 -DSAGE_VERSION=\"$(VERSION)\"
 
-INCLUDES = -Ilib/glfw/include -Ilib/glad/include -Ilib/cglm/include \
+INCLUDES = -Ilib/glfw/include -Ilib/glad/include \
 		   -Ilib/std -Ilib/nuklear/ -Ilib/stb
 
 LDFLAGS = -lm lib/glad/src/gl.o lib/glfw/src/libglfw3.a
 
+# add compile flag for defining SAGE_RELEASE as 1
+
 ifeq ($(UNAME), Linux)
-	CFLAGS += -std=c23
+	CFLAGS += -std=c99
 	LDFLAGS += -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 endif
 
 ifeq ($(UNAME), Darwin)
-	CFLAGS += -v -std=c2x -Wgnu-zero-variadic-macro-arguments
+	CFLAGS += -v -std=c99 -Wgnu-zero-variadic-macro-arguments
 	LDFLAGS += -framework Foundation -framework AppKit -framework CoreVideo \
 			   -framework Cocoa -framework IOKit -framework Metal \
 			   -framework QuartzCore
@@ -48,4 +51,4 @@ run:
 clean:
 	rm -rf $(BIN) $(OBJ)
 
-.PHONY: all clean
+.PHONY: all sage lib run clean

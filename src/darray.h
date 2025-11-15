@@ -13,46 +13,25 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_MESH_H
-#define SAGE_MESH_H
+#ifndef SAGE_DARRAY_H
+#define SAGE_DARRAY_H
 
-#include <stdint.h>
 #include <stddef.h>
 
-#include "mnf/mnf_types.h"
-#include "texture.h"
-#include "darray.h"
+#define DARRAY_RESIZE_FACTOR 2
 
-struct vertex {
-    vec3 pos;
-    vec3 normal;
-    vec2 uv;
-};
+typedef struct darray {
+    size_t len;
+    size_t capacity;
+    size_t item_size;
+    void *items;
+} darray;
 
-struct mesh_gpu {
-    uint32_t vao;
-    uint32_t vbo;
-    uint32_t ibo;
-    uint32_t vertex_count;
-    uint32_t index_count;
-};
+darray *darray_alloc(size_t n_size, size_t initial_size);
+size_t darray_push(darray *arr, void *item);
+void *darray_pop_at(darray *arr,  size_t index);
+void *darray_pop(darray *arr);
+void *darray_at(darray *arr, size_t index);
+void darray_free(darray *arr);
 
-struct transform {
-    vec3 rotation;
-    vec3 scale;
-    vec3 position;
-};
-
-struct mesh {
-    struct mesh_gpu buffer;
-    darray *vertices;
-    darray *indices;
-};
-
-struct mesh mesh_geometry_create_cube(void);
-struct mesh mesh_create_from_vertices(darray *vertices);
-void mesh_destroy(struct mesh *mesh);
-void mesh_bind(struct mesh mesh);
-void mesh_draw(struct mesh mesh);
-
-#endif /* SAGE_MESH_H */
+#endif /* SAGE_DARRAY_H */

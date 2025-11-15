@@ -1,3 +1,73 @@
 https://gpuopen.com/learn/mesh_shaders/mesh_shaders-from_vertex_shader_to_mesh_shader/
 https://wikis.khronos.org/opengl/Vertex_Specification_Best_Practices
 https://songho.ca/opengl/gl_sphere.html#sphere
+
+texture
+https://math.hws.edu/graphicsbook/c6/s4.html
+
+bind texture vs active texture
+https://stackoverflow.com/a/45240467
+
+kohi game engine
+
+difference between material and texture (stack overflow)
+
+
+
+The question suggests a common misunderstanding of various computer graphics concepts. It is one born of pre-shader thinking and coding.
+
+A texture is nothing more than a container for a series of one or more images, where an image is an array of some dimensionality (1D, 2D, etc) of values, where each value can be a vector of between 1 and 4 numbers. Textures also have some special techniques for accessing values from them that allow for interpolation and the minimizing of aliasing artifacts from sampling.
+
+A texture can contain colors, but textures do not have to contain colors. Textures can be used to vary parameters across an objects surface, but that is not all textures can be used for.
+
+Textures have no direct association with "materials"; you can use them for a wide variety of things (or nothing at all).
+
+A material is a concept in lighting. Given a particular light and a point on the surface, the intensity (ie: color) of light reflected from that surface at that point is governed by a lighting equation. This equation is a function of many parameters. But those parameters are grouped into two categories.
+
+One category of light equation parameters are the light parameters. These describe the characteristics of the light source. Point lights vs. directional lights vs. spot lights. The light intensity (again: color) is another parameter. Since the intensity itself may vary depending on the direction of the surface point relative to the light (think flashlights or spotlights), the intensity may be accessed from a texture. That's how many games project flashlights over a dark room.
+
+The other category of light equation parameters describes the characteristics of the surface at that point. These are called material parameters. The material parameters, or material for short, describe important properties of the surface at the point in question. The normal at that point is an important one. There is also the diffuse reflectance (color), specular reflectance, specular shininess (exponent for Phong/Blinn-Phong) and various other parameters, depending on how comprehensive your lighting equation is.
+
+Where do these values come from? Light parameters tend to be fixed in the world. Lights don't move per-object (though if you're doing lighting in object space, then each object would have its own light position). The light intensity may vary. But that's mostly it; anything else happens between frames, not within a single frame's rendering. So most light parameters are shader uniforms.
+
+Material parameters can come from a variety of sources. Using a shader uniform effectively means that all points on the surface have that same value. So your could have the diffuse color come from a uniform, which would give the surface a uniform color (modified by lighting, of course). You can vary material parameters per-vertex, by passing them as vertex attributes or computing them from other attributes.
+
+Or you can provide a parameter by mapping a texture to a surface. This mapping involves associating texture coordinates with vertex positions, so that the texture is directly attached to the surface. The texture is sampled at that location during rendering, and that value is used to perform the lighting.
+
+The most common textures you're familiar with, "color textures", are simply varying the diffuse reflectance of the surface. The texture provides the diffuse color at each point along the surface.
+
+This is not the only function of textures. You could just as easily vary the specular shininess over the surface. Or the light intensity. Or anything else.
+
+Textures are tools. Materials are just a group of light equation parameters.
+
+https://stackoverflow.com/a/8573097
+
+---
+
+Donald E. Knuth Literate Programming
+
+I believe that the time is ripe
+for significantly better documentation of programs, and
+that we can best achieve this by considering programs
+to be works of literature. Hence, my title: “Literate
+Programming.”
+Let us change our traditional attitude to the con-
+struction of programs: Instead of imagining that our
+main task is to instruct a computer what to do, let us
+concentrate rather on explaining to human beings what
+we want a computer to do.
+The practitioner of literate programming can be re-
+garded as an essayist, whose main concern is with ex-
+position and excellence of style. Such an author, with
+thesaurus in hand, chooses the names of variables care-
+fully and explains what each variable means. He or she
+strives for a program that is comprehensible because its
+concepts have been introduced in an order that is best
+for human understanding, using a mixture of formal
+and informal methods that re¨ınforce each other.
+I dare to suggest that such
+
+
+SUPER GREATE LECGTURE
+https://dis.dankook.ac.kr/lectures/cg24/wp-content/uploads/sites/98/2024/11/lecture15-ch8.pdf
+https://alelievr.github.io/Modern-Rendering-Introduction/Material/

@@ -15,17 +15,19 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <glad/gl.h>
-#include "slog/slog.h"
 
+#include "logger.h"
+#include "assert.h"
 #include "texture.h"
 
 struct texture texture_create(const char *path)
 {
-	LOG_INFO("Creating texture of %s", path);
+	SINFO("Creating texture of %s", path);
 	struct texture texture = {0};
 	int32_t width, height, channels;
 	width = height = channels = 0;
@@ -40,7 +42,7 @@ struct texture texture_create(const char *path)
 	);
 
 	if (data == NULL) {
-		LOG_ERROR("Failed to load texture '%s'", path);
+		SERROR("Texture '%s' failed to load", path);
         return texture;
 	}
 
@@ -54,8 +56,8 @@ struct texture texture_create(const char *path)
         default: format = GL_RED;
                  break;
     }
-
-	memcpy(&texture.size, (ivec2) {width, height}, sizeof(ivec2));
+    texture.width = width;
+    texture.height = height;
 
 	glGenTextures(1, &texture.id);
 	glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -86,12 +88,13 @@ struct texture texture_create(const char *path)
 
 struct texture texture_create_default(void)
 {
-	LOG_INFO("Creating default 1x1 texture");
+	SINFO("Creating a default 1x1 pixel texture");
 	struct texture texture = {0};
 
     /* single pixel of (255, 255, 255, 255) */
     const unsigned char white[4] = {255, 255, 255, 255};
-	memcpy(&texture.size, (ivec2) {1, 1}, sizeof(ivec2));
+    texture.width = 1;
+    texture.height = 1;
 
 	glGenTextures(1, &texture.id);
 	glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -126,11 +129,19 @@ struct texture texture_create_default(void)
  */
 struct texture cubemap_texture_create(char *cubemap_faces[6])
 {
-	struct texture cubemap = {0};
+    SINFO("Creating a cubemap texture for:");
+    SINFO("\t%s", cubemap_faces[0]);
+    SINFO("\t%s", cubemap_faces[1]);
+    SINFO("\t%s", cubemap_faces[2]);
+    SINFO("\t%s", cubemap_faces[3]);
+    SINFO("\t%s", cubemap_faces[4]);
+    SINFO("\t%s", cubemap_faces[5]);
+
+	struct texture texture = {0};
 
     /* single pixel of (255, 255, 255, 255) */
-	glGenTextures(1, &cubemap.id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id);
+	glGenTextures(1, &texture.id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texture.id);
 
     int32_t width, height, channels;
 	width = height = channels = 0;
@@ -162,7 +173,7 @@ struct texture cubemap_texture_create(char *cubemap_faces[6])
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	return cubemap;
+	return texture;
 }
 
 void cubemap_texture_bind(struct texture t)
@@ -170,8 +181,12 @@ void cubemap_texture_bind(struct texture t)
     glBindTexture(GL_TEXTURE_CUBE_MAP, t.id);
 }
 
-void texture_bind(struct texture t)
+
+/* n should be defaulted to 0 if only using 1 uniform texture */
+void texture_bind(struct texture t, size_t n_texture_unit)
 {
+    SASSERT(n_texture_unit < 16);
+    glActiveTexture(GL_TEXTURE0 + n_texture_unit);
     glBindTexture(GL_TEXTURE_2D, t.id);
 }
 

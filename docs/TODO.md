@@ -55,18 +55,19 @@
     [   ] create gizmo manipulator (some help in ddiakoppoulos/tinygizmo)
 
 [...] render basic lighting
-    [...] create shaders for lighting (phong)
-        [ x ] ambient
-        [...] diffuse
-        [   ] specular
-    [   ] reconfigure memory buffers and vertex arrays to take in normals
-    [   ] setup vertex array parser
-        [   ] setup function for normal calculation (if needed)
-    [   ] create gouraud shader
-    [   ] setup shader for multiple light casters
+    [ x ] create shader to calculate phong lighting model
+        [ x ] ambient reflection
+        [ x ] diffuse / lambertian reflection
+        [ x ] specular reflection
+    [ x ] reconfigure memory buffers and vertex arrays to take in normals
+    [ x ] create gouraud shader
+    [...] shade multiple light casters
 
-[   ] render materials
+[...] render simple materials
+    [ x ] diffuse map
+    [ x ] specular map
 
+[ x ] render a skybox
 
 [   ] render a model
     [   ] setup a model loader
@@ -79,11 +80,7 @@
         [   ] load files
         [   ] save files
 
-[   ]
-
-[   ] render a skybox
-
-[   ] render a scene
+[...] render a scene
 
 [   ] setup pbr (physically-based rendering)
 
@@ -93,3 +90,4 @@
 
 [   ] create and render procedural terrain
 [   ] create and ren
+[   ] update comment formatting

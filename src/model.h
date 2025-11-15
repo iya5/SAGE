@@ -13,26 +13,27 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_TEXTURE_H
-#define SAGE_TEXTURE_H
+#ifndef SAGE_MODEL_H
+#define SAGE_MODEL_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include "material.h"
+#include "shader.h"
+#include "mesh.h"
 
-struct texture {
-    uint32_t id;
-    int32_t width;
-    int32_t height;
+struct model {
+    struct mesh mesh;
+    struct material material;
+    struct transform transform;
 };
 
-struct texture texture_create_default(void);
-struct texture texture_create(const char *path);
+struct model model_load_from_file(const char *path);
+struct model model_create_cube(void);
+void model_draw(struct model model, struct shader shader);
+void model_destroy(struct model *model);
 
-/* Wrapper around glBindTexture() */
-void texture_bind(struct texture t, size_t texture_unit);
-void texture_destroy(struct texture *t);
+void model_reset_transform(struct model *model);
+void model_scale(struct model *model, vec3 scalars);
+void model_rotation(struct model *model, vec3 euler_angles);
+void model_translate(struct model *model, vec3 position);
 
-struct texture cubemap_texture_create(char *cubemap_faces[6]);
-void cubemap_texture_bind(struct texture t);
-
-#endif /* SAGE_TEXTURE_H */
+#endif /* SAGE_MODEL_H */

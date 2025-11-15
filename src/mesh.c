@@ -1,4 +1,4 @@
-/* Mesh source code for Sage
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
 
 This file is part of Sage
 
@@ -13,89 +13,168 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <stdint.h>
+#include <stdlib.h>
 #include <glad/gl.h>
-#include "mnf/mnf_matrix.h"
-#include "mnf/mnf_transform.h"
-#include "mnf/mnf_vector.h"
-#include "slog/slog.h"
 
+#include "assert.h"
+#include "darray.h"
+#include "mnf/mnf_types.h"
+#include "mnf/mnf_vector.h"
+#include "logger.h"
 #include "mesh.h"
 
-struct vertex_array vertex_array_create(const float *vertices, size_t n_bytes);
-void vertex_array_free(struct vertex_array *va);
+#define N_VERTICES_2D_TRIANGLE 3
+#define N_INDICES_2D_TRIANGLE 3
 
-struct mesh mesh_create(const float *vertices, size_t n_bytes)
+#define N_VERTICES_QUAD 4
+#define N_INDICES_QUAD 6
+
+#define N_VERTICES_CUBE 36
+
+static struct mesh_gpu mesh_gpu_create(const darray *vertices, 
+                                       const darray *indices);
+static void mesh_gpu_free(struct mesh_gpu *buffer);
+
+struct mesh mesh_create_from_vertices(darray *vertices)
 {
-    struct mesh mesh = {0};
+    struct mesh mesh;
+    mesh.buffer = mesh_gpu_create(vertices, NULL);
+    mesh.vertices = vertices;
+    mesh.indices = NULL;
 
-    mesh.vertex_array = vertex_array_create(vertices, n_bytes);
-
-    mesh_reset_transform(&mesh);
-
-    /* calculating local transform of mesh */
-    mnf_mat4_scale(mesh.model, mesh.transform.scale, mesh.model);
-    mnf_euler_rotate_xyz(mesh.model, mesh.transform.rotate, mesh.model);
-    mnf_mat4_translate(mesh.model, mesh.transform.position, mesh.model);
-
-    LOG_INFO("Created mesh with %d vertices", mesh.vertex_array.vertex_count);
+    SINFO("Created a mesh with %d vertices", mesh.vertices->len);
 
     return mesh;
 }
 
-void mesh_reset_transform(struct mesh *mesh)
+struct mesh mesh_geometry_create_cube(void)
 {
-    mnf_vec3_copy((vec3) {1, 1, 1}, mesh->transform.scale);
-    mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.rotate);
-    mnf_vec3_copy(MNF_ZERO_VECTOR, mesh->transform.position);
-    mnf_mat4_identity(mesh->model);
-}
+    struct mesh mesh;
 
-void mesh_set_scale(struct mesh *mesh, vec3 scalars)
-{
-    mnf_vec3_copy(scalars, mesh->transform.scale);
-}
+    darray *vertices = darray_alloc(sizeof(struct vertex), 3);
 
-void mesh_set_position(struct mesh *mesh, vec3 position)
-{
-    mnf_vec3_copy(position, mesh->transform.position);
-}
+    if (vertices == NULL) goto err;
 
-void mesh_set_rotation(struct mesh *mesh, vec3 euler_angles)
-{
-    mnf_vec3_copy(euler_angles, mesh->transform.rotate);
-}
+    vec3 pos[] = {
+        {-0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f},
+        { 0.5f,  0.5f, -0.5f}, { 0.5f,  0.5f, -0.5f},
+        {-0.5f,  0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f,  0.5f}, { 0.5f, -0.5f,  0.5f},
+        { 0.5f,  0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}, {-0.5f, -0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}, {-0.5f,  0.5f, -0.5f},
+        {-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f,  0.5f}, {-0.5f,  0.5f,  0.5f},
+        { 0.5f,  0.5f,  0.5f}, { 0.5f,  0.5f, -0.5f},
+        { 0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f},
+        { 0.5f, -0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f},
+        {-0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f},
+        { 0.5f, -0.5f,  0.5f}, { 0.5f, -0.5f,  0.5f},
+        {-0.5f, -0.5f,  0.5f}, {-0.5f, -0.5f, -0.5f},
+        {-0.5f,  0.5f, -0.5f}, { 0.5f,  0.5f, -0.5f},
+        { 0.5f,  0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}, {-0.5f,  0.5f, -0.5f}
+    };
 
-void mesh_update_transform(struct mesh *mesh)
-{
-    mnf_mat4_identity(mesh->model);
-    mnf_mat4_scale(mesh->model, mesh->transform.scale, mesh->model);
-    mnf_euler_rotate_xyz(mesh->model, mesh->transform.rotate, mesh->model);
-    mnf_mat4_translate(mesh->model, mesh->transform.position, mesh->model);
+    vec3 normal[] = {
+        { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f},
+        { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f}, { 0.0f,  0.0f, -1.0f},
+        { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f},
+        { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f}, { 0.0f,  0.0f,  1.0f},
+        {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f},
+        {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f}, {-1.0f,  0.0f,  0.0f},
+        { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f},
+        { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f}, { 1.0f,  0.0f,  0.0f},
+        { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f},
+        { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f}, { 0.0f, -1.0f,  0.0f},
+        { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f},
+        { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f}, { 0.0f,  1.0f,  0.0f}
+    };
+
+    vec2 uv[] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}
+    };
+
+    for (int i = 0; i < N_VERTICES_CUBE; i++) {
+        struct vertex vertex = {0};
+        mnf_vec3_copy(pos[i], vertex.pos);
+        mnf_vec3_copy(normal[i], vertex.normal);
+        mnf_vec2_copy(uv[i], vertex.uv);
+        darray_push(vertices, &vertex);
+    }
+
+    mesh.buffer = mesh_gpu_create(vertices, NULL);
+    mesh.vertices = vertices;
+    mesh.indices = NULL;
+
+    return mesh;
+
+err:
+    if (vertices) darray_free(vertices);
+    SFATAL("Failed to alloc memory for mesh darray");
+    exit(1);
 }
 
 void mesh_destroy(struct mesh *mesh)
 {
-    vertex_array_free(&(mesh->vertex_array));
+    mesh_gpu_free(&(mesh->buffer));
+
+    if (mesh->vertices) {
+        darray_free(mesh->vertices);
+        mesh->vertices = NULL;
+    }
+
+    if (mesh->indices) {
+        darray_free(mesh->indices);
+        mesh->indices = NULL;
+    }
 }
 
 void mesh_bind(struct mesh mesh)
 {
-    glBindVertexArray(mesh.vertex_array.vao);
+    glBindVertexArray(mesh.buffer.vao);
+    if (mesh.indices)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.buffer.ibo);
 }
 
 void mesh_draw(struct mesh mesh)
 {
-    glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_array.vertex_count);
+    /* this check is probably expensive but is important for my sake */
+    int32_t bounded_vao = 0;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bounded_vao);
+    SASSERT_MSG((int32_t) mesh.buffer.vao == bounded_vao, "Attempted to draw a mesh without binding it first");
+
+    if (mesh.indices) {
+        glDrawElements(GL_TRIANGLES, 
+                       mesh.buffer.index_count,
+                       GL_UNSIGNED_INT,
+                       0);
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, mesh.buffer.vertex_count);
+    }
 }
 
-struct vertex_array vertex_array_create(const float *vertices, size_t n_bytes)
+static struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices)
 {
-    struct vertex_array va = {0};
-
+    struct mesh_gpu buffer;
+    
     uint32_t vao;
     uint32_t vbo;
+    uint32_t ibo;
 
-    /* generating buffers for vertices */
+    /* generating buffers */
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
 
@@ -104,9 +183,12 @@ struct vertex_array vertex_array_create(const float *vertices, size_t n_bytes)
 
     /* bind and copy data over to the buffer */
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, n_bytes, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 
+                 vertices->item_size * vertices->len,
+                 vertices->items,
+                 GL_STATIC_DRAW);
 
-    /* configure the vao to interpret the attributes */
+    /* configure the vao to interpret attributes */
     /* stride is the offset between consecutive generic vertex attributes */
     size_t vertex_size = 8;
     size_t stride = vertex_size * sizeof(float);
@@ -124,10 +206,22 @@ struct vertex_array vertex_array_create(const float *vertices, size_t n_bytes)
                           pos_offset);
     glEnableVertexAttribArray(pos_index);
 
+
+    /* bind normal uv attributes */
+    uint32_t normal_index = 1;
+    int32_t normal_size = 3;
+    void *normal_offset = (void *) ((pos_size) * sizeof(float));
+    glVertexAttribPointer(normal_index,
+                          normal_size,
+                          GL_FLOAT,
+                          normalized,
+                          stride,
+                          normal_offset);
+
     /* bind texture uv attributes */
-    uint32_t uv_index = 1;
+    uint32_t uv_index = 2;
     int32_t uv_size = 2;
-    void *uv_offset = (void *) (pos_size * sizeof(float));
+    void *uv_offset = (void *) ((pos_size + normal_size) * sizeof(float));
     glVertexAttribPointer(uv_index,
                           uv_size,
                           GL_FLOAT,
@@ -135,46 +229,47 @@ struct vertex_array vertex_array_create(const float *vertices, size_t n_bytes)
                           stride,
                           uv_offset);
     glEnableVertexAttribArray(uv_index);
-
-    /* bind normal uv attributes */
-    uint32_t normal_index = 2;
-    int32_t normal_size = 3;
-    void *normal_offset = (void *) ((pos_size + uv_size) * sizeof(float));
-    glVertexAttribPointer(normal_index,
-                          normal_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          normal_offset);
     glEnableVertexAttribArray(normal_index);
+
+    if (indices) {
+        /* generating buffer for indices */
+        glGenBuffers(1, &ibo);
+        /* bind indices for index drawing */
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     indices->item_size * indices->len,
+                     indices->items,
+                     GL_STATIC_DRAW);
+
+        buffer.ibo = ibo;
+        buffer.index_count = (uint32_t) indices->len;
+    } else {
+        buffer.ibo = 0;
+        buffer.index_count = 0;
+    }
+
 
     /* unbinding */
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    va.vao= vao;
-    va.vbo = vbo;
-    va.vertex_count = (uint32_t) ((n_bytes) / sizeof(float) / 8);
+    buffer.vao = vao;
+    buffer.vbo = vbo;
+    buffer.vertex_count = (uint32_t) vertices->len;
 
-    return va;
+    return buffer;
 }
 
-void vertex_array_free(struct vertex_array *va)
+static void mesh_gpu_free(struct mesh_gpu *buffer)
 {
-    glDeleteVertexArrays(1, &(va->vao));
-    glDeleteBuffers(1, &(va->vbo));
-    va->vao = 0;
-    va->vbo = 0;
-    va->vertex_count = 0;
-}
+    glDeleteVertexArrays(1, &(buffer->vao));
+    glDeleteBuffers(1, &(buffer->vbo));
+    if (buffer->ibo > 0)
+        glDeleteBuffers(1, &(buffer->ibo));
 
-void vertex_array_bind(struct vertex_array va)
-{
-    glBindVertexArray(va.vao);
+    buffer->vao = 0;
+    buffer->vbo = 0;
+    buffer->ibo = 0;
+    buffer->vertex_count = 0;
+    buffer->index_count = 0;
 }
-
-void vertex_array_draw(struct vertex_array va)
-{
-    glDrawArrays(GL_TRIANGLES, 0, va.vertex_count);
-}
-
