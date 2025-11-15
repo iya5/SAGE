@@ -16,20 +16,20 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #ifndef SAGE_MODEL_H
 #define SAGE_MODEL_H
 
-#include "texture.h"
 #include "material.h"
 #include "shader.h"
 #include "mesh.h"
 
 struct model {
     struct mesh mesh;
-    struct texture texture;
     struct material material;
     struct transform transform;
 };
 
 struct model model_load_from_file(const char *path);
+struct model model_create_cube(void);
 void model_draw(struct model model, struct shader shader);
+void model_destroy(struct model *model);
 
 void model_reset_transform(struct model *model);
 void model_scale(struct model *model, vec3 scalars);

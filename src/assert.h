@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_ASSERT_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 /* Comment out if disabling assertions */
 #define SAGE_ENABLE_ASSERTIONS
@@ -33,7 +34,7 @@ void report_assertion_failure(const char *expression,
         if (expr) {                                                     \
         } else {                                                        \
             report_assertion_failure(#expr, "", __FILE__, __LINE__);    \
-            abort();                                                    \
+            exit(1);                                                    \
         }                                                               \
     }
 #define SASSERT_MSG(expr, msg)                                          \
@@ -41,7 +42,7 @@ void report_assertion_failure(const char *expression,
         if (expr) {                                                     \
         } else {                                                        \
             report_assertion_failure(#expr, msg, __FILE__, __LINE__);   \
-            abort();                                                    \
+            exit(1);                                                    \
         }                                                               \
     }
 #else

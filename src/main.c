@@ -13,7 +13,6 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -26,8 +25,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 struct scene scene;
 struct platform platform;
-
-bool SAGE_DRAW_SKYBOX = false;
+struct debug_settings {
+    bool draw_skybox;
+} debug;
 
 void process_input(double dt)
 {
@@ -36,8 +36,7 @@ void process_input(double dt)
     bool *keys = input->keys;
     bool *mouse_buttons = input->mouse_buttons;
 
-    if (keys[KEY_ESC])
-        platform.running = false;
+    if (keys[KEY_ESC]) platform.running = false;
 
     if (keys[KEY_W])
         camera_move(cam, MOVE_FORWARD, dt);
@@ -57,17 +56,10 @@ void process_input(double dt)
     if (keys[KEY_LCTRL])
         camera_move(cam, MOVE_DOWN, dt);
 
-    if (keys[KEY_1])
-        SAGE_DRAW_SKYBOX = true;
-
-    if (keys[KEY_2])
-        SAGE_DRAW_SKYBOX = false;
-
-    if (keys[KEY_3])
-        gl_polygon_mode(POLYGON_LINE);
-
-    if (keys[KEY_4])
-        gl_polygon_mode(POLYGON_FILL);
+    if (keys[KEY_1]) debug.draw_skybox = true;
+    if (keys[KEY_2]) debug.draw_skybox = false;
+    if (keys[KEY_3]) gl_polygon_mode(POLYGON_LINE);
+    if (keys[KEY_4]) gl_polygon_mode(POLYGON_FILL);
 
     if (mouse_buttons[MOUSE_RIGHT])
         cam->can_move = true;
@@ -90,6 +82,7 @@ int main(int argc, __attribute__((unused)) char **argv)
                          SAGE_INITIAL_VIEWPORT_WIDTH,
                          SAGE_INITIAL_VIEWPORT_HEIGHT);
     
+    // ui_init
     scene_init(&scene, platform.viewport_width, platform.viewport_height);
 
     double previous_time = platform_get_time_seconds();
@@ -101,11 +94,13 @@ int main(int argc, __attribute__((unused)) char **argv)
         platform_poll_input(&platform);
         process_input(delta_time);
 
+        // ui_draw
         scene_render(&scene);
 
         platform_swap_buffer(&platform);
     }
 
+    // ui_shutdown
     scene_destroy(&scene);
     platform_window_shutdown(&platform);
 

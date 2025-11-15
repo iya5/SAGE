@@ -54,15 +54,4 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
 void scene_render(struct scene *scene);
 void scene_destroy(struct scene *scene);
 
-void world_grid_draw(mat4 view,
-                     mat4 projection,
-                     struct mesh mesh,
-                     struct shader shader, 
-                     struct texture texture);
-
-void skybox_draw(struct shader skybox_shader, 
-                 struct mesh skybox, 
-                 struct texture cubemap,
-                 mat4 view, 
-                 mat4 projection);
 #endif /* SAGE_SCENE_H */

@@ -19,33 +19,14 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdint.h>
 #include <stddef.h>
 
-enum texture_type {
-    /*
-     * Clearing some confusion and a personal note, a diffuse map or texture map
-     * is really just the actual image attached to a mesh, and it's called
-     * diffuse the texture is used directly for the diffuse reflection 
-     * in the fragment shader. I was always wondering what a "normal"
-     * texture is called---"normal" relating to just a plain texture attached to
-     * a mesh, but it's really just called a diffuse map.
-     *
-     * Calling it diffuse makes it sound like some special material property but
-     * it's just the base texture and is what gives it actual visual "form"
-     * because it reacts to light!
-     */
-    TEXTURE_DIFFUSE,
-    TEXTURE_SPECULAR,
-    TEXTURE_CUBEMAP
-};
-
 struct texture {
     uint32_t id;
-    enum texture_type type;
     int32_t width;
     int32_t height;
 };
 
 struct texture texture_create_default(void);
-struct texture texture_create(const char *path, enum texture_type type);
+struct texture texture_create(const char *path);
 
 /* Wrapper around glBindTexture() */
 void texture_bind(struct texture t, size_t texture_unit);

@@ -37,9 +37,9 @@ out vec4 out_color;
 void main()
 {
     //out_color = texture(u_texture, frag_uv) * u_color;
-    //out_color = u_color;
+    out_color = u_color;
     //out_color = vec4(abs(frag_uv), 0.0, 1.0);
-    out_color = vec4(frag_normal, 1.0);
+    //out_color = vec4(abs(frag_normal), 1.0);
     //out_color = vec4(abs(frag_pos), 1.0);
 }
 

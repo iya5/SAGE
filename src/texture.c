@@ -25,7 +25,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "assert.h"
 #include "texture.h"
 
-struct texture texture_create(const char *path, enum texture_type)
+struct texture texture_create(const char *path)
 {
 	SINFO("Creating texture of %s", path);
 	struct texture texture = {0};
@@ -58,7 +58,6 @@ struct texture texture_create(const char *path, enum texture_type)
     }
     texture.width = width;
     texture.height = height;
-    texture.type = TEXTURE_DIFFUSE;
 
 	glGenTextures(1, &texture.id);
 	glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -146,8 +145,6 @@ struct texture cubemap_texture_create(char *cubemap_faces[6])
 
     int32_t width, height, channels;
 	width = height = channels = 0;
-
-    texture.type = TEXTURE_CUBEMAP;
 
     /* set texture parameters */
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

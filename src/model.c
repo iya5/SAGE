@@ -13,6 +13,7 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include "material.h"
 #include "mesh.h"
 #include "mnf/mnf_matrix.h"
 #include "mnf/mnf_transform.h"
@@ -34,11 +35,7 @@ struct model model_load_from_file(const char *path)
     mesh = mesh_create_from_vertices(vertices);
     model.mesh = mesh;
 
-    struct material material = {
-        .diffuse_map = texture_create_default(),
-        .specular_map = texture_create_default()
-    };
-    model.material = material;
+    model.material = material_create_default();
     
     mnf_vec3_copy(MNF_ONE_VECTOR, model.transform.scale);
     mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.rotation);
@@ -47,14 +44,43 @@ struct model model_load_from_file(const char *path)
     return model;
 }
 
+struct model model_create_cube(void)
+{
+    struct model model;
+    struct mesh mesh;
+
+    mesh = mesh_geometry_create_cube();
+    model.mesh = mesh;
+
+    model.material = material_create_default();
+    
+    mnf_vec3_copy(MNF_ONE_VECTOR, model.transform.scale);
+    mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.rotation);
+    mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.position);
+
+    return model;
+}
+
+
 void model_draw(struct model model, struct shader shader)
 {
+    struct material material = model.material;
+    texture_bind(material.diffuse_map, 0);
+    texture_bind(material.specular_map, 1);
+
     mat4 model_matrix;
     transform_model_matrix(model.transform, model_matrix);
 
     mesh_bind(model.mesh);
     shader_uniform_mat4(shader, "u_model", model_matrix);
     mesh_draw(model.mesh);
+}
+
+void model_destroy(struct model *model)
+{
+    texture_destroy(&model->material.diffuse_map);
+    texture_destroy(&model->material.specular_map);
+    mesh_destroy(&model->mesh);
 }
 
 void model_reset_transform(struct model *model) 
