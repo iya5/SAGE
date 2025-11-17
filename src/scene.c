@@ -68,13 +68,59 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     model_set_name(&crab, "Crab");
     darray_push(scene->models, &crab);
 
+    struct model avocado = model_load_from_file("res/avocado.obj");
+    avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
+                                    "res/avocado/textures/avocado_specular.jpeg", 10);
+    avocado.material.shader = phong_shader;
+    model_scale(&avocado, (vec3){10, 10, 10});
+    model_translate(&avocado, (vec3){-3, 2, 1});
+    model_set_name(&avocado, "Avocado");
+    darray_push(scene->models, &avocado);
+    
+    struct model croissant = model_load_from_file("res/croissant.obj");
+    croissant.material = material_create("res/croissant/textures/croissant_albedo.jpeg", 
+                                        "res/croissant/textures/croissant_albedo.jpeg", 10);
+    croissant.material.shader = phong_shader;
+    model_scale(&croissant, (vec3){10, 10, 10});
+    model_translate(&croissant, (vec3){-1, 2, 1});
+    model_set_name(&croissant, "Croissant");
+    darray_push(scene->models, &croissant);
+    
+    struct model lemon = model_load_from_file("res/lemon.obj");
+    lemon.material = material_create("res/lemon/textures/lemon_albedo.jpeg", 
+                                    "res/lemon/textures/lemon_specular.jpeg", 10);
+    lemon.material.shader = phong_shader;
+    model_scale(&lemon, (vec3){10, 10, 10});
+    model_translate(&lemon, (vec3){1, 2, 1});
+    model_set_name(&lemon, "Lemon");
+    darray_push(scene->models, &lemon);
+
+    struct model lime = model_load_from_file("res/lime.obj");
+    lime.material = material_create("res/lime/textures/lime_albedo.jpeg", 
+                                    "res/lime/textures/lime_specular.jpeg", 10);
+    lime.material.shader = phong_shader;
+    model_scale(&lime, (vec3){10, 10, 10});
+    model_translate(&lime, (vec3){2, 2, 1});
+    model_set_name(&lime, "Lime");
+    darray_push(scene->models, &lime);
+    
+    struct model orange = model_load_from_file("res/orange.obj");
+    orange.material = material_create("res/orange/textures/orange_albedo.jpeg", 
+                                    "res/orange/textures/orange_specular.jpeg", 10);
+    orange.material.shader = phong_shader;
+    model_scale(&orange, (vec3){10, 10, 10});
+    model_translate(&orange, (vec3){4, 2, 1});
+    model_set_name(&orange, "Orange");
+    darray_push(scene->models, &orange);
+    
+
     struct model light_body = model_load_from_file("res/sphere.obj");
     light_body.material = material_create(NULL, NULL, 1);
     light_body.material.shader = light_shader;
     model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
 
     struct model floor = model_create_cube();
-    floor.material = material_create(NULL, NULL, 1);
+    floor.material = material_create("res/textures/base.png", NULL, 1);
     floor.material.shader = phong_shader;
     model_scale(&floor, (vec3){30, 0.1, 30});
     model_translate(&floor, (vec3){0, -2, 0});
@@ -84,9 +130,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     /* Creating light */
     struct directional_light environment_light = {
         .direction = {0, -1.0, -1.0},
-        .ambient = {0.2, 0.2, 0.2},
-        .diffuse = {0.0, 0.0, 0.0},
-        .specular = {0.0, 0.0, 0.0}
+        .ambient = {0.4, 0.4, 0.4},
+        .diffuse = {0.7, 0.7, 0.7},
+        .specular = {0.2, 0.2, 0.2}
     };
     scene->environment_light = environment_light;
 
