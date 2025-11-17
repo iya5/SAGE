@@ -13,6 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <string.h>
+
 #include "material.h"
 #include "mesh.h"
 #include "mnf/mnf_matrix.h"
@@ -41,6 +43,8 @@ struct model model_load_from_file(const char *path)
     mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.rotation);
     mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.position);
 
+    model_set_name(&model, "Model");
+
     return model;
 }
 
@@ -61,6 +65,10 @@ struct model model_create_cube(void)
     return model;
 }
 
+void model_set_name(struct model *model, char name[MODEL_NAME_MAX_SIZE])
+{
+    strncpy(model->name, name, MODEL_NAME_MAX_SIZE);
+}
 
 void model_draw(struct model model, struct shader shader)
 {

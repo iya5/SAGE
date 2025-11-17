@@ -20,13 +20,17 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "shader.h"
 #include "mesh.h"
 
+#define MODEL_NAME_MAX_SIZE 64
+
 struct model {
+    char name[MODEL_NAME_MAX_SIZE];
     struct mesh mesh;
     struct material material;
     struct transform transform;
 };
 
 struct model model_load_from_file(const char *path);
+void model_set_name(struct model *model, char name[MODEL_NAME_MAX_SIZE]);
 struct model model_create_cube(void);
 void model_draw(struct model model, struct shader shader);
 void model_destroy(struct model *model);

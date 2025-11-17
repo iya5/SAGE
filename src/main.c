@@ -85,7 +85,7 @@ int main(int argc, __attribute__((unused)) char **argv)
                          SAGE_INITIAL_VIEWPORT_WIDTH,
                          SAGE_INITIAL_VIEWPORT_HEIGHT);
     
-    //ui_init(&ui, platform);
+    ui_init(&ui, platform);
     scene_init(&scene, platform.viewport_width, platform.viewport_height);
 
     double previous_time = platform_get_time_seconds();
@@ -97,15 +97,15 @@ int main(int argc, __attribute__((unused)) char **argv)
         platform_poll_input(&platform);
         process_input(delta_time);
 
-        //ui_draw_frame(&ui, &scene);
+        ui_draw_frame(&ui, &scene, &platform);
 
         scene_render(&scene);
 
-        //ui_render();
+        ui_render();
         platform_swap_buffer(&platform);
     }
 
-    //ui_shutdown(&ui);
+    ui_shutdown(&ui);
     scene_destroy(&scene);
     platform_window_shutdown(&platform);
 

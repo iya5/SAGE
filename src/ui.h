@@ -28,7 +28,7 @@ struct ui {
 
 /* Initializes the Intermediate-Mode GUI using Nuklear */
 void ui_init(struct ui *ui, struct platform platform);
-void ui_draw_frame(struct ui *ui, struct scene *scene);
+void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform);
 void ui_render(void);
 
 /* Shutdowns the IMGUI */

@@ -36,6 +36,11 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "logger.h"
 #include "scene.h"
 
+typedef struct nk_context context;
+
+static void transform_model_pos_widget(context *self, struct model *model);
+static void transform_model_rotation_widget(context *self, struct model *model);
+
 void ui_init(struct ui *ui, struct platform platform)
 {
     SINFO("Initializing Nuklear Intermediate-Mode GUI");
@@ -52,23 +57,25 @@ void ui_init(struct ui *ui, struct platform platform)
 }
 
 /* drawing windows starts at (0, 0) at the top left */
-void ui_draw_frame(struct ui *ui, struct scene *scene)
+void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform)
 {
+    float width = platform->viewport_width;
+    float height = platform->viewport_height;
+
     struct nk_context *context = ui->context;
 
     nk_glfw3_new_frame();
 
-    if (nk_begin(context, "Nuklear window", nk_rect(100, 0, 500, 500),
+    if (nk_begin(context, "Sage 3D Renderer", nk_rect(0, 0, width, 10), NK_WINDOW_TITLE)) {}
+    nk_end(context);
+
+    if (nk_begin(context, "Nuklear window", nk_rect(50, 50, 230, 500),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
                  | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE)) {
 
-        struct model *model = darray_at(scene->models, 0);
-        struct transform *transform = &model->transform;
 
         enum {EASY, HARD};
         static int op = EASY;
-        static int property = 0;
-
 
         nk_layout_row_static(context, 30, 80, 1);
         if (nk_button_label(context, "button"))
@@ -78,33 +85,17 @@ void ui_draw_frame(struct ui *ui, struct scene *scene)
         if (nk_option_label(context, "easy", op == EASY)) op = EASY;
         if (nk_option_label(context, "hard", op == HARD)) op = HARD;
 
-        nk_layout_row_dynamic(context, 25, 1);
-        nk_property_float(context, "X::", 0, &transform->position[0], 100, 10, 1);
-
-        nk_layout_row_dynamic(context, 25, 1);
-        nk_property_float(context, "Y:", 0, &transform->position[1], 100, 10, 1);
-
-        nk_layout_row_dynamic(context, 25, 1);
-        nk_property_float(context, "2:", 0, &transform->position[2], 100, 10, 1);
-
-        model_translate(model, transform->position);
+        // transform
+        for (uint32_t i = 0; i < scene->models->len; i++) {
+            struct model *model = darray_at(scene->models, i);
+            nk_layout_row_dynamic(context, 20, 1);
+            nk_label(context, model->name, NK_TEXT_LEFT);
+            transform_model_pos_widget(context, model);
+            transform_model_rotation_widget(context, model);
+        }
 
         nk_layout_row_dynamic(context, 20, 1);
         nk_label(context, "background:", NK_TEXT_LEFT);
-        nk_layout_row_dynamic(context, 25, 1);
-
-        /*
-            if (nk_combo_begin_color(context, nk_rgb_cf(bg), nk_vec2(nk_widget_width(context),400))) {
-                nk_layout_row_dynamic(context, 120, 1);
-                bg = nk_color_picker(context, bg, NK_RGBA);
-                nk_layout_row_dynamic(context, 25, 1);
-                bg.r = nk_propertyf(context, "#R:", 0, bg.r, 1.0f, 0.01f,0.005f);
-                bg.g = nk_propertyf(context, "#G:", 0, bg.g, 1.0f, 0.01f,0.005f);
-                bg.b = nk_propertyf(context, "#B:", 0, bg.b, 1.0f, 0.01f,0.005f);
-                bg.a = nk_propertyf(context, "#A:", 0, bg.a, 1.0f, 0.01f,0.005f);
-                nk_combo_end(context);
-            }
-            */
     }
     nk_end(context);
 }
@@ -125,4 +116,94 @@ void ui_shutdown(struct ui *ui)
     SINFO("Shutting down IMGUI");
     nk_glfw3_shutdown();
     ui->context = NULL;
+}
+
+static void transform_model_pos_widget(context *self, struct model *model)
+{
+    struct transform *transform= &model->transform;
+    float transform_step = 0.2;
+    float x_pos = transform->position[0];
+    float y_pos = transform->position[1];
+    float z_pos = transform->position[2];
+
+    /* x-axis position */
+    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    {
+        nk_layout_row_push(self, 5);
+        nk_label(self, "X", NK_TEXT_LEFT);
+        nk_layout_row_push(self, 200);
+        nk_slider_float(self, -10, &x_pos, 10, transform_step);
+    }
+    nk_layout_row_end(self);
+
+    /* y-axis position */
+    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    {
+        nk_layout_row_push(self, 5);
+        nk_label(self, "Y", NK_TEXT_LEFT);
+        nk_layout_row_push(self, 200);
+        nk_slider_float(self, -10, &y_pos, 10, transform_step);
+    }
+    nk_layout_row_end(self);
+
+    /* z-axis position */
+    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    {
+        nk_layout_row_push(self, 5);
+        nk_label(self, "Z", NK_TEXT_LEFT);
+        nk_layout_row_push(self, 200);
+        nk_slider_float(self, -10, &z_pos, 10, transform_step);
+    }
+    nk_layout_row_end(self);
+
+    transform->position[0] = x_pos;
+    transform->position[1] = y_pos;
+    transform->position[2] = z_pos;
+
+    model_translate(model, transform->position);
+}
+
+
+static void transform_model_rotation_widget(context *self, struct model *model)
+{
+    struct transform *transform= &model->transform;
+    float transform_step = 1;
+    float x_deg = MNF_DEG(transform->rotation[0]);
+    float y_deg = MNF_DEG(transform->rotation[1]);
+    float z_deg = MNF_DEG(transform->rotation[2]);
+
+    /* x-axis position */
+    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    {
+        nk_layout_row_push(self, 5);
+        nk_label(self, "X", NK_TEXT_LEFT);
+        nk_layout_row_push(self, 200);
+        nk_slider_float(self, -360, &x_deg, 360, transform_step);
+    }
+    nk_layout_row_end(self);
+
+    /* y-axis position */
+    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    {
+        nk_layout_row_push(self, 5);
+        nk_label(self, "Y", NK_TEXT_LEFT);
+        nk_layout_row_push(self, 200);
+        nk_slider_float(self, -360, &y_deg, 360, transform_step);
+    }
+    nk_layout_row_end(self);
+
+    /* z-axis position */
+    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    {
+        nk_layout_row_push(self, 5);
+        nk_label(self, "Z", NK_TEXT_LEFT);
+        nk_layout_row_push(self, 200);
+        nk_slider_float(self, -360, &z_deg, 360, transform_step);
+    }
+    nk_layout_row_end(self);
+
+    transform->rotation[0] = MNF_RAD(x_deg);
+    transform->rotation[1] = MNF_RAD(y_deg);
+    transform->rotation[2] = MNF_RAD(z_deg);
+    model_rotation(model, transform->rotation);
 }

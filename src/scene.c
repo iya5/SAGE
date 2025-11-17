@@ -59,11 +59,13 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     sphere.material.shader = phong_shader;
     model_scale(&sphere, (vec3){0.5, 0.5, 0.5});
     model_translate(&sphere, (vec3){3, 0.0, -1.0});
+    model_set_name(&sphere, "Sphere");
     darray_push(scene->models, &sphere);
 
     struct model crab = model_load_from_file("res/crab.obj");
     crab.material = material_create("res/crab.png", NULL, 10);
     crab.material.shader = phong_shader;
+    model_set_name(&crab, "Crab");
     darray_push(scene->models, &crab);
 
     struct model light_body = model_load_from_file("res/sphere.obj");
@@ -76,6 +78,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     floor.material.shader = phong_shader;
     model_scale(&floor, (vec3){30, 0.1, 30});
     model_translate(&floor, (vec3){0, -2, 0});
+    model_set_name(&floor, "Floor");
     darray_push(scene->models, &floor);
 
     /* Creating light */
