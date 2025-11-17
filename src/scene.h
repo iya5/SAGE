@@ -33,11 +33,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
  */
 
 #include "camera.h"
-#include "material.h"
 #include "lighting.h"
-#include "mesh.h"
 #include "darray.h"
-#include "shader.h"
 
 #define SCENE_MAX_POINT_LIGHTS 4
 #define SCENE_MAX_MATERIALS 6

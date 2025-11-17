@@ -27,6 +27,7 @@ void main()
        NOTE: I said model because we're representing the vertex in world space,
        but we can optimize by also converting this in view space to reduce one
        variable needed (view position) for calculating specular */
+
     mat3 normal_mat = mat3(transpose(inverse(u_model)));
     frag_pos = vec3(u_model * vec4(attr_pos, 1.0));
     frag_normal = normal_mat * attr_normal;
@@ -153,6 +154,7 @@ vec3 point_light_calculate(point_light light, vec3 normal, vec3 view_direction)
        factors so that the brightness of the light on the fragment decreases
        as distance increases.so intensity of light on the fragment decreases as
        distance of the fragment to the light increases */
+
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;

@@ -23,7 +23,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "material.h"
 #include "model.h"
 #include "shader.h"
-#include "texture.h"
 #include "lighting.h"
 
 #define LEN_STATIC_ARR(arr) sizeof((arr)) / sizeof((arr[0]))
@@ -53,53 +52,102 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
                        PERSPECTIVE_DEFAULT_FAR);
 
     struct shader phong_shader = shader_create("glsl/phong.glsl");
+    struct shader light_shader = shader_create("glsl/light.glsl");
+
+    struct model sphere = model_load_from_file("res/sphere.obj");
+    sphere.material = material_create("res/textures/base.png", NULL, 32);
+    sphere.material.shader = phong_shader;
+    model_scale(&sphere, (vec3){0.5, 0.5, 0.5});
+    model_translate(&sphere, (vec3){3, 0.0, -1.0});
+    darray_push(scene->models, &sphere);
+
+    struct model crab = model_load_from_file("res/crab.obj");
+    crab.material = material_create("res/crab.png", NULL, 10);
+    crab.material.shader = phong_shader;
+    darray_push(scene->models, &crab);
+
+    struct model light_body = model_load_from_file("res/sphere.obj");
+    light_body.material = material_create(NULL, NULL, 1);
+    light_body.material.shader = light_shader;
+    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
+
+    struct model floor = model_create_cube();
+    floor.material = material_create(NULL, NULL, 1);
+    floor.material.shader = phong_shader;
+    model_scale(&floor, (vec3){30, 0.1, 30});
+    model_translate(&floor, (vec3){0, -2, 0});
+    darray_push(scene->models, &floor);
 
     /* Creating light */
     struct directional_light environment_light = {
-        .direction = {0.5, -0.3, 0.5},
-        .ambient = {0.0, 0.0, 0.0},
+        .direction = {0, -1.0, -1.0},
+        .ambient = {0.2, 0.2, 0.2},
         .diffuse = {0.0, 0.0, 0.0},
         .specular = {0.0, 0.0, 0.0}
     };
     scene->environment_light = environment_light;
 
-    struct point_light point_light = {
-        .color = {1.0, 1.0, 1.0},
-        .pos = {1.0, 1.0, 1.0},
-        .diffuse = {1.0, 1.0, 1.0},
-        .specular = {1.0, 1.0, 1.0},
+    struct point_light r_light = {
+        .color = {1.0, 0.0, 0.0},
+        .pos = {1.0, 4.0, 0.0},
+        .diffuse = {1.0, 0.0, 0.0},
+        .specular = {1.0, 0.0, 0.0},
         .constant = 1.0,
         .linear = 0.9,
-        .quadratic = 0.032
+        .quadratic = 0.032,
+        .geometric_model = light_body
     };
-    darray_push(scene->point_lights, &point_light);
+    darray_push(scene->point_lights, &r_light);
 
-    struct model crab = model_load_from_file("res/crab.obj");
-    crab.material = material_create("res/crab.png", NULL, 1024);
-    crab.material.shader = phong_shader;
-    darray_push(scene->models, &crab);
 
-    /* stick the non-geometric light to the visual lightbulb, syncing their 
-       position */
-    struct model lightbulb = model_load_from_file("res/sphere.obj");
-    lightbulb.material = material_create(NULL, NULL, 0);
-    lightbulb.material.shader = phong_shader;
-    model_scale(&lightbulb, (vec3){0.2, 0.2, 0.2});
-    model_translate(&lightbulb, point_light.pos);
-    darray_push(scene->models, &lightbulb);
+    struct point_light g_light = {
+        .color = {0.0, 1.0, 0.0},
+        .pos = {-2.0, 4.0, 2.0},
+        .diffuse = {0.0, 1.0, 0.0},
+        .specular = {0.0, 1.0, 0.0},
+        .constant = 1.0,
+        .linear = 0.9,
+        .quadratic = 0.032,
+        .geometric_model = light_body
+    };
+    darray_push(scene->point_lights, &g_light);
+
+
+    struct point_light b_light = {
+        .color = {0.0, 0.0, 1.0},
+        .pos = {3.0, 4.0, -3.0},
+        .diffuse = {0.0, 0.0, 1.0},
+        .specular = {0.0, 0.0, 1.0},
+        .constant = 1.0,
+        .linear = 0.9,
+        .quadratic = 0.032,
+        .geometric_model = light_body
+    };
+    darray_push(scene->point_lights, &b_light);
 }
 
 // TODO: refactor
 void scene_render(struct scene *scene)
 {
     /* clearing buffers */
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     struct camera *cam = &(scene->cam);
     camera_update(cam);
 
-    /* rendering models */
+    for (uint32_t i = 0; i < scene->point_lights->len; i++) {
+        struct point_light *light = darray_at(scene->point_lights, i);
+        struct model light_model = light->geometric_model;
+        struct shader shader = light_model.material.shader;
+        shader_use(shader);
+        model_translate(&light_model, light->pos);
+        shader_uniform_vec3(shader, "u_color", light->color);
+        shader_uniform_mat4(shader, "u_view", cam->view);
+        shader_uniform_mat4(shader, "u_projection", cam->projection);
+        model_draw(light_model, shader);
+    }
+
     for (uint32_t i = 0; i < scene->models->len; i++) {
         struct model *model = darray_at(scene->models, i);
         struct material material = model->material;
@@ -107,7 +155,9 @@ void scene_render(struct scene *scene)
 
         /* pre-rendering model */
         shader_use(shader);
+        //shader_uniform_vec4(shader, "u_color", (vec4){1.0, 1.0, 1.0, 1.0});
         shader_uniform_mat4(shader, "u_view", cam->view);
+        shader_uniform_vec3(shader, "u_view_pos", cam->pos);
         shader_uniform_mat4(shader, "u_projection", cam->projection);
         lighting_apply(shader, scene->environment_light, scene->point_lights);
 

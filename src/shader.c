@@ -101,6 +101,10 @@ struct shader shader_create(const char *path)
         shader.path[i] = path[i];
     shader.path[i] = '\0';
 
+    SDEBUG("Compiled shader '%s', with OpenGL ID: %d",
+           shader.path,
+           shader.handle);
+
     return shader;
 }
 

@@ -16,6 +16,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdint.h>
 #include <stdlib.h>
 #include <glad/gl.h>
+#include <stddef.h>
 
 #include "assert.h"
 #include "darray.h"
@@ -190,64 +191,35 @@ static struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *ind
 
     /* configure the vao to interpret attributes */
     /* stride is the offset between consecutive generic vertex attributes */
-    size_t vertex_size = 8;
-    size_t stride = vertex_size * sizeof(float);
-    GLboolean normalized = GL_FALSE;
+    size_t stride = sizeof(struct vertex);
 
-    /* bind position attributes */
-    uint32_t pos_index = 0;
-    int32_t pos_size = 3;
     void *pos_offset = (void *) 0;
-    glVertexAttribPointer(pos_index,
-                          pos_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          pos_offset);
-    glEnableVertexAttribArray(pos_index);
+    void *normal_offset = (void *) offsetof(struct vertex, normal);
+    void *uv_offset = (void *) offsetof(struct vertex, uv);
 
-
-    /* bind normal uv attributes */
-    uint32_t normal_index = 1;
-    int32_t normal_size = 3;
-    void *normal_offset = (void *) ((pos_size) * sizeof(float));
-    glVertexAttribPointer(normal_index,
-                          normal_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          normal_offset);
-
-    /* bind texture uv attributes */
-    uint32_t uv_index = 2;
-    int32_t uv_size = 2;
-    void *uv_offset = (void *) ((pos_size + normal_size) * sizeof(float));
-    glVertexAttribPointer(uv_index,
-                          uv_size,
-                          GL_FLOAT,
-                          normalized, 
-                          stride,
-                          uv_offset);
-    glEnableVertexAttribArray(uv_index);
-    glEnableVertexAttribArray(normal_index);
+    /* position attribute */
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, pos_offset);
+    glEnableVertexAttribArray(0);
+    /* normal attribute */
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, normal_offset);
+    glEnableVertexAttribArray(1);
+    /* uv attribute */
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, uv_offset);
+    glEnableVertexAttribArray(2);
 
     if (indices) {
-        /* generating buffer for indices */
         glGenBuffers(1, &ibo);
-        /* bind indices for index drawing */
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                      indices->item_size * indices->len,
                      indices->items,
                      GL_STATIC_DRAW);
-
         buffer.ibo = ibo;
         buffer.index_count = (uint32_t) indices->len;
     } else {
         buffer.ibo = 0;
         buffer.index_count = 0;
     }
-
 
     /* unbinding */
     glBindBuffer(GL_ARRAY_BUFFER, 0);

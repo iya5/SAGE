@@ -116,10 +116,11 @@ bool platform_window_init(struct platform *platform,
     }
 
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
+    /* setup hints */
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SAGE_OPENGL_MAJOR_VERSION);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, SAGE_OPENGL_MINOR_VERSION);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
     GLFWwindow *context = glfwCreateWindow(window_width,
                                            window_height,
                                            SAGE_WINDOW_TITLE,
@@ -132,11 +133,6 @@ bool platform_window_init(struct platform *platform,
 
     glfwMakeContextCurrent(context);
 
-    /* setup hints */
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SAGE_OPENGL_MAJOR_VERSION);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, SAGE_OPENGL_MINOR_VERSION);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, SAGE_MULTISAMPLE_ANTIALIASING);
     glfwSwapInterval(SAGE_VSYNC_SETTING);
 
     /* setting up event callbacks */
