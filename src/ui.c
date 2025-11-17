@@ -38,8 +38,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 typedef struct nk_context context;
 
-static void transform_model_pos_widget(context *self, struct model *model);
-static void transform_model_rotation_widget(context *self, struct model *model);
+static void transform_model_pos_widget(context *ctx, struct model *model);
+static void transform_model_rotation_widget(context *ctx, struct model *model);
+static void transform_model_scale_widget(context *ctx, struct model *model);
 
 void ui_init(struct ui *ui, struct platform platform)
 {
@@ -69,7 +70,7 @@ void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform
     if (nk_begin(context, "Sage 3D Renderer", nk_rect(0, 0, width, 10), NK_WINDOW_TITLE)) {}
     nk_end(context);
 
-    if (nk_begin(context, "Nuklear window", nk_rect(50, 50, 230, 500),
+    if (nk_begin(context, "Nuklear window", nk_rect(50, 50, 300, 500),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
                  | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE)) {
 
@@ -77,7 +78,6 @@ void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform
         enum {EASY, HARD};
         static int op = EASY;
 
-        nk_layout_row_static(context, 30, 80, 1);
         if (nk_button_label(context, "button"))
             SDEBUG("button pressed");
 
@@ -88,10 +88,12 @@ void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform
         // transform
         for (uint32_t i = 0; i < scene->models->len; i++) {
             struct model *model = darray_at(scene->models, i);
+
             nk_layout_row_dynamic(context, 20, 1);
             nk_label(context, model->name, NK_TEXT_LEFT);
             transform_model_pos_widget(context, model);
             transform_model_rotation_widget(context, model);
+            transform_model_scale_widget(context, model);
         }
 
         nk_layout_row_dynamic(context, 20, 1);
@@ -118,7 +120,7 @@ void ui_shutdown(struct ui *ui)
     ui->context = NULL;
 }
 
-static void transform_model_pos_widget(context *self, struct model *model)
+static void transform_model_pos_widget(context *ctx, struct model *model)
 {
     struct transform *transform= &model->transform;
     float transform_step = 0.2;
@@ -127,34 +129,41 @@ static void transform_model_pos_widget(context *self, struct model *model)
     float z_pos = transform->position[2];
 
     /* x-axis position */
-    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
-        nk_layout_row_push(self, 5);
-        nk_label(self, "X", NK_TEXT_LEFT);
-        nk_layout_row_push(self, 200);
-        nk_slider_float(self, -10, &x_pos, 10, transform_step);
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "Position", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "X", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -10, &x_pos, 10, transform_step);
     }
-    nk_layout_row_end(self);
+    nk_layout_row_end(ctx);
 
     /* y-axis position */
-    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
-        nk_layout_row_push(self, 5);
-        nk_label(self, "Y", NK_TEXT_LEFT);
-        nk_layout_row_push(self, 200);
-        nk_slider_float(self, -10, &y_pos, 10, transform_step);
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "Y", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -10, &y_pos, 10, transform_step);
     }
-    nk_layout_row_end(self);
+    nk_layout_row_end(ctx);
 
     /* z-axis position */
-    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
-        nk_layout_row_push(self, 5);
-        nk_label(self, "Z", NK_TEXT_LEFT);
-        nk_layout_row_push(self, 200);
-        nk_slider_float(self, -10, &z_pos, 10, transform_step);
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "Z", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -10, &z_pos, 10, transform_step);
     }
-    nk_layout_row_end(self);
+    nk_layout_row_end(ctx);
 
     transform->position[0] = x_pos;
     transform->position[1] = y_pos;
@@ -163,8 +172,7 @@ static void transform_model_pos_widget(context *self, struct model *model)
     model_translate(model, transform->position);
 }
 
-
-static void transform_model_rotation_widget(context *self, struct model *model)
+static void transform_model_rotation_widget(context *ctx, struct model *model)
 {
     struct transform *transform= &model->transform;
     float transform_step = 1;
@@ -172,38 +180,97 @@ static void transform_model_rotation_widget(context *self, struct model *model)
     float y_deg = MNF_DEG(transform->rotation[1]);
     float z_deg = MNF_DEG(transform->rotation[2]);
 
-    /* x-axis position */
-    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    /* x-axis rotation */
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
-        nk_layout_row_push(self, 5);
-        nk_label(self, "X", NK_TEXT_LEFT);
-        nk_layout_row_push(self, 200);
-        nk_slider_float(self, -360, &x_deg, 360, transform_step);
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "Rotation", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "X", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -360, &x_deg, 360, transform_step);
     }
-    nk_layout_row_end(self);
+    nk_layout_row_end(ctx);
 
-    /* y-axis position */
-    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    /* y-axis rotation */
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
-        nk_layout_row_push(self, 5);
-        nk_label(self, "Y", NK_TEXT_LEFT);
-        nk_layout_row_push(self, 200);
-        nk_slider_float(self, -360, &y_deg, 360, transform_step);
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "Y", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -360, &y_deg, 360, transform_step);
     }
-    nk_layout_row_end(self);
+    nk_layout_row_end(ctx);
 
-    /* z-axis position */
-    nk_layout_row_begin(self, NK_STATIC, 30, 2);
+    /* z-axis rotation */
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
-        nk_layout_row_push(self, 5);
-        nk_label(self, "Z", NK_TEXT_LEFT);
-        nk_layout_row_push(self, 200);
-        nk_slider_float(self, -360, &z_deg, 360, transform_step);
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "Z", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -360, &z_deg, 360, transform_step);
     }
-    nk_layout_row_end(self);
+    nk_layout_row_end(ctx);
 
     transform->rotation[0] = MNF_RAD(x_deg);
     transform->rotation[1] = MNF_RAD(y_deg);
     transform->rotation[2] = MNF_RAD(z_deg);
     model_rotation(model, transform->rotation);
 }
+
+static void transform_model_scale_widget(context *ctx, struct model *model)
+{
+    struct transform *transform= &model->transform;
+    float transform_step = 0.2;
+    float x_scale = transform->scale[0];
+    float y_scale = transform->scale[1];
+    float z_scale = transform->scale[2];
+
+    /* x-axis position */
+
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+    {
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "Scale", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "X", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -10, &x_scale, 10, transform_step);
+    }
+    nk_layout_row_end(ctx);
+
+    /* y-axis position */
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+    {
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "Y", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -10, &y_scale, 10, transform_step);
+    }
+    nk_layout_row_end(ctx);
+
+    /* z-axis position */
+    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+    {
+        nk_layout_row_push(ctx, 60);
+        nk_label(ctx, "", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 5);
+        nk_label(ctx, "Z", NK_TEXT_LEFT);
+        nk_layout_row_push(ctx, 200);
+        nk_slider_float(ctx, -10, &z_scale, 10, transform_step);
+    }
+    nk_layout_row_end(ctx);
+
+    transform->scale[0] = x_scale;
+    transform->scale[1] = y_scale;
+    transform->scale[2] = z_scale;
+
+    model_scale(model, transform->scale);
+}
+
