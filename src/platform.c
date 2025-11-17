@@ -25,6 +25,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #define GET_KPD(action) (action) == GLFW_PRESS || (action) == GLFW_REPEAT
 
+static void gl_reset_state(void);
+
 void error_callback(int32_t error, const char *description)
 {
     SERROR("Error (%d): %s", error, description);
@@ -183,10 +185,8 @@ bool platform_window_init(struct platform *platform,
 
 
 
-    /* Set OpenGL parameters */
+    /* Set OpenGL state */
     glViewport(0, 0, viewport_width, viewport_height);
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -224,6 +224,8 @@ bool platform_should_close(struct platform *platform)
 void platform_swap_buffer(struct platform *platform)
 {
     glfwSwapBuffers(platform->context);
+    /* nuklear changes the OpenGL state so it must be reset back */
+    gl_reset_state();
 }
 
 void platform_window_shutdown(struct platform *platform)
@@ -250,4 +252,13 @@ void gl_polygon_mode(enum polygon_mode mode) {
     }
 
     glPolygonMode(GL_FRONT_AND_BACK, gl_mode);
+}
+
+static void gl_reset_state(void)
+{
+    glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

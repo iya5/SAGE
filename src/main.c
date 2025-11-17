@@ -17,14 +17,17 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "ui.h"
 #include "camera.h"
 #include "config.h"
 #include "scene.h"
 #include "logger.h"
 #include "platform.h"
 
+struct nk_context *context;
 struct scene scene;
 struct platform platform;
+struct ui ui;
 struct debug_settings {
     bool draw_skybox;
 } debug;
@@ -73,7 +76,7 @@ int main(int argc, __attribute__((unused)) char **argv)
 {
     if (argc > 1) {
         SFATAL("Sage has no flags, run the binary by itself.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     platform_window_init(&platform, 
@@ -82,7 +85,7 @@ int main(int argc, __attribute__((unused)) char **argv)
                          SAGE_INITIAL_VIEWPORT_WIDTH,
                          SAGE_INITIAL_VIEWPORT_HEIGHT);
     
-    // ui_init
+    ui_init(&ui, platform);
     scene_init(&scene, platform.viewport_width, platform.viewport_height);
 
     double previous_time = platform_get_time_seconds();
@@ -94,15 +97,17 @@ int main(int argc, __attribute__((unused)) char **argv)
         platform_poll_input(&platform);
         process_input(delta_time);
 
-        // ui_draw
+        ui_draw_frame(&ui, &scene);
+
         scene_render(&scene);
 
+        ui_render();
         platform_swap_buffer(&platform);
     }
 
-    // ui_shutdown
+    ui_shutdown(&ui);
     scene_destroy(&scene);
     platform_window_shutdown(&platform);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
