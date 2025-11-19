@@ -13,25 +13,12 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_UI_H
-#define SAGE_UI_H
+#ifndef SAGE_INPUT_H
+#define SAGE_INPUT_H
 
-#include "platform.h"
 #include "scene.h"
+#include "platform.h"
 
-/* Forward-declaration */
-struct nk_context;
+void process_input(struct scene *scene, struct platform *platform, double dt);
 
-struct ui {
-    struct nk_context *context;
-};
-
-/* Initializes the Intermediate-Mode GUI using Nuklear */
-void ui_init(struct ui *ui, struct platform platform);
-void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform);
-void ui_render(void);
-
-/* Shutdowns the IMGUI */
-void ui_shutdown(struct ui *ui);
-
-#endif /* SAGE_UI_H */
+#endif /* SAGE_INPUT_H */

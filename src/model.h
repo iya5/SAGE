@@ -16,6 +16,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #ifndef SAGE_MODEL_H
 #define SAGE_MODEL_H
 
+#include <stdbool.h>
+
 #include "material.h"
 #include "shader.h"
 #include "mesh.h"
@@ -27,6 +29,7 @@ struct model {
     struct mesh mesh;
     struct material material;
     struct transform transform;
+    bool rendered;
 };
 
 struct model model_load_from_file(const char *path);

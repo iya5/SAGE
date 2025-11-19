@@ -20,8 +20,10 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stddef.h>
 
 #include "mnf/mnf_types.h"
-#include "texture.h"
 #include "darray.h"
+
+/* A mesh is just a c
+ */
 
 struct vertex {
     vec3 pos;

@@ -45,7 +45,6 @@ darray *obj_load_from_file(const char *path)
     darray *positions = darray_alloc(sizeof(vec3), 1028);
     darray *normals = darray_alloc(sizeof(vec3), 1028);
     darray *uvs = darray_alloc(sizeof(vec2), 1028);
-    SDEBUG("size of vertex %d", sizeof(struct vertex));
     darray *vertices = darray_alloc(sizeof(struct vertex), 1028);
 
     ssize_t nread;
@@ -112,11 +111,10 @@ darray *obj_load_from_file(const char *path)
         }
     }
 
+    free(line);
     darray_free(positions);
     darray_free(uvs);
     darray_free(normals);
-
-    free(line);
     fclose(file);
     
     return vertices;

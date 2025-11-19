@@ -101,10 +101,6 @@ struct shader shader_create(const char *path)
         shader.path[i] = path[i];
     shader.path[i] = '\0';
 
-    SDEBUG("Compiled shader '%s', with OpenGL ID: %d",
-           shader.path,
-           shader.handle);
-
     return shader;
 }
 
@@ -198,7 +194,7 @@ static char *shader_load_from_source(const char *path)
     if (length == -1) goto err;
     if (fseek(file, 0, SEEK_SET) == -1) goto err;
 
-    source = (char *) malloc(length + 1);
+    source = malloc(length + 1);
     if (source == NULL) goto err;
 
     bytes_read = fread(source, sizeof(char), length, file);

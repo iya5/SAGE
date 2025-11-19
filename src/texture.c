@@ -30,16 +30,11 @@ struct texture texture_create(const char *path)
 	SINFO("Creating texture of %s", path);
 	struct texture texture = {0};
 	int32_t width, height, channels;
-	width = height = channels = 0;
 
-	/* 
-     * OpenGL expects the uv 0.0 coordinate on the y-axis to be on the bottom
-     * side of the image 
-     */
+	/* OpenGL expects the uv 0.0 coordinate on the y-axis to be on the bottom
+       side of the image */
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load(
-		path, &width, &height, &channels, STBI_rgb_alpha
-	);
+	unsigned char *data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
 
 	if (data == NULL) {
 		SERROR("Texture '%s' failed to load", path);

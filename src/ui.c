@@ -13,6 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <stdbool.h>
+
 /* necessary to include glfw header before nuklear */
 #include "mesh.h"
 #include "model.h"
@@ -58,8 +60,9 @@ void ui_init(struct ui *ui, struct platform platform)
 }
 
 /* drawing windows starts at (0, 0) at the top left */
-void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform)
+void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
 {
+    static bool first_load = true;
     float width = platform->viewport_width;
     float height = platform->viewport_height;
 
@@ -67,39 +70,48 @@ void ui_draw_frame(struct ui *ui, struct scene *scene, struct platform *platform
 
     nk_glfw3_new_frame();
 
+
     if (nk_begin(context, "Sage 3D Renderer", nk_rect(0, 0, width, 10), NK_WINDOW_TITLE)) {}
     nk_end(context);
 
-    if (nk_begin(context, "Nuklear window", nk_rect(50, 50, 300, 500),
+    if (nk_begin(context, "Model Transform", nk_rect(50, 50, 300, 500),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
-                 | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE)) {
+                 | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_MINIMIZED )) {
 
 
         enum {EASY, HARD};
-        static int op = EASY;
 
         if (nk_button_label(context, "button"))
             SDEBUG("button pressed");
 
-        nk_layout_row_dynamic(context, 30, 2);
-        if (nk_option_label(context, "easy", op == EASY)) op = EASY;
-        if (nk_option_label(context, "hard", op == HARD)) op = HARD;
 
         // transform
         for (uint32_t i = 0; i < scene->models->len; i++) {
             struct model *model = darray_at(scene->models, i);
 
+
             nk_layout_row_dynamic(context, 20, 1);
             nk_label(context, model->name, NK_TEXT_LEFT);
-            transform_model_pos_widget(context, model);
-            transform_model_rotation_widget(context, model);
-            transform_model_scale_widget(context, model);
-        }
 
-        nk_layout_row_dynamic(context, 20, 1);
-        nk_label(context, "background:", NK_TEXT_LEFT);
+            nk_layout_row_dynamic(context, 30, 2);
+            if (nk_option_label(context, "show", model->rendered))
+                model->rendered = true;
+            if (nk_option_label(context, "hide", !model->rendered))
+                model->rendered = false;
+
+            if (model->rendered) {
+                transform_model_pos_widget(context, model);
+                transform_model_rotation_widget(context, model);
+                transform_model_scale_widget(context, model);
+            }
+        }
     }
     nk_end(context);
+
+    if (first_load) {
+        first_load = false;
+        nk_window_collapse(context, "Model Transform", NK_MINIMIZED);
+    }
 }
 
 void ui_render(void)
@@ -129,7 +141,6 @@ static void transform_model_pos_widget(context *ctx, struct model *model)
     float z_pos = transform->position[2];
 
     /* x-axis position */
-
     nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
     {
         nk_layout_row_push(ctx, 60);

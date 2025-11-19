@@ -15,79 +15,65 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
-#include "ui.h"
-#include "camera.h"
 #include "config.h"
-#include "scene.h"
-#include "logger.h"
 #include "platform.h"
+#include "ui.h"
+#include "scene.h"
+#include "input.h"
 
-struct nk_context *context;
 struct scene scene;
 struct platform platform;
 struct ui ui;
-struct debug_settings {
-    bool draw_skybox;
-} debug;
 
-void process_input(double dt)
+int main(void)
 {
-    struct camera *cam = &(scene.cam);
-    struct input_state *input = platform.input;
-    bool *keys = input->keys;
-    bool *mouse_buttons = input->mouse_buttons;
+    /* The main() function is the orchestrator and entrance to the application
+       where the binary starts running.
+     
+       All of our initializations occur here, we pass references to our structs
+       so that we can declare them statically, plus it's overall nicer.
+       
+       When the program starts, it begins by starting platform-specific code for
+       OpenGL (loading the functions & starting it) as well as input & window
+       management. We pass the window's size as well as the viewport (that is,
+       the drawable part of the window, typically the same size as the window)
+       to our init function.
 
-    if (keys[KEY_ESC]) platform.running = false;
+       The UI is done using Immediate-Mode GUI (drawn every single frame) and
+       it too requires an initialization by passing the platform  (to retrieve
+       the width & height of the drawable area)
 
-    if (keys[KEY_W])
-        camera_move(cam, MOVE_FORWARD, dt);
+       Finally, the scene is initialized; including the geometry, lighting, &
+       camera necessary to view the 3D rendered models.
 
-    if (keys[KEY_A])
-        camera_move(cam, STRAFE_LEFT, dt);
-
-    if (keys[KEY_S])
-        camera_move(cam, MOVE_BACKWARD, dt);
-
-    if (keys[KEY_D])
-        camera_move(cam, STRAFE_RIGHT, dt);
-
-    if (keys[KEY_SPACE])
-        camera_move(cam, MOVE_UP, dt);
-
-    if (keys[KEY_LCTRL])
-        camera_move(cam, MOVE_DOWN, dt);
-
-    if (keys[KEY_1]) debug.draw_skybox = true;
-    if (keys[KEY_2]) debug.draw_skybox = false;
-    if (keys[KEY_3]) gl_polygon_mode(POLYGON_LINE);
-    if (keys[KEY_4]) gl_polygon_mode(POLYGON_FILL);
-
-    if (mouse_buttons[MOUSE_RIGHT])
-        cam->can_move = true;
-    else
-        cam->can_move = false;
-
-    camera_mouse(cam, input->mouse_dx, input->mouse_dy);
-}
-
-int main(int argc, __attribute__((unused)) char **argv)
-{
-    if (argc > 1) {
-        SFATAL("Sage has no flags, run the binary by itself.");
-        exit(EXIT_FAILURE);
-    }
-
+       All of these initializations will later on be 'deinitialized' for
+       gracefully ending the program. */
     platform_window_init(&platform, 
                          SAGE_INITIAL_WINDOW_WIDTH,
                          SAGE_INITIAL_WINDOW_HEIGHT,
                          SAGE_INITIAL_VIEWPORT_WIDTH,
                          SAGE_INITIAL_VIEWPORT_HEIGHT);
-    
     ui_init(&ui, platform);
     scene_init(&scene, platform.viewport_width, platform.viewport_height);
 
+    /* This is our rendering loop (or can also be thought of as the game loop
+       which 'runs' the entire program every frame until it closes.
+
+       The general structure of the rendering loop can be thought of as this:
+       1. begin the loop
+       2. poll for input
+       3. process the input
+       4. render the UI
+       5. render the scene (everything from models, to lighting, to cameras)
+       6. swap the back buffer with the front buffer
+       7. go backt to the start of the loop & repeat
+
+       There are additional steps such as calculating delta time used for
+       the input or other debug options like the FPS (or even better, the time
+       per frame!) but generally, it looks like the above, atleast for this
+       project.
+       */
     double previous_time = platform_get_time_seconds();
     while (!platform_should_close(&platform)) {
         double current_time = platform_get_time_seconds();
@@ -95,19 +81,45 @@ int main(int argc, __attribute__((unused)) char **argv)
         previous_time = current_time;
 
         platform_poll_input(&platform);
-        process_input(delta_time);
+        process_input(&scene, &platform, delta_time);
 
-        ui_draw_frame(&ui, &scene, &platform);
-
+        ui_draw(&ui, &scene, &platform);
         scene_render(&scene);
 
+        /* The reason we draw the UI, then render the scene, then finally render
+           the UI is because of how the UI's backend requires setting some
+           changes to OpenGL's state that would affect our scene. There are more
+           things that do happen internally and can be viewed by reading the
+           documentation over at: 'ui.h' */
         ui_render();
         platform_swap_buffer(&platform);
     }
 
+    /* After the program proceeds to end, whether it was through forceful
+       means, or intentional ones, all of the initializations done at the top
+       are sent to shutdown or destroy, for example freeing up memory allocated
+       to loading a model, or properly closing the window & cleaning up some
+       things. Normally, it would be okay to simply ignore this and just kill
+       the program then and there since the Operating System cleans up after
+       ourselves, but it's not a good habit to do so!
+
+       After that's done, Sage returns 0 indicating (hopefully) that everything
+       went well.
+
+       For learning more about Sage, there are 2 routes that gives different
+       perspectives; a high-level overview of the entire renderer (that is, the
+       actual visuals being shown), or the lower-level overview for building up
+       to the former.
+
+       For a high-level overview: 'scene.h' provides the introduction to how
+       scenes are managed, what is a scene, and what is its components, and how
+       are things displayed!
+
+       For a lower-level overview: 'mesh'.h' shows how rendering works using
+       OpenGL, what is OpenGL to begin with, and the overall graphics pipeline */
     ui_shutdown(&ui);
     scene_destroy(&scene);
     platform_window_shutdown(&platform);
 
-    return EXIT_SUCCESS;
+    return 0;
 }

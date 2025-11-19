@@ -25,7 +25,14 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "shader.h"
 #include "lighting.h"
 
-#define LEN_STATIC_ARR(arr) sizeof((arr)) / sizeof((arr[0]))
+struct skybox {
+    struct texture cubemap;
+    struct mesh mesh;
+};
+
+void skybox_init(struct skybox *skybox, const char *cubemap_paths[6]);
+void skybox_draw(struct skybox *skybox, const char *cubemap_paths[6]);
+
 
 void scene_init(struct scene *scene, float viewport_width, float viewport_height)
 {
@@ -130,9 +137,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     /* Creating light */
     struct directional_light environment_light = {
         .direction = {0, -1.0, -1.0},
-        .ambient = {0.4, 0.4, 0.4},
-        .diffuse = {0.7, 0.7, 0.7},
-        .specular = {0.2, 0.2, 0.2}
+        .ambient = {0.2, 0.2, 0.2},
+        .diffuse = {0.0, 0.0, 0.0},
+        .specular = {0.0, 0.0, 0.0}
     };
     scene->environment_light = environment_light;
 
@@ -175,6 +182,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     darray_push(scene->point_lights, &b_light);
 }
 
+
 // TODO: refactor
 void scene_render(struct scene *scene)
 {
@@ -199,6 +207,8 @@ void scene_render(struct scene *scene)
 
     for (uint32_t i = 0; i < scene->models->len; i++) {
         struct model *model = darray_at(scene->models, i);
+        if (!model->rendered) continue;
+
         struct material material = model->material;
         struct shader shader = material.shader;
 

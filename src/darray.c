@@ -50,7 +50,7 @@ size_t darray_push(darray *arr, void *item)
     }
     size_t index = arr->len;
     size_t offset = index * arr->item_size;
-    memcpy((uint8_t  *) arr->items + offset, item, arr->item_size);
+    memcpy((uint8_t *) arr->items + offset, item, arr->item_size);
     arr->len++;
 
     return index;

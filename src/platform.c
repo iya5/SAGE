@@ -198,13 +198,13 @@ bool platform_window_init(struct platform *platform,
     /* set user pointer so platform is accessible in callbacks */
     glfwSetWindowUserPointer(context, platform);
 
-    return true;
+    return 0;
 
 err_platform:
     if (input) free(input);
     glfwTerminate();
     context = NULL;
-    return false;
+    return 1;
 }
 
 double platform_get_time_seconds(void)

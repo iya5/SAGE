@@ -16,37 +16,54 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #ifndef SAGE_SCENE_H
 #define SAGE_SCENE_H
 
-/*
- * From scratch a pixel
- * However, a 3D scene encompasses more than just geometry. While geometry is a
- * critical element, a camera is also needed to view the scene. Thus, a scene
- * description typically includes a camera. Moreover, a scene without light
- * would appear black, necessitating the inclusion of lights. In rendering, all
- * this information (the geometry, camera, and lights) is contained within a
- * file called the scene file. The content of the 3D scene can also be loaded
- * into the memory of a 3D package such as Maya or Blender. In such cases, when
- * a user initiates rendering, a special program or plugin processes each object
- * in the scene, along with each light, and exports everything (including the
- * camera) directly to the renderer. Additionally, the renderer requires certain
- * extra information, such as the resolution of the final image, typically
- * referred to as global render settings or options.
- */
-
 #include "camera.h"
 #include "lighting.h"
 #include "darray.h"
 
-#define SCENE_MAX_POINT_LIGHTS 4
-#define SCENE_MAX_MATERIALS 6
+/* A good definition of what a scene is can be taken from the website: 
+   scratch a pixel
+ 
+        "...However, a 3D scene encompasses more than just geometry. While
+        geometry is a critical element, a camera is also needed to view the
+        scene. Thus, a scene description typically includes a camera. Moreover,
+        a scene without light would appear black, necessitating the inclusion of
+        lights. In rendering, all this information (the geometry, camera, and
+        lights) is contained within a file called the scene file."
 
+   And that's pretty much what a scene is, given its theatrical nature, it can
+   also be thought of at the actual "stage" of a play, with all the actors &
+   props representing the geometry (or what we can call as models), the lighting
+   so that we can see the objects, and of course the audience (or the camera).
+
+   There are also some terms such as a Scene Graph which is a data structure
+   used for representing scenes in a tree-like hierarchy, We recommend the
+   reader to take some time reading more about it, it's very interesting and
+   also because the scene representation of this project is just a flat struct
+   of arrays.
+
+   With that in mind, the project's scene is a struct that contains; a camera;
+   a directional light (an example, the sun) and point lights (they are
+   most similar to light bulbs); and models, which are composed of geometry and
+   attributes for how its supposed to look like when rendered
+
+   The scene is just the actual "visual" aspect of the project! */
 struct scene {
     struct camera cam; 
     struct directional_light environment_light;
-
+    /* darrays are just dynamically-allocated arrays that can resize itself
+       when it gets full, thus it differs from a normal array in the fact that
+       it's located on the heap. We use it for models & point lights because
+       it's easier to manage however many objets a person might want to load,
+       and it ideally saves space compared to using a statically-allocated array
+       where parts of its memory might not be used */
     darray *models;
     darray *point_lights;
 };
 
+/* There are only 3 scene functons used and that is for initialization,
+   rendering the scene, and after, destroying the scene once the program ends.
+
+   */
 void scene_init(struct scene *scene, float viewport_width, float viewport_height);
 void scene_render(struct scene *scene);
 void scene_destroy(struct scene *scene);
