@@ -68,6 +68,7 @@ struct point_light {
     float constant;
     float linear;
     float quadratic;
+    bool visible;
 };
 #define MAX_SCENE_POINT_LIGHT 8
 uniform int u_num_point_lights;
@@ -82,6 +83,7 @@ vec3 directional_light_calculate(directional_light light);
 
 vec3 point_light_calculate(point_light light, vec3 normal, vec3 view_direction)
 {
+    if (!light.visible) return vec3(0.0);
     /* Retrieve the light direction by getting the difference between its
        position and the fragment currently being shaded. This will be used for
        both the diffuse & specular reflection model */
@@ -199,7 +201,6 @@ void main()
     /* Calculating the influence of all point lights passed to the shader */
     for (int i = 0; i < u_num_point_lights; i++)
         output_color += point_light_calculate(u_point_lights[i], normal, view_direction);
-
     out_color = vec4(output_color, 1.0);
 }
 

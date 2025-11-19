@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <string.h>
 
 #include "lighting.h"
+#include "logger.h"
 
 #define MAX_UNIFORM_NAME_LEN 64
 
@@ -35,33 +36,39 @@ void lighting_apply(struct shader active_shader,
         struct point_light *point_light = darray_at(point_lights, i);
         char uniform_name[MAX_UNIFORM_NAME_LEN] = {0};
 
+        /* visible */
+        snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].visible", i);
+        shader_uniform_1i(active_shader, uniform_name, point_light->visible);
+        if (!point_light->visible) continue;
+
         /* position */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].pos", i);
         shader_uniform_vec3(active_shader, uniform_name, point_light->pos);
-        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
 
         /* diffuse */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].diffuse", i);
         shader_uniform_vec3(active_shader, uniform_name, point_light->diffuse);
-        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
 
         /* specular */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].specular", i);
         shader_uniform_vec3(active_shader, uniform_name, point_light->specular);
-        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
 
         /* constant */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].constant", i);
         shader_uniform_1f(active_shader, uniform_name, point_light->constant);
-        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
         /* linear */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].linear", i);
         shader_uniform_1f(active_shader, uniform_name, point_light->linear);
-        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
 
         /* quadratic */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].quadratic", i);
         shader_uniform_1f(active_shader, uniform_name, point_light->quadratic);
-        memset(uniform_name, 0, MAX_UNIFORM_NAME_LEN);
+
     }
 }
+
+void light_set_name(struct point_light *light, char name[LIGHT_NAME_MAX_SIZE])
+{
+    strncpy(light->name, name, LIGHT_NAME_MAX_SIZE);
+}
+

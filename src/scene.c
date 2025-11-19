@@ -145,8 +145,10 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .constant = 1.0,
         .linear = 0.9,
         .quadratic = 0.032,
-        .geometric_model = light_body
+        .geometric_model = light_body,
+        .visible = true
     };
+    light_set_name(&r_light, "Red");
     darray_push(scene->point_lights, &r_light);
 
 
@@ -158,8 +160,10 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .constant = 1.0,
         .linear = 0.9,
         .quadratic = 0.032,
-        .geometric_model = light_body
+        .geometric_model = light_body,
+        .visible = true
     };
+    light_set_name(&g_light, "Green");
     darray_push(scene->point_lights, &g_light);
 
 
@@ -171,8 +175,10 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .constant = 1.0,
         .linear = 0.9,
         .quadratic = 0.032,
-        .geometric_model = light_body
+        .geometric_model = light_body,
+        .visible = true
     };
+    light_set_name(&b_light, "Blue");
     darray_push(scene->point_lights, &b_light);
 
      const char *cubemap_faces[6] = {
@@ -202,6 +208,8 @@ void scene_render(struct scene *scene)
 
     for (uint32_t i = 0; i < scene->point_lights->len; i++) {
         struct point_light *light = darray_at(scene->point_lights, i);
+        if (!light->visible) continue;
+
         struct model light_model = light->geometric_model;
         struct shader shader = light_model.material.shader;
         shader_use(shader);
@@ -214,7 +222,7 @@ void scene_render(struct scene *scene)
 
     for (uint32_t i = 0; i < scene->models->len; i++) {
         struct model *model = darray_at(scene->models, i);
-        if (!model->rendered) continue;
+        if (!model->visible) continue;
 
         struct material material = model->material;
         struct shader shader = material.shader;

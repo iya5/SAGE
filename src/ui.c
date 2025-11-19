@@ -16,6 +16,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdbool.h>
 
 /* necessary to include glfw header before nuklear */
+#include "darray.h"
 #include "mesh.h"
 #include "model.h"
 #include "platform.h"
@@ -36,6 +37,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <demo/glfw_opengl4/nuklear_glfw_gl4.h>
 
 #include "ui.h"
+#include "mnf/mnf_vector.h"
 #include "logger.h"
 #include "scene.h"
 
@@ -84,6 +86,9 @@ void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
         if (nk_button_label(context, "button"))
             SDEBUG("button pressed");
 
+        static float pos_x = 20;
+        nk_layout_row_dynamic(context, 25, 1);
+        nk_property_float(context, "X:", -100, &pos_x, 100, 10, 1);
         // transform
         for (uint32_t i = 0; i < scene->models->len; i++) {
             struct model *model = darray_at(scene->models, i);
@@ -93,12 +98,12 @@ void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
             nk_label(context, model->name, NK_TEXT_LEFT);
 
             nk_layout_row_dynamic(context, 30, 2);
-            if (nk_option_label(context, "show", model->rendered))
-                model->rendered = true;
-            if (nk_option_label(context, "hide", !model->rendered))
-                model->rendered = false;
+            if (nk_option_label(context, "show", model->visible))
+                model->visible= true;
+            if (nk_option_label(context, "hide", !model->visible))
+                model->visible= false;
 
-            if (model->rendered) {
+            if (model->visible) {
                 transform_model_pos_widget(context, model);
                 transform_model_rotation_widget(context, model);
                 transform_model_scale_widget(context, model);
@@ -107,9 +112,43 @@ void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
     }
     nk_end(context);
 
+    if (nk_begin(context, "Options", nk_rect(350, 100, 300, 300),
+                 NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
+                 | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_MINIMIZED )) {
+        
+        static float step = 0.05;
+        if (nk_tree_push(context, NK_TREE_TAB, "Point Lights", NK_MINIMIZED)) {
+            for (uint32_t i = 0; i < scene->point_lights->len; i++) {
+                struct point_light *light = darray_at(scene->point_lights, i);
+
+                nk_label(context, light->name, NK_TEXT_LEFT);
+
+                nk_layout_row_dynamic(context, 30, 2);
+                if (nk_option_label(context, "show", light->visible))
+                    light->visible= true;
+                if (nk_option_label(context, "hide", !light->visible))
+                    light->visible= false;
+
+                if (!light->visible) continue;
+                nk_label(context, "Position:", NK_TEXT_LEFT);
+                nk_layout_row_dynamic(context, 25, 1);
+                nk_property_float(context, "#X:", -100, &light->pos[0], 100, 10, step);
+
+                nk_layout_row_dynamic(context, 25, 1);
+                nk_property_float(context, "#Y:", -100, &light->pos[1], 100, 10, step);
+
+                nk_layout_row_dynamic(context, 25, 1);
+                nk_property_float(context, "#Z:", -100, &light->pos[2], 100, 10, step);
+            }
+            nk_tree_pop(context);
+        }
+    }
+    nk_end(context);
+
     if (first_load) {
         first_load = false;
         nk_window_collapse(context, "Model Transform", NK_MINIMIZED);
+        nk_window_collapse(context, "Options", NK_MINIMIZED);
     }
     ui->hovered = nk_window_is_any_hovered(context);
 }
@@ -196,6 +235,23 @@ static void transform_model_pos_widget(context *ctx, struct model *model)
     transform->position[2] = z_pos;
 
     model_translate(model, transform->position);
+}
+
+
+static void transform_point_light_widget(context *ctx, struct point_light *light)
+{
+    vec3 color;
+    mnf_vec3_copy(light->color, color);
+    vec3 pos;
+    mnf_vec3_copy(light->pos, pos);
+    vec3 diffuse;
+    mnf_vec3_copy(light->diffuse, diffuse);
+    vec3 specular;
+    mnf_vec3_copy(light->specular, specular);
+
+    nk_layout_row_dynamic(ctx, 20, 1);
+    nk_label(ctx, light->name, NK_TEXT_LEFT);
+    
 }
 
 static void transform_model_rotation_widget(context *ctx, struct model *model)

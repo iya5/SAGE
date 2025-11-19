@@ -29,7 +29,7 @@ struct model {
     struct mesh mesh;
     struct material material;
     struct transform transform;
-    bool rendered;
+    bool visible;
 };
 
 struct model model_load_from_file(const char *path);

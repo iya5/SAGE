@@ -36,7 +36,7 @@ struct model model_load_from_file(const char *path)
     darray *vertices = obj_load_from_file(path);
     mesh = mesh_create_from_vertices(vertices);
     model.mesh = mesh;
-    model.rendered = true;
+    model.visible = true;
 
     model.material = material_create_default();
     
@@ -56,7 +56,7 @@ struct model model_create_cube(void)
 
     mesh = mesh_geometry_create_cube();
     model.mesh = mesh;
-    model.rendered = true;
+    model.visible = true;
 
     model.material = material_create_default();
     

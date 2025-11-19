@@ -21,6 +21,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "shader.h"
 #include "model.h"
 
+#define LIGHT_NAME_MAX_SIZE 100
+
 /* Although conceptually the same as a point light, it differs by not having an
    "actual position", and only having a direction, thus every object in a scene
    is shaded by the same direction of this light. It can be thought of as a point
@@ -43,6 +45,7 @@ struct point_light {
     vec3 pos;
     vec3 diffuse;
     vec3 specular;
+    char name[LIGHT_NAME_MAX_SIZE];
 
     float constant;
     float linear;
@@ -51,9 +54,13 @@ struct point_light {
     /* if this is NULL, the light isn't geometrically rendered but still exists
        in the scene */
     struct model geometric_model;
+    bool visible;
 };
 
 void lighting_apply(struct shader active_shader,
                     struct directional_light directional_light,
                     darray *point_lights);
+
+void light_set_name(struct point_light *light, char name[LIGHT_NAME_MAX_SIZE]);
+
 #endif /* SAGE_LIGHTING_H */
