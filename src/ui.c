@@ -18,6 +18,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 /* necessary to include glfw header before nuklear */
 #include "mesh.h"
 #include "model.h"
+#include "platform.h"
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #define MAX_VERTEX_BUFFER 512 * 1024
@@ -62,14 +63,13 @@ void ui_init(struct ui *ui, struct platform platform)
 /* drawing windows starts at (0, 0) at the top left */
 void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
 {
+    struct nk_context *context = ui->context;
+
     static bool first_load = true;
     float width = platform->viewport_width;
     float height = platform->viewport_height;
 
-    struct nk_context *context = ui->context;
-
     nk_glfw3_new_frame();
-
 
     if (nk_begin(context, "Sage 3D Renderer", nk_rect(0, 0, width, 10), NK_WINDOW_TITLE)) {}
     nk_end(context);
@@ -83,7 +83,6 @@ void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
 
         if (nk_button_label(context, "button"))
             SDEBUG("button pressed");
-
 
         // transform
         for (uint32_t i = 0; i < scene->models->len; i++) {
@@ -112,6 +111,7 @@ void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
         first_load = false;
         nk_window_collapse(context, "Model Transform", NK_MINIMIZED);
     }
+    ui->hovered = nk_window_is_any_hovered(context);
 }
 
 void ui_render(void)
@@ -123,6 +123,21 @@ void ui_render(void)
        Make sure to either a.) save and restore or b.) reset your own state after
        rendering the UI. */
     nk_glfw3_render(NK_ANTI_ALIASING_ON);
+}
+
+void ui_process_input(struct ui *ui, struct platform *platform)
+{
+    if (!ui->hovered) return;
+
+    context *context = ui->context;
+
+    nk_input_begin(context); {
+        /* all UI related input processing here */
+        struct input_state input = platform->input;
+        struct mouse mouse = input.mouse;
+        /* ??? i'm doing something wrong here idk */
+        nk_input_scroll(context, nk_vec2(mouse.scroll_x, mouse.scroll_y));
+    } nk_input_end(context);
 }
 
 void ui_shutdown(struct ui *ui)
@@ -284,4 +299,3 @@ static void transform_model_scale_widget(context *ctx, struct model *model)
 
     model_scale(model, transform->scale);
 }
-

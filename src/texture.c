@@ -122,7 +122,7 @@ struct texture texture_create_default(void)
  *      +x, -x, +y, -y +z, -z
  * https://wikis.khronos.org/opengl/Cubemap_Texture
  */
-struct texture cubemap_texture_create(char *cubemap_faces[6])
+struct texture cubemap_texture_create(const char *cubemap_faces[6])
 {
     SINFO("Creating a cubemap texture for:");
     SINFO("\t%s", cubemap_faces[0]);

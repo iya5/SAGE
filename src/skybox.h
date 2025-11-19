@@ -1,4 +1,4 @@
-/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
+/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer
 
 This file is part of Sage
 
@@ -13,26 +13,19 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-#ifndef SAGE_TEXTURE_H
-#define SAGE_TEXTURE_H
+#ifndef SAGE_SKYBOX_H
+#define SAGE_SKYBOX_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include "texture.h"
+#include "mesh.h"
 
-struct texture {
-    uint32_t id;
-    int32_t width;
-    int32_t height;
+struct skybox {
+    struct texture cubemap;
+    struct mesh mesh;
 };
 
-struct texture texture_create_default(void);
-struct texture texture_create(const char *path);
+void skybox_init(struct skybox *skybox, const char *cubemap_paths[6]);
+void skybox_draw(struct skybox skybox, mat4 view, mat4 projection);
+void skybox_destroy(struct skybox *skybox);
 
-/* Wrapper around glBindTexture() */
-void texture_bind(struct texture t, size_t texture_unit);
-void texture_destroy(struct texture *t);
-
-struct texture cubemap_texture_create(const char *cubemap_faces[6]);
-void cubemap_texture_bind(struct texture t);
-
-#endif /* SAGE_TEXTURE_H */
+#endif /* SAGE_SKYBOX_H */

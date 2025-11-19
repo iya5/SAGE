@@ -22,9 +22,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "scene.h"
 #include "input.h"
 
-struct scene scene;
 struct platform platform;
 struct ui ui;
+struct scene scene;
 
 int main(void)
 {
@@ -84,6 +84,7 @@ int main(void)
         process_input(&scene, &platform, delta_time);
 
         ui_draw(&ui, &scene, &platform);
+        ui_process_input(&ui, &platform);
         scene_render(&scene);
 
         /* The reason we draw the UI, then render the scene, then finally render

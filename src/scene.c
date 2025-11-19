@@ -24,15 +24,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "model.h"
 #include "shader.h"
 #include "lighting.h"
+#include "skybox.h"
 
-struct skybox {
-    struct texture cubemap;
-    struct mesh mesh;
-};
-
-void skybox_init(struct skybox *skybox, const char *cubemap_paths[6]);
-void skybox_draw(struct skybox *skybox, const char *cubemap_paths[6]);
-
+struct skybox skybox;
 
 void scene_init(struct scene *scene, float viewport_width, float viewport_height)
 {
@@ -137,7 +131,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     /* Creating light */
     struct directional_light environment_light = {
         .direction = {0, -1.0, -1.0},
-        .ambient = {0.2, 0.2, 0.2},
+        .ambient = {0.8, 0.8, 0.8},
         .diffuse = {0.0, 0.0, 0.0},
         .specular = {0.0, 0.0, 0.0}
     };
@@ -180,6 +174,16 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .geometric_model = light_body
     };
     darray_push(scene->point_lights, &b_light);
+
+     const char *cubemap_faces[6] = {
+        "res/textures/skybox/right.jpg",
+        "res/textures/skybox/left.jpg",
+        "res/textures/skybox/top.jpg",
+        "res/textures/skybox/bottom.jpg",
+        "res/textures/skybox/front.jpg",
+        "res/textures/skybox/back.jpg",
+    };
+    skybox_init(&skybox, cubemap_faces);
 }
 
 
@@ -190,8 +194,11 @@ void scene_render(struct scene *scene)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+
     struct camera *cam = &(scene->cam);
     camera_update(cam);
+
+    skybox_draw(skybox, cam->view, cam->projection);
 
     for (uint32_t i = 0; i < scene->point_lights->len; i++) {
         struct point_light *light = darray_at(scene->point_lights, i);

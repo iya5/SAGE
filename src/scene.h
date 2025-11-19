@@ -62,7 +62,11 @@ struct scene {
 
 /* There are only 3 scene functons used and that is for initialization,
    rendering the scene, and after, destroying the scene once the program ends.
-
+    
+   For initialization, we pass the viewport dimensions because that's where the
+   size of oour visible area will be at, more specifically, it'll give the
+   camera its aspect ratio and is primarily used for setting up the camera.
+   Besides that, initializing the scene is where the 
    */
 void scene_init(struct scene *scene, float viewport_width, float viewport_height);
 void scene_render(struct scene *scene);

@@ -13,15 +13,13 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
-
 #include "input.h"
 
 void process_input(struct scene *scene, struct platform *platform, double dt)
 {
     struct camera *cam = &(scene->cam);
-    struct input_state *input = platform->input;
-    bool *keys = input->keys;
-    bool *mouse_buttons = input->mouse_buttons;
+    struct mouse mouse = platform->input.mouse;
+    bool *keys = platform->input.keys;
 
     if (keys[KEY_ESC]) platform->running = false;
 
@@ -35,10 +33,10 @@ void process_input(struct scene *scene, struct platform *platform, double dt)
     if (keys[KEY_1]) gl_polygon_mode(POLYGON_LINE);
     if (keys[KEY_2]) gl_polygon_mode(POLYGON_FILL);
 
-    if (mouse_buttons[MOUSE_RIGHT])
+    if (mouse.buttons[MOUSE_RIGHT])
         cam->can_move = true;
     else
         cam->can_move = false;
 
-    camera_mouse(cam, input->mouse_dx, input->mouse_dy);
+    camera_mouse(cam, mouse.dx, mouse.dy);
 }

@@ -24,11 +24,13 @@ struct nk_context;
 
 struct ui {
     struct nk_context *context;
+    bool hovered;
 };
 
 /* Initializes the Intermediate-Mode GUI using Nuklear */
 void ui_init(struct ui *ui, struct platform platform);
 void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform);
+void ui_process_input(struct ui *ui, struct platform *platform);
 void ui_render(void);
 
 /* Shutdowns the IMGUI */

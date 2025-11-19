@@ -25,77 +25,25 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #define GET_KPD(action) (action) == GLFW_PRESS || (action) == GLFW_REPEAT
 
-static void gl_reset_state(void);
-
-void error_callback(int32_t error, const char *description)
-{
-    SERROR("Error (%d): %s", error, description);
-}
-
-void framebuffer_size_callback(GLFWwindow *window, int32_t width, int32_t height)
-{
-    glViewport(0, 0, width, height);
-    struct platform *platform = glfwGetWindowUserPointer(window);
-    if (platform == NULL) return;
-    platform->viewport_width = width;
-    platform->viewport_height = height;
-}
-
-void scroll_callback(GLFWwindow *window, double dx, double dy)
-{
-    /* camera_scroll(&cam, dy); */
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-    struct platform *platform = glfwGetWindowUserPointer(window);
-    bool *mouse_buttons = platform->input->mouse_buttons;
-
-    if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
-        if (button == GLFW_MOUSE_BUTTON_1) mouse_buttons[MOUSE_LEFT] = GET_KPD(action);
-        if (button == GLFW_MOUSE_BUTTON_2) mouse_buttons[MOUSE_RIGHT] = GET_KPD(action);
-    }
-}
-
-void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t action, int32_t mods)
-{
-    struct platform *platform = glfwGetWindowUserPointer(window);
-    bool *keys = platform->input->keys;
-
-    if (key >= 0 && key <= GLFW_KEY_LAST) {
-        if (key == GLFW_KEY_A) keys[KEY_A] = GET_KPD(action);
-        if (key == GLFW_KEY_W) keys[KEY_W] = GET_KPD(action);
-        if (key == GLFW_KEY_S) keys[KEY_S] = GET_KPD(action);
-        if (key == GLFW_KEY_D) keys[KEY_D] = GET_KPD(action);
-        if (key == GLFW_KEY_SPACE) keys[KEY_SPACE] = GET_KPD(action);
-        if (key == GLFW_KEY_SPACE) keys[KEY_SPACE] = GET_KPD(action);
-        if (key == GLFW_KEY_LEFT_CONTROL) keys[KEY_LCTRL] = GET_KPD(action);
-        if (key == GLFW_KEY_ESCAPE) keys[KEY_ESC] = GET_KPD(action);
-        if (key == GLFW_KEY_0) keys[KEY_0] = GET_KPD(action);
-        if (key == GLFW_KEY_1) keys[KEY_1] = GET_KPD(action);
-        if (key == GLFW_KEY_2) keys[KEY_2] = GET_KPD(action);
-        if (key == GLFW_KEY_3) keys[KEY_3] = GET_KPD(action);
-        if (key == GLFW_KEY_4) keys[KEY_4] = GET_KPD(action);
-    }
-}
+static void gl_set_state(void);
+static void error_callback(int32_t error, const char *description);
+static void framebuffer_size_callback(GLFWwindow *window, int32_t width, int32_t height);
+static void scroll_callback(GLFWwindow *window, double dx, double dy);
+static void mouse_button_callback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods);
+static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t action, int32_t mods);
 
 void platform_poll_input(struct platform *platform)
 {
     glfwPollEvents();
-
-    /* Idk if it's good to poll for mouse in the software or just react to
-     * events, but i'll fill input queue for key presses using events instead
-     * because they're rarely pressed compared to mouse movement
-     */
-    struct input_state *input = platform->input;
+    struct input_state *input = &platform->input;
 
     double mouse_x;
     double mouse_y;
     glfwGetCursorPos(platform->context, &mouse_x, &mouse_y);
-    input->mouse_dx = (float) mouse_x - input->mouse_x;
-    input->mouse_dy = input->mouse_y - (float) mouse_y;
-    input->mouse_x = (float) mouse_x;
-    input->mouse_y = (float) mouse_y;
+    input->mouse.dx = mouse_x - input->mouse.x;
+    input->mouse.dy = input->mouse.y - mouse_y;
+    input->mouse.x = mouse_x;
+    input->mouse.y = mouse_y;
 }
 
 bool platform_window_init(struct platform *platform, 
@@ -104,8 +52,6 @@ bool platform_window_init(struct platform *platform,
                           int32_t window_width,
                           int32_t window_height)
 {
-    struct input_state *input = NULL;
-
     SINFO("Starting GLFW: %s", glfwGetVersionString());
 
     glfwSetErrorCallback(error_callback);
@@ -114,7 +60,6 @@ bool platform_window_init(struct platform *platform,
         SFATAL("GLFW failed to initialize");
         exit(1);
     }
-
 
     /* setup hints */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SAGE_OPENGL_MAJOR_VERSION);
@@ -151,14 +96,6 @@ bool platform_window_init(struct platform *platform,
           GLAD_VERSION_MAJOR(version),
           GLAD_VERSION_MINOR(version));
 
-
-    input = (struct input_state *) malloc(sizeof(struct input_state));
-    if (input == NULL) {
-        SFATAL("Could not alloc memory for platform state");
-        goto err_platform;
-    }
-    memset(input, 0, sizeof(struct input_state));
-
     /* fetching GPU specs */
     int n_vertex_attributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &n_vertex_attributes);
@@ -179,17 +116,10 @@ bool platform_window_init(struct platform *platform,
     SINFO("\tMax combined shader texture units: %d", max_combined_texture_units);
     SINFO("\tMax vertex shader attributes: %d", n_vertex_attributes);
 
-
-
     /* Set OpenGL state */
     glViewport(0, 0, viewport_width, viewport_height);
-    glFrontFace(GL_CCW);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl_set_state();
 
-    platform->input = input;
     platform->context = context;
     platform->running = true;
     platform->viewport_width = viewport_width;
@@ -198,13 +128,12 @@ bool platform_window_init(struct platform *platform,
     /* set user pointer so platform is accessible in callbacks */
     glfwSetWindowUserPointer(context, platform);
 
-    return 0;
+    return true;
 
 err_platform:
-    if (input) free(input);
     glfwTerminate();
     context = NULL;
-    return 1;
+    return false;
 }
 
 double platform_get_time_seconds(void)
@@ -221,14 +150,13 @@ void platform_swap_buffer(struct platform *platform)
 {
     glfwSwapBuffers(platform->context);
     /* nuklear changes the OpenGL state so it must be reset back */
-    gl_reset_state();
+    gl_set_state();
 }
 
 void platform_window_shutdown(struct platform *platform)
 {
     SINFO("Closing window and cleaning up");
     glfwTerminate();
-    free(platform->input);
     platform->context = NULL;
     platform->running = false;
     platform->viewport_width = 0;
@@ -250,11 +178,75 @@ void gl_polygon_mode(enum polygon_mode mode) {
     glPolygonMode(GL_FRONT_AND_BACK, gl_mode);
 }
 
-static void gl_reset_state(void)
+static void gl_set_state(void)
 {
     glFrontFace(GL_CCW);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+static void error_callback(int32_t error, const char *description)
+{
+    SERROR("Error (%d): %s", error, description);
+}
+
+static void framebuffer_size_callback(GLFWwindow *window,
+                                      int32_t width,
+                                      int32_t height)
+{
+    glViewport(0, 0, width, height);
+    struct platform *platform = glfwGetWindowUserPointer(window);
+    if (platform == NULL) return;
+    platform->viewport_width = width;
+    platform->viewport_height = height;
+}
+
+static void scroll_callback(GLFWwindow *window, double dx, double dy)
+{
+    struct platform *platform = glfwGetWindowUserPointer(window);
+
+    platform->input.mouse.scroll_x += dx;
+    platform->input.mouse.scroll_y += dy;
+}
+
+static void mouse_button_callback(GLFWwindow* window,
+                           int32_t button,
+                           int32_t action,
+                           int32_t mods)
+{
+    struct platform *platform = glfwGetWindowUserPointer(window);
+    bool *mouse_buttons = platform->input.mouse.buttons;
+
+    if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
+        if (button == GLFW_MOUSE_BUTTON_1) mouse_buttons[MOUSE_LEFT] = GET_KPD(action);
+        if (button == GLFW_MOUSE_BUTTON_2) mouse_buttons[MOUSE_RIGHT] = GET_KPD(action);
+    }
+}
+
+static void key_callback(GLFWwindow *window,
+                         int32_t key,
+                         int32_t scancode,
+                         int32_t action,
+                         int32_t mods)
+{
+    struct platform *platform = glfwGetWindowUserPointer(window);
+    bool *keys = platform->input.keys;
+
+    if (key >= 0 && key <= GLFW_KEY_LAST) {
+        if (key == GLFW_KEY_A) keys[KEY_A] = GET_KPD(action);
+        if (key == GLFW_KEY_W) keys[KEY_W] = GET_KPD(action);
+        if (key == GLFW_KEY_S) keys[KEY_S] = GET_KPD(action);
+        if (key == GLFW_KEY_D) keys[KEY_D] = GET_KPD(action);
+        if (key == GLFW_KEY_SPACE) keys[KEY_SPACE] = GET_KPD(action);
+        if (key == GLFW_KEY_SPACE) keys[KEY_SPACE] = GET_KPD(action);
+        if (key == GLFW_KEY_LEFT_CONTROL) keys[KEY_LCTRL] = GET_KPD(action);
+        if (key == GLFW_KEY_ESCAPE) keys[KEY_ESC] = GET_KPD(action);
+        if (key == GLFW_KEY_0) keys[KEY_0] = GET_KPD(action);
+        if (key == GLFW_KEY_1) keys[KEY_1] = GET_KPD(action);
+        if (key == GLFW_KEY_2) keys[KEY_2] = GET_KPD(action);
+        if (key == GLFW_KEY_3) keys[KEY_3] = GET_KPD(action);
+        if (key == GLFW_KEY_4) keys[KEY_4] = GET_KPD(action);
+    }
 }

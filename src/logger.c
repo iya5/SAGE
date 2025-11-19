@@ -41,8 +41,8 @@ void sage_log_output(enum log_level level, const char *fmt, ...)
         ANSI_COLOR_BG_RED"[FATAL]"ANSI_COLOR_RESET,
         ANSI_COLOR_RED"[ERROR]"ANSI_COLOR_RESET,
         ANSI_COLOR_YELLOW"[WARN]"ANSI_COLOR_RESET,
-        ANSI_COLOR_BLUE"[INFO]"ANSI_COLOR_RESET,
-        "[DEBUG]",
+        ANSI_COLOR_GREEN"[INFO]"ANSI_COLOR_RESET,
+        ANSI_COLOR_BLUE"[DEBUG]"ANSI_COLOR_RESET,
         "[TRACE]"
     };
     // int32_t is_error = level < 2;
