@@ -58,6 +58,7 @@ struct scene {
        where parts of its memory might not be used */
     darray *models;
     darray *point_lights;
+    bool draw_skybox;
 };
 
 /* There are only 3 scene functons used and that is for initialization,

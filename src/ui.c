@@ -120,6 +120,16 @@ void ui_draw(struct ui *ui, struct scene *scene, struct platform *platform)
     if (nk_begin(context, "Debug", nk_rect(50, 150, 300, 300),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
                  | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_MINIMIZED )) {
+
+        if (nk_tree_push(context, NK_TREE_TAB, "Skybox", NK_MINIMIZED)) {
+            nk_layout_row_dynamic(context, 25, 2);
+            if (nk_option_label(context, "enable", scene->draw_skybox))
+                scene->draw_skybox= true;
+            if (nk_option_label(context, "disable", !scene->draw_skybox))
+                scene->draw_skybox= false;
+            nk_tree_pop(context);
+        }
+
         char info_buffer[128];
         snprintf(info_buffer, 128, "Metrics: %d fps (%.2f ms)", platform->fps, platform->frame_time * 1000);
         nk_layout_row_dynamic(context, 25, 1);

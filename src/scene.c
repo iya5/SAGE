@@ -203,7 +203,7 @@ void scene_render(struct scene *scene)
     struct camera *cam = &(scene->cam);
     camera_update(cam);
 
-    //skybox_draw(skybox, cam->view, cam->projection);
+    if (scene->draw_skybox) skybox_draw(skybox, cam->view, cam->projection);
 
     for (uint32_t i = 0; i < scene->point_lights->len; i++) {
         struct point_light *light = darray_at(scene->point_lights, i);
