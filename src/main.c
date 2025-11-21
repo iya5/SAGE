@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdint.h>
 
 #include "config.h"
+#include "mnf/mnf_types.h"
 #include "platform.h"
 #include "ui.h"
 #include "scene.h"
@@ -74,14 +75,10 @@ int main(void)
        per frame!) but generally, it looks like the above, atleast for this
        project.
        */
-    double previous_time = platform_get_time_seconds();
     while (!platform_should_close(&platform)) {
-        double current_time = platform_get_time_seconds();
-        double delta_time = current_time - previous_time;
-        previous_time = current_time;
-
+        platform_update_frame_timing(&platform);
         platform_poll_input(&platform);
-        process_input(&scene, &platform, delta_time);
+        process_input(&scene, &platform);
 
         ui_draw(&ui, &scene, &platform);
         ui_process_input(&ui, &platform);

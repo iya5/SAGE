@@ -124,6 +124,9 @@ bool platform_window_init(struct platform *platform,
     platform->running = true;
     platform->viewport_width = viewport_width;
     platform->viewport_height = viewport_height;
+    platform->previous_time = platform_get_time_seconds();
+    platform->current_time = platform_get_time_seconds();
+    platform->draw_mode = POLYGON_FILL;
 
     /* set user pointer so platform is accessible in callbacks */
     glfwSetWindowUserPointer(context, platform);
@@ -141,6 +144,22 @@ double platform_get_time_seconds(void)
     return glfwGetTime();
 }
 
+void platform_update_frame_timing(struct platform *platform)
+{
+    platform->current_time = platform_get_time_seconds();
+    platform->dt = platform->current_time - platform->previous_time;
+    platform->previous_time = platform->current_time;
+    platform->fps_count++;
+    platform->fps_timer += platform->dt;
+
+    if (platform->fps_timer >= 1.0) {
+        platform->frame_time = 1.0 / (float) platform->fps;
+        platform->fps = platform->fps_count;
+        platform->fps_count = 0;
+        platform->fps_timer = 0;
+    }
+}
+
 bool platform_should_close(struct platform *platform)
 {
     return (glfwWindowShouldClose(platform->context) || !platform->running);
@@ -151,6 +170,7 @@ void platform_swap_buffer(struct platform *platform)
     glfwSwapBuffers(platform->context);
     /* nuklear changes the OpenGL state so it must be reset back */
     gl_set_state();
+    gl_polygon_mode(platform->draw_mode);
 }
 
 void platform_window_shutdown(struct platform *platform)

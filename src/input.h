@@ -19,6 +19,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "scene.h"
 #include "platform.h"
 
-void process_input(struct scene *scene, struct platform *platform, double dt);
+void process_input(struct scene *scene, struct platform *platform);
 
 #endif /* SAGE_INPUT_H */

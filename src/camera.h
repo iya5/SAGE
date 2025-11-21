@@ -17,7 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_CAMERA_H
 
 #include <stdbool.h>
-#include "mnf/mnf.h"
+#include "mnf/mnf_types.h"
 
 #define CAM_PITCH_MAX 89.0
 #define CAM_PITCH_MIN -89.0
@@ -30,7 +30,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define CAM_DEFAULT_SPEED 5.0
 
 #define PERSPECTIVE_DEFAULT_NEAR 0.1
-#define PERSPECTIVE_DEFAULT_FAR 100.0
+#define PERSPECTIVE_DEFAULT_FAR 1000.0
 #define FOV_DEFAULT 67.0
 #define FOV_DEFAULT_MIN 4.0
 #define FOV_DEFAULT_MAX 98.0

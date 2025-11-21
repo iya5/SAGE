@@ -97,8 +97,17 @@ struct platform {
     void *context;
     struct input_state input;
     bool running;
+    enum polygon_mode draw_mode;
     int32_t viewport_width;
     int32_t viewport_height;
+
+    uint32_t fps;
+    float frame_time;
+    uint32_t fps_count;
+    double fps_timer;
+    double dt;
+    double current_time;
+    double previous_time;
 };
 
 /* Initializes platform specific window (GLFW) and stores configurations such as
@@ -111,6 +120,9 @@ bool platform_window_init(struct platform *platform,
 
 /* Shutdowns the window and frees related memory */
 void platform_window_shutdown(struct platform *platform);
+
+/* Calculates frame timing information like FPS, dt, etc */
+void platform_update_frame_timing(struct platform *platform);
 
 /* Polls input; wrapper around glfwPollInput() */
 void platform_poll_input(struct platform *platform);

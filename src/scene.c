@@ -71,7 +71,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
 
     struct model avocado = model_load_from_file("res/avocado.obj");
     avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
-                                    "res/avocado/textures/avocado_specular.jpeg", 10);
+                                    "res/avocado/textures/avocado_specular.jpeg", 1);
     avocado.material.shader = phong_shader;
     model_scale(&avocado, (vec3){10, 10, 10});
     model_translate(&avocado, (vec3){-3, 2, 1});
@@ -80,7 +80,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     
     struct model croissant = model_load_from_file("res/croissant.obj");
     croissant.material = material_create("res/croissant/textures/croissant_albedo.jpeg", 
-                                        "res/croissant/textures/croissant_albedo.jpeg", 10);
+                                        "res/croissant/textures/croissant_albedo.jpeg", 1);
     croissant.material.shader = phong_shader;
     model_scale(&croissant, (vec3){10, 10, 10});
     model_translate(&croissant, (vec3){-1, 2, 1});
@@ -89,7 +89,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     
     struct model lemon = model_load_from_file("res/lemon.obj");
     lemon.material = material_create("res/lemon/textures/lemon_albedo.jpeg", 
-                                    "res/lemon/textures/lemon_specular.jpeg", 10);
+                                    "res/lemon/textures/lemon_specular.jpeg", 1);
     lemon.material.shader = phong_shader;
     model_scale(&lemon, (vec3){10, 10, 10});
     model_translate(&lemon, (vec3){1, 2, 1});
@@ -98,7 +98,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
 
     struct model lime = model_load_from_file("res/lime.obj");
     lime.material = material_create("res/lime/textures/lime_albedo.jpeg", 
-                                    "res/lime/textures/lime_specular.jpeg", 10);
+                                    "res/lime/textures/lime_specular.jpeg", 1);
     lime.material.shader = phong_shader;
     model_scale(&lime, (vec3){10, 10, 10});
     model_translate(&lime, (vec3){2, 2, 1});
@@ -107,7 +107,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     
     struct model orange = model_load_from_file("res/orange.obj");
     orange.material = material_create("res/orange/textures/orange_albedo.jpeg", 
-                                    "res/orange/textures/orange_specular.jpeg", 10);
+                                    "res/orange/textures/orange_specular.jpeg", 1);
     orange.material.shader = phong_shader;
     model_scale(&orange, (vec3){10, 10, 10});
     model_translate(&orange, (vec3){4, 2, 1});
@@ -146,9 +146,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .linear = 0.9,
         .quadratic = 0.032,
         .geometric_model = light_body,
-        .visible = true
+        .visible = true,
     };
-    light_set_name(&r_light, "Red");
+    light_set_name(&r_light, "Point Light 1");
     darray_push(scene->point_lights, &r_light);
 
 
@@ -163,7 +163,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .geometric_model = light_body,
         .visible = true
     };
-    light_set_name(&g_light, "Green");
+    light_set_name(&g_light, "Point Light 2");
     darray_push(scene->point_lights, &g_light);
 
 
@@ -178,7 +178,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         .geometric_model = light_body,
         .visible = true
     };
-    light_set_name(&b_light, "Blue");
+    light_set_name(&b_light, "Point Light 3");
     darray_push(scene->point_lights, &b_light);
 
      const char *cubemap_faces[6] = {
@@ -199,12 +199,11 @@ void scene_render(struct scene *scene)
     /* clearing buffers */
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
 
     struct camera *cam = &(scene->cam);
     camera_update(cam);
 
-    skybox_draw(skybox, cam->view, cam->projection);
+    //skybox_draw(skybox, cam->view, cam->projection);
 
     for (uint32_t i = 0; i < scene->point_lights->len; i++) {
         struct point_light *light = darray_at(scene->point_lights, i);
@@ -229,7 +228,6 @@ void scene_render(struct scene *scene)
 
         /* pre-rendering model */
         shader_use(shader);
-        //shader_uniform_vec4(shader, "u_color", (vec4){1.0, 1.0, 1.0, 1.0});
         shader_uniform_mat4(shader, "u_view", cam->view);
         shader_uniform_vec3(shader, "u_view_pos", cam->pos);
         shader_uniform_mat4(shader, "u_projection", cam->projection);
