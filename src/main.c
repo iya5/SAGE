@@ -57,6 +57,7 @@ int main(void)
                          SAGE_INITIAL_VIEWPORT_HEIGHT);
     ui_init(&ui, platform);
     scene_init(&scene, platform.viewport_width, platform.viewport_height);
+    ui_scene_nodes_build(&scene);
 
     /* This is our rendering loop (or can also be thought of as the game loop
        which 'runs' the entire program every frame until it closes.
