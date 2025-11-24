@@ -103,14 +103,24 @@ static void mesh_gpu_free(struct mesh_gpu *buffer)
     buffer->index_count = 0;
 }
 
-struct mesh mesh_create_from_vertices(darray *vertices)
+struct mesh mesh_create(darray *vertices, darray *indices)
 {
-    struct mesh mesh;
-    mesh.buffer = mesh_gpu_create(vertices, NULL);
-    mesh.vertices = vertices;
-    mesh.indices = NULL;
+    SASSERT_MSG(vertices !=  NULL, "Creating a mesh must atleast have vertices");
 
-    SINFO("Created a mesh with %d vertices", mesh.vertices->len);
+    struct mesh mesh;
+    mesh.vertices = vertices;
+
+    if (indices == NULL) {
+        mesh.buffer = mesh_gpu_create(vertices, NULL);
+        mesh.indices = NULL;
+        SINFO("Created a mesh with %u vertices and 0 indices", mesh.vertices->len);
+    } else {
+        mesh.buffer = mesh_gpu_create(vertices, indices);
+        mesh.indices = indices;
+        SINFO("Created a mesh with %u vertices and %u indices",
+              mesh.vertices->len,
+              mesh.indices->len);
+    }
 
     return mesh;
 }

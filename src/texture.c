@@ -81,6 +81,61 @@ struct texture texture_create(const char *path)
 	return texture;
 }
 
+uint32_t texture_create_id(const char *path, bool flip)
+{
+	SINFO("Creating texture id from %s", path);
+    uint32_t id;
+	int32_t width, height, channels;
+
+	/* OpenGL expects the uv 0.0 coordinate on the y-axis to be on the bottom
+       side of the image */
+	stbi_set_flip_vertically_on_load(flip);
+	unsigned char *data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+
+	if (data == NULL) {
+		SERROR("Texture '%s' failed to load", path);
+        return 0;
+	}
+
+    /* TODO: */
+    GLenum format;
+    switch (channels) {
+        case 3: format = GL_RGB;
+                break;
+        case 4: format = GL_RGBA;
+                break;
+        default: format = GL_RED;
+                 break;
+    }
+
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+
+    /* set texture parameters */
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, /* target           */
+              0,                /* level (lod)      */
+              format,           /* color components */
+              width,            /* width            */
+              height,           /* height           */
+              0,                /* border           */
+              GL_RGBA,          /* pixel format     */
+              GL_UNSIGNED_BYTE, /* data type        */
+              data);            /* data in memory   */
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(data);
+
+	return id;
+}
+
+
 struct texture texture_create_default(void)
 {
 	SINFO("Creating a default 1x1 pixel texture");

@@ -54,7 +54,6 @@ struct ui_scene_graph {
 void ui_build_scene_graph(struct ui_scene_graph *scene_graph, struct scene *scene);
 void ui_draw_scene_graph(struct nk_context *ctx, struct ui_scene_graph *scene_graph);
 void ui_rebuild_dirty_scene_graph(struct ui_scene_graph *scene_graph, struct scene *scene);
-
 void ui_draw_inspector(struct nk_context *ctx, struct ui_scene_node *node);
 
 #endif /* SAGE_UI_SCENE_GRAPH_H */

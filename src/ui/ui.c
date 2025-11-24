@@ -61,7 +61,6 @@ void ui_begin_frame(struct ui *ui, struct scene *scene, struct platform *platfor
 
     static bool first_load = true;
     float width = platform->viewport_width;
-    //float height = platform->viewport_height;
 
     if (nk_begin(ctx, "Sage 3D Renderer", nk_rect(0, 0, width, 10), NK_WINDOW_TITLE)) {}
     nk_end(ctx);

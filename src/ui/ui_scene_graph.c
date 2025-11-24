@@ -96,14 +96,10 @@ void ui_build_scene_graph(struct ui_scene_graph *scene_graph, struct scene *scen
 
     SINFO("Building Scene Graph for the UI");
 
-    struct texture tex = texture_create("res/icons/geometry.png");
-    geometry_icon = nk_image_id(tex.id);
-    tex = texture_create("res/icons/camera-flipped.png");
-    camera_icon = nk_image_id(tex.id);
-    tex = texture_create("res/icons/sun.png");
-    sun_icon = nk_image_id(tex.id);
-    tex = texture_create("res/icons/light.png");
-    light_icon = nk_image_id(tex.id);
+    geometry_icon = nk_image_id(texture_create_id("res/icons/geometry.png", false));
+    camera_icon = nk_image_id(texture_create_id("res/icons/camera.png", false));
+    sun_icon = nk_image_id(texture_create_id("res/icons/sun.png", false));
+    light_icon = nk_image_id(texture_create_id("res/icons/light.png", false));
 
     scene_graph->nodes = darray_alloc(sizeof(struct ui_scene_node), 64);
     scene_graph->dirty = false;

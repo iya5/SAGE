@@ -25,6 +25,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "obj_loader.h"
 #include "darray.h"
 #include "texture.h"
+#include "logger.h"
 
 static void transform_model_matrix(struct transform transform, mat4 out);
 
@@ -33,11 +34,13 @@ struct model model_load_from_file(const char *path)
     struct model model;
     struct mesh mesh;
 
-    darray *vertices = obj_load_from_file(path);
-    mesh = mesh_create_from_vertices(vertices);
+    darray *vertices = NULL;
+    darray *indices = NULL;
+    obj_load_mesh(path, &vertices, &indices);
+    mesh = mesh_create(vertices, indices);
+
     model.mesh = mesh;
     model.visible = true;
-
     model.material = material_create_default();
     
     mnf_vec3_copy(MNF_ONE_VECTOR, model.transform.scale);

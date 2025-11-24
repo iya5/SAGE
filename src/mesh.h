@@ -22,9 +22,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "mnf/mnf_types.h"
 #include "darray.h"
 
-/* A mesh is just a c
- */
-
 struct vertex {
     vec3 pos;
     vec3 normal;
@@ -52,7 +49,7 @@ struct mesh {
 };
 
 struct mesh mesh_geometry_create_cube(void);
-struct mesh mesh_create_from_vertices(darray *vertices);
+struct mesh mesh_create(darray *vertices, darray *indices);
 void mesh_destroy(struct mesh *mesh);
 void mesh_bind(struct mesh mesh);
 void mesh_draw(struct mesh mesh);
