@@ -57,14 +57,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
 
     struct shader phong_shader = shader_create("glsl/phong.glsl");
     struct shader light_shader = shader_create("glsl/light.glsl");
-
-    struct model sphere = model_load_from_file("res/sphere.obj");
-    sphere.material = material_create("res/textures/base.png", NULL, 32);
-    sphere.material.shader = phong_shader;
-    model_scale(&sphere, (vec3){0.2, 0.2, 0.2});
-    model_translate(&sphere, (vec3){1.40, 4.70, -2.55});
-    model_set_name(&sphere, "Sphere");
-    darray_push(scene->models, &sphere);
     
     struct model avocado = model_load_from_file("res/avocado.obj");
     avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
@@ -140,9 +132,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     peach.material = material_create("res/peach/textures/peach.jpg", 
                                      NULL, 1);
     peach.material.shader = phong_shader;
-    model_scale(&peach, (vec3){0.8, 0.8, 0.8});
-    model_rotation(&peach, (vec3){MNF_RAD(72), MNF_RAD(-161), MNF_RAD(21)});
-    model_translate(&peach, (vec3){-0.04, 4.74, 0.79});
+    model_translate(&peach, (vec3){-0.04, 4.64, 0.89});
+    model_rotation(&peach, (vec3){MNF_RAD(58), MNF_RAD(154.01), MNF_RAD(-19)});
+    model_scale(&peach, (vec3){4, 4, 4});
     model_set_name(&peach, "Peach");
     darray_push(scene->models, &peach);
     
@@ -215,19 +207,28 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     model_scale(&pudding_plate, (vec3){6, 6, 6});
     model_set_name(&pudding_plate, "Pudding plate");
     darray_push(scene->models, &pudding_plate);
+    
+    struct model coffee = model_load_from_file("res/vienna.obj");
+    coffee.material = material_create("res/vienna-coffee/textures/vienna.jpeg", 
+                                        "res/vienna-coffee/textures/vienna_ao.jpeg", 1);
+    coffee.material.shader = phong_shader;
+    model_translate(&coffee, (vec3){-0.20, 4.34, -1.67});
+    model_rotation(&coffee, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&coffee, (vec3){4, 4, 4});
+    model_set_name(&coffee, "Vienna Coffee");
+    darray_push(scene->models, &coffee);
 
     /*
     struct model bread_seeds = model_load_from_file("res/bread-seeds.obj");
     bread_seeds.material = material_create("res/bread-seeds/textures/bread-seeds.jpeg", 
                                     NULL, 1);
     bread_seeds.material.shader = phong_shader;
-    model_translate(&bread_seeds, (vec3){0.21, 5.64, -0.13});
-    model_rotation(&bread_seeds, (vec3){MNF_RAD(40), MNF_RAD(16.99), MNF_RAD(-7)});
+    model_translate(&bread_seeds, (vec3){0, 6, 0});
+    model_rotation(&bread_seeds, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&bread_seeds, (vec3){0.05, 0.05, 0.05});
     model_set_name(&bread_seeds, "Bread with seeds");
     darray_push(scene->models, &bread_seeds);
     */
-
 
     struct model wooden_table = model_load_from_file("res/wooden-table.obj");
     wooden_table.material = material_create("res/wooden_table/textures/table.png", 
@@ -249,20 +250,32 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     model_set_name(&wooden_chair, "Wooden chair");
     darray_push(scene->models, &wooden_chair);
     
+    struct model carpet = model_load_from_file("res/carpet.obj");
+    carpet.material = material_create("res/carpet/textures/carpet_alb.png", 
+                                    "res/carpet/textures/carpet_mtl.png", 1);
+    carpet.material.shader = phong_shader;
+    model_translate(&carpet, (vec3){0, -0.22, 0});
+    model_rotation(&carpet, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&carpet, (vec3){3, 3, 3});
+    model_set_name(&carpet, "Carpet");
+    darray_push(scene->models, &carpet);
     
+    struct model hw_floor = model_create_cube();
+    hw_floor.material = material_create("res/hardwood/textures/hw_diff.jpeg", 
+                                        "res/hardwood/textures/hw_spec.png", 1);
+    hw_floor.material.shader = phong_shader;
+    model_translate(&hw_floor, (vec3){0, -0.24, 0});
+    model_rotation(&hw_floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&hw_floor, (vec3){50, 0.1, 50});
+    model_set_name(&hw_floor, "Floor");
+    darray_push(scene->models, &hw_floor);
+    
+
     struct model light_body = model_load_from_file("res/sphere.obj");
     light_body.material = material_create(NULL, NULL, 1);
     light_body.material.shader = light_shader;
     model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
 
-    struct model floor = model_create_cube();
-    floor.material = material_create("res/textures/base.png", NULL, 1);
-    floor.material.shader = phong_shader;
-    model_scale(&floor, (vec3){50, 0.1, 50});
-    model_rotation(&floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
-    model_translate(&floor, (vec3){0, -0.24, 0});
-    model_set_name(&floor, "Floor");
-    darray_push(scene->models, &floor);
 
     /* Creating light */
     struct directional_light environment_light = {

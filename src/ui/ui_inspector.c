@@ -118,11 +118,11 @@ static void model_inspector(struct nk_context *ctx, struct model *model)
     nk_label(ctx, model->name, NK_TEXT_LEFT);
     if (nk_tree_push(ctx, NK_TREE_TAB, "Transform", NK_MINIMIZED)) {
         nk_label(ctx, "Position", NK_TEXT_LEFT);
-        ui_vec3_editor_xyz(ctx, model->transform.position, -UINT16_MAX, UINT16_MAX, 10, 0.05);
+        ui_vec3_editor_xyz(ctx, model->transform.position, -UINT16_MAX, UINT16_MAX, 1, 0.01);
         nk_label(ctx, "Rotation", NK_TEXT_LEFT);
-        ui_vec3_editor_deg(ctx, model->transform.rotation, -UINT16_MAX, UINT16_MAX, 10, 1);
+        ui_vec3_editor_deg(ctx, model->transform.rotation, -UINT16_MAX, UINT16_MAX, 10, 0.1);
         nk_label(ctx, "Scale", NK_TEXT_LEFT);
-        ui_vec3_editor_xyz(ctx, model->transform.position, -UINT16_MAX, UINT16_MAX, 10, 0.1);
+        ui_vec3_editor_xyz(ctx, model->transform.scale, -UINT16_MAX, UINT16_MAX, 0.1, 1);
         nk_tree_pop(ctx);
     }
     if (nk_tree_push(ctx, NK_TREE_TAB, "Visibility", NK_MINIMIZED)) {

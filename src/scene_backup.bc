@@ -58,76 +58,20 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model sphere = model_load_from_file("res/sphere.obj");
     sphere.material = material_create("res/textures/base.png", NULL, 32);
     sphere.material.shader = phong_shader;
-    model_scale(&sphere, (vec3){0.5, 0.5, 0.5});
-    model_translate(&sphere, (vec3){3, 0.0, -1.0});
+    model_translate(&sphere, (vec3){1.53, 1.80, -8.74});
+    model_rotation(&sphere, (vec3){MNF_RAD(12), MNF_RAD(41), MNF_RAD(-41)});
+    model_scale(&sphere, (vec3){1, 1, 1});
     model_set_name(&sphere, "Sphere");
     darray_push(scene->models, &sphere);
-
-    struct model crab = model_load_from_file("res/crab.obj");
-    crab.material = material_create("res/crab.png", NULL, 10);
-    crab.material.shader = phong_shader;
-    model_set_name(&crab, "Crab");
-    darray_push(scene->models, &crab);
-
-    struct model avocado = model_load_from_file("res/avocado.obj");
-    avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
-                                    "res/avocado/textures/avocado_specular.jpeg", 1);
-    avocado.material.shader = phong_shader;
-    model_scale(&avocado, (vec3){10, 10, 10});
-    model_translate(&avocado, (vec3){-3, 2, 1});
-    model_set_name(&avocado, "Avocado");
-    darray_push(scene->models, &avocado);
     
-    struct model croissant = model_load_from_file("res/croissant.obj");
-    croissant.material = material_create("res/croissant/textures/croissant_albedo.jpeg", 
-                                        "res/croissant/textures/croissant_albedo.jpeg", 1);
-    croissant.material.shader = phong_shader;
-    model_scale(&croissant, (vec3){10, 10, 10});
-    model_translate(&croissant, (vec3){-1, 2, 1});
-    model_set_name(&croissant, "Croissant");
-    darray_push(scene->models, &croissant);
-    
-    struct model lemon = model_load_from_file("res/lemon.obj");
-    lemon.material = material_create("res/lemon/textures/lemon_albedo.jpeg", 
-                                    "res/lemon/textures/lemon_specular.jpeg", 1);
-    lemon.material.shader = phong_shader;
-    model_scale(&lemon, (vec3){10, 10, 10});
-    model_translate(&lemon, (vec3){1, 2, 1});
-    model_set_name(&lemon, "Lemon");
-    darray_push(scene->models, &lemon);
-
-    struct model lime = model_load_from_file("res/lime.obj");
-    lime.material = material_create("res/lime/textures/lime_albedo.jpeg", 
-                                    "res/lime/textures/lime_specular.jpeg", 1);
-    lime.material.shader = phong_shader;
-    model_scale(&lime, (vec3){10, 10, 10});
-    model_translate(&lime, (vec3){2, 2, 1});
-    model_set_name(&lime, "Lime");
-    darray_push(scene->models, &lime);
-    
-    struct model orange = model_load_from_file("res/orange.obj");
-    orange.material = material_create("res/orange/textures/orange_albedo.jpeg", 
-                                    "res/orange/textures/orange_specular.jpeg", 1);
-    orange.material.shader = phong_shader;
-    model_scale(&orange, (vec3){10, 10, 10});
-    model_translate(&orange, (vec3){4, 2, 1});
-    model_set_name(&orange, "Orange");
-    darray_push(scene->models, &orange);
-    
-    struct model bowl = model_load_from_file("res/ChickenBowl.obj");
-    bowl.material = material_create("res/wooden-bowl/textures/ChickenBowl_DIFFUSE.jpg", 
-                                    "res/wooden-bowl/textures/ChickenBowl_GLOSSINESS.jpg", 1);
-    bowl.material.shader = phong_shader;
-    model_scale(&bowl, (vec3){0.1, 0.1, 0.1});
-    model_translate(&bowl, (vec3){3, 2, 2});
-    model_set_name(&bowl, "Bowl");
-    darray_push(scene->models, &bowl);
-    
-
-    struct model light_body = model_load_from_file("res/sphere.obj");
-    light_body.material = material_create(NULL, NULL, 1);
-    light_body.material.shader = light_shader;
-    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
+    struct model shapes = model_load_from_file("res/shapes.obj");
+    shapes.material = material_create("res/textures/base.png", NULL, 32);
+    shapes.material.shader = phong_shader;
+    model_translate(&shapes, (vec3){0, 1.80, -8.74});
+    model_rotation(&shapes, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&shapes, (vec3){5, 5, 5});
+    model_set_name(&shapes, "Shapes");
+    darray_push(scene->models, &shapes);
 
     struct model floor = model_create_cube();
     floor.material = material_create("res/textures/base.png", NULL, 1);
