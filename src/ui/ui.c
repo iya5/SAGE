@@ -36,6 +36,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <demo/glfw_opengl4/nuklear_glfw_gl4.h>
 
 #include "ui.h"
+#include "ui_util.h"
 #include "../darray.h"
 #include "../logger.h"
 
@@ -80,6 +81,13 @@ void ui_begin_frame(struct ui *ui, struct scene *scene, struct platform *platfor
                 scene->draw_skybox= false;
             nk_tree_pop(ctx);
         }
+
+        nk_layout_row_dynamic(ctx, 25, 1);
+        nk_label(ctx, "Clear Color", NK_TEXT_LEFT);
+        nk_layout_row_dynamic(ctx, 25, 1);
+        ui_vec3_editor_rgb(ctx, scene->clear_color, 0.0f, 255.0f, 1.0f, 0.1f);
+
+
         char info_buffer[128];
         snprintf(info_buffer, 128, "Metrics: %d fps (%.2f ms)", platform->fps, platform->frame_time * 1000);
         nk_layout_row_dynamic(ctx, 25, 1);

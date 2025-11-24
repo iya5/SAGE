@@ -46,7 +46,13 @@ struct point_light {
     vec3 diffuse;
     vec3 specular;
     char name[LIGHT_NAME_MAX_SIZE];
+    /* *IMPORTANT* setting attenuation range should not be done manually as it
+       won't calculate the attenuation coefficients and should be done using
+       its respective function */
+    float attenuation_range;
 
+    /* these usually shouldn't be set now because attenuation range will
+       calculate the constant, linear, & quadratic */
     float constant;
     float linear;
     float quadratic;
@@ -57,10 +63,19 @@ struct point_light {
     bool visible;
 };
 
+struct point_light point_light_create(const char *name, float attenuation_range);
+void point_light_set_attenuation_range(struct point_light *light, float range);
+
+void point_light_set_pos(struct point_light *light, vec3 pos);
+void point_light_set_color(struct point_light *light, vec3 color);
+void point_light_set_diffuse(struct point_light *light, vec3 diffuse);
+void point_light_set_specular(struct point_light *light, vec3 specular);
+
 void lighting_apply(struct shader active_shader,
                     struct directional_light directional_light,
                     darray *point_lights);
 
-void light_set_name(struct point_light *light, char name[LIGHT_NAME_MAX_SIZE]);
+void light_set_name(struct point_light *light, const char name[LIGHT_NAME_MAX_SIZE]);
+
 
 #endif /* SAGE_LIGHTING_H */

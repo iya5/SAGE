@@ -31,6 +31,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "ui_scene_graph.h"
 #include "../mnf/mnf_vector.h"
 #include "../mnf/mnf_util.h"
+#include "../logger.h"
+#include "../assert.h"
 
 static void model_inspector(struct nk_context *ctx, struct model *model);
 static void environment_light_inspector(struct nk_context *ctx, struct directional_light *light);
@@ -142,17 +144,23 @@ static void environment_light_inspector(struct nk_context *ctx, struct direction
     nk_layout_row_dynamic(ctx, 30, 1);
     nk_label(ctx, "Environment Light", NK_TEXT_LEFT);
 
-    nk_label(ctx, "Direction:", NK_TEXT_LEFT);
-    ui_vec3_editor_xyz(ctx, light->direction, -UINT16_MAX, UINT16_MAX, 10, 0.05);
+    if (nk_tree_push(ctx, NK_TREE_TAB, "Orientation", NK_MINIMIZED)) {
+        nk_label(ctx, "Direction:", NK_TEXT_LEFT);
+        ui_vec3_editor_xyz(ctx, light->direction, -UINT16_MAX, UINT16_MAX, 10, 0.05);
+        nk_tree_pop(ctx);
+    }
 
-    nk_label(ctx, "Ambient:", NK_TEXT_LEFT);
-    ui_vec3_editor_rgb(ctx, light->ambient, 0.0f, 255.0f, 10.0f, 1.0f);
+    if (nk_tree_push(ctx, NK_TREE_TAB, "Properties", NK_MINIMIZED)) {
+        nk_label(ctx, "Ambient:", NK_TEXT_LEFT);
+        ui_vec3_editor_rgb(ctx, light->ambient, 0.0f, 255.0f, 10.0f, 1.0f);
 
-    nk_label(ctx, "Diffuse:", NK_TEXT_LEFT);
-    ui_vec3_editor_rgb(ctx, light->diffuse, 0.0f, 255.0f, 10.0f, 1.0f);
+        nk_label(ctx, "Diffuse:", NK_TEXT_LEFT);
+        ui_vec3_editor_rgb(ctx, light->diffuse, 0.0f, 255.0f, 10.0f, 1.0f);
 
-    nk_label(ctx, "Specular:", NK_TEXT_LEFT);
-    ui_vec3_editor_rgb(ctx, light->specular, 0.0f, 255.0f, 10.0f, 1.0f);
+        nk_label(ctx, "Specular:", NK_TEXT_LEFT);
+        ui_vec3_editor_rgb(ctx, light->specular, 0.0f, 255.0f, 10.0f, 1.0f);
+        nk_tree_pop(ctx);
+    }
 }
 
 static void point_light_inspector(struct nk_context *ctx, struct point_light *light)
@@ -182,14 +190,23 @@ static void point_light_inspector(struct nk_context *ctx, struct point_light *li
         nk_tree_pop(ctx);
     }
 
-    nk_label(ctx, "Visual Color:", NK_TEXT_LEFT);
-    ui_vec3_editor_rgb(ctx, light->color, 0.0f, 255.0f, 10.0f, 1.0f);
+    if (nk_tree_push(ctx, NK_TREE_TAB, "Properties", NK_MINIMIZED)) {
+        nk_tree_pop(ctx);
+        nk_label(ctx, "Visual Color:", NK_TEXT_LEFT);
+        ui_vec3_editor_rgb(ctx, light->color, 0.0f, 255.0f, 10.0f, 1.0f);
 
-    nk_label(ctx, "Diffuse:", NK_TEXT_LEFT);
-    ui_vec3_editor_rgb(ctx, light->diffuse, 0.0f, 255.0f, 10.0f, 1.0f);
+        nk_label(ctx, "Diffuse:", NK_TEXT_LEFT);
+        ui_vec3_editor_rgb(ctx, light->diffuse, 0.0f, 255.0f, 10.0f, 1.0f);
 
-    nk_label(ctx, "Specular:", NK_TEXT_LEFT);
-    ui_vec3_editor_rgb(ctx, light->specular, 0.0f, 255.0f, 10.0f, 1.0f);
+        nk_label(ctx, "Specular:", NK_TEXT_LEFT);
+        ui_vec3_editor_rgb(ctx, light->specular, 0.0f, 255.0f, 10.0f, 1.0f);
+
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_label(ctx, "Attenuation Range:", NK_TEXT_LEFT);
+        nk_layout_row_dynamic(ctx, 30, 1);
+        nk_property_float(ctx, "#Range:", 0.0, &light->attenuation_range, 2048.0, 1, 0.1);
+        point_light_set_attenuation_range(light, light->attenuation_range);
+    }
 }
 
 static void camera_inspector(struct nk_context *ctx, struct camera *cam)
@@ -203,4 +220,3 @@ static void camera_inspector(struct nk_context *ctx, struct camera *cam)
     nk_layout_row_dynamic(ctx, 25, 1);
     nk_property_float(ctx, "speed:", 0.0, &cam->speed, UINT16_MAX, 1, 1);
 }
-

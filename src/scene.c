@@ -16,6 +16,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdlib.h>
 #include <glad/gl.h>
 
+#include "mnf/mnf_vector.h"
+#include "skybox.h"
 #include "scene.h"
 #include "camera.h"
 #include "darray.h"
@@ -24,10 +26,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "model.h"
 #include "shader.h"
 #include "lighting.h"
-#include "skybox.h"
 #include "mnf/mnf_util.h"
 
-struct skybox skybox;
+static void scene_clear_color(struct scene *scene);
 
 void scene_init(struct scene *scene, float viewport_width, float viewport_height)
 {
@@ -43,9 +44,12 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     }
 
     scene->draw_skybox = true;
+    mnf_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, scene->clear_color);
 
     /* A scene is composed of three important components; camera,
        geometry, & lighting */
+
+    /* This section consists of the camera */
     struct camera *cam = &(scene->cam);
     float aspect = viewport_width / viewport_height;
     camera_init(cam, CAM_DEFAULT_POS, CAM_DEFAULT_FORWARD, CAM_DEFAULT_UP);
@@ -55,8 +59,47 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
                        PERSPECTIVE_DEFAULT_NEAR,
                        PERSPECTIVE_DEFAULT_FAR);
 
-    struct shader phong_shader = shader_create("glsl/phong.glsl");
+    /* This section consists of lighting */
     struct shader light_shader = shader_create("glsl/light.glsl");
+    struct model light_body = model_load_from_file("res/sphere.obj");
+    light_body.material = material_create(NULL, NULL, 1);
+    light_body.material.shader = light_shader;
+    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
+
+    struct directional_light environment_light = {
+        .direction = {1, -1.0, 1.5},
+        .ambient = {100.0/255.0, 100.0/255.0, 100.0/255.0},
+        .diffuse = {150.0/255.0, 150.0/255.0, 150.0/255.0},
+        .specular = {50.0/255.0, 50.0/255.0, 50.0/255.0}
+    };
+    scene->environment_light = environment_light;
+
+    struct point_light plight_1 = point_light_create("Point Light 1", 50.0);
+    point_light_set_color(&plight_1, (vec3){1.0, 0.0, 0.0});
+    point_light_set_pos(&plight_1, (vec3){0.60, 9.0, 4.0});
+    point_light_set_diffuse(&plight_1, (vec3){1.0, 0.0, 0.0});
+    point_light_set_specular(&plight_1, (vec3){1.0, 0.0, 0.0});
+    plight_1.geometric_model = light_body;
+    darray_push(scene->point_lights, &plight_1);
+
+    struct point_light plight_2 = point_light_create("Point Light 2", 50.0);
+    point_light_set_color(&plight_2, (vec3){0.0, 1.0, 0.0});
+    point_light_set_pos(&plight_2, (vec3){0.60, 9.0, 0.0});
+    point_light_set_diffuse(&plight_2, (vec3){0.0, 1.0, 0.0});
+    point_light_set_specular(&plight_2, (vec3){0.0, 1.0, 0.0});
+    plight_2.geometric_model = light_body;
+    darray_push(scene->point_lights, &plight_2);
+
+    struct point_light plight_3 = point_light_create("Point Light 3", 50.0);
+    point_light_set_color(&plight_3, (vec3){0.0, 0.0, 1.0});
+    point_light_set_pos(&plight_3, (vec3){0.60, 9.0, -4.0});
+    point_light_set_diffuse(&plight_3, (vec3){0.0, 0.0, 1.0});
+    point_light_set_specular(&plight_3, (vec3){0.0, 0.0, 1.0});
+    plight_3.geometric_model = light_body;
+    darray_push(scene->point_lights, &plight_3);
+
+    /* This section consists of models */
+    struct shader phong_shader = shader_create("glsl/phong.glsl");
     
     struct model avocado = model_load_from_file("res/avocado.obj");
     avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
@@ -270,66 +313,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     model_set_name(&hw_floor, "Floor");
     darray_push(scene->models, &hw_floor);
     
-
-    struct model light_body = model_load_from_file("res/sphere.obj");
-    light_body.material = material_create(NULL, NULL, 1);
-    light_body.material.shader = light_shader;
-    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
-
-
-    /* Creating light */
-    struct directional_light environment_light = {
-        .direction = {1, -1.0, 1.5},
-        .ambient = {100.0/255.0, 100.0/255.0, 100.0/255.0},
-        .diffuse = {150.0/255.0, 150.0/255.0, 150.0/255.0},
-        .specular = {50.0/255.0, 50.0/255.0, 50.0/255.0}
-    };
-    scene->environment_light = environment_light;
-
-    struct point_light r_light = {
-        .color = {1.0, 0.0, 0.0},
-        .pos = {0.60, 9.0, 4.0},
-        .diffuse = {1.0, 0.0, 0.0},
-        .specular = {1.0, 0.0, 0.0},
-        .constant = 1.0,
-        .linear = 0.9,
-        .quadratic = 0.032,
-        .geometric_model = light_body,
-        .visible = true,
-    };
-    light_set_name(&r_light, "Point Light 1");
-    darray_push(scene->point_lights, &r_light);
-
-
-    struct point_light g_light = {
-        .color = {0.0, 1.0, 0.0},
-        .pos = {0.60, 9.0, 0},
-        .diffuse = {0.0, 1.0, 0.0},
-        .specular = {0.0, 1.0, 0.0},
-        .constant = 1.0,
-        .linear = 0.9,
-        .quadratic = 0.032,
-        .geometric_model = light_body,
-        .visible = true
-    };
-    light_set_name(&g_light, "Point Light 2");
-    darray_push(scene->point_lights, &g_light);
-
-
-    struct point_light b_light = {
-        .color = {0.0, 0.0, 1.0},
-        .pos = {0.60, 9.0, -4},
-        .diffuse = {0.0, 0.0, 1.0},
-        .specular = {0.0, 0.0, 1.0},
-        .constant = 1.0,
-        .linear = 0.9,
-        .quadratic = 0.032,
-        .geometric_model = light_body,
-        .visible = true
-    };
-    light_set_name(&b_light, "Point Light 3");
-    darray_push(scene->point_lights, &b_light);
-
      const char *cubemap_faces[6] = {
         "res/textures/skybox/right.jpg",
         "res/textures/skybox/left.jpg",
@@ -338,21 +321,17 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         "res/textures/skybox/front.jpg",
         "res/textures/skybox/back.jpg",
     };
-    skybox_init(&skybox, cubemap_faces);
+    skybox_init(&scene->skybox, cubemap_faces);
 }
 
-
-// TODO: refactor
 void scene_render(struct scene *scene)
 {
-    /* clearing buffers */
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    scene_clear_color(scene);
 
     struct camera *cam = &(scene->cam);
     camera_update(cam);
 
-    if (scene->draw_skybox) skybox_draw(skybox, cam->view, cam->projection);
+    if (scene->draw_skybox) skybox_draw(scene->skybox, cam->view, cam->projection);
 
     for (uint32_t i = 0; i < scene->point_lights->len; i++) {
         struct point_light *light = darray_at(scene->point_lights, i);
@@ -399,4 +378,11 @@ void scene_destroy(struct scene *scene)
 
     darray_free(scene->point_lights);
     darray_free(scene->models);
+}
+
+static void scene_clear_color(struct scene *scene)
+{
+    /* clearing buffers */
+    glClearColor(scene->clear_color[0], scene->clear_color[1], scene->clear_color[2], 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

@@ -19,6 +19,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "camera.h"
 #include "lighting.h"
 #include "darray.h"
+#include "skybox.h"
 
 /* A good definition of what a scene is can be taken from the website: 
    scratch a pixel
@@ -50,6 +51,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 struct scene {
     struct camera cam; 
     struct directional_light environment_light;
+    struct skybox skybox;
     /* darrays are just dynamically-allocated arrays that can resize itself
        when it gets full, thus it differs from a normal array in the fact that
        it's located on the heap. We use it for models & point lights because
@@ -59,6 +61,7 @@ struct scene {
     darray *models;
     darray *point_lights;
     bool draw_skybox;
+    vec3 clear_color;
 };
 
 /* There are only 3 scene functons used and that is for initialization,

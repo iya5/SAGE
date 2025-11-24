@@ -34,6 +34,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <demo/glfw_opengl4/nuklear_glfw_gl4.h>
 
 #include "ui_scene_graph.h"
+#include "ui_util.h"
 #include "../logger.h"
 
 struct nk_image geometry_icon;
