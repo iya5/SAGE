@@ -61,58 +61,58 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model sphere = model_load_from_file("res/sphere.obj");
     sphere.material = material_create("res/textures/base.png", NULL, 32);
     sphere.material.shader = phong_shader;
-    model_translate(&sphere, (vec3){1.40, 4.70, -2.55});
     model_scale(&sphere, (vec3){0.2, 0.2, 0.2});
+    model_translate(&sphere, (vec3){1.40, 4.70, -2.55});
     model_set_name(&sphere, "Sphere");
     darray_push(scene->models, &sphere);
     
     struct model avocado = model_load_from_file("res/avocado.obj");
     avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
-        "res/avocado/textures/avocado_specular.jpeg", 1);
+                                       "res/avocado/textures/avocado_specular.jpeg", 1);
     avocado.material.shader = phong_shader;
-    model_translate(&avocado, (vec3){0.10, 4.78, 1.20});
-    model_rotation(&avocado, (vec3){MNF_RAD(-46), MNF_RAD(6), MNF_RAD(-133)});
     model_scale(&avocado, (vec3){6, 6, 6});
+    model_rotation(&avocado, (vec3){MNF_RAD(-46), MNF_RAD(6), MNF_RAD(-133)});
+    model_translate(&avocado, (vec3){0.10, 4.78, 1.20});
     model_set_name(&avocado, "Avocado");
     darray_push(scene->models, &avocado);
         
     struct model croissant = model_load_from_file("res/croissant.obj");
     croissant.material = material_create("res/croissant/textures/croissant_albedo.jpeg", 
-        "res/croissant/textures/croissant_albedo.jpeg", 1);
+                                         "res/croissant/textures/croissant_albedo.jpeg", 1);
     croissant.material.shader = phong_shader;
-    model_translate(&croissant, (vec3){0.05, 4.34, -1.09});
-    model_rotation(&croissant, (vec3){MNF_RAD(0), MNF_RAD(-105), MNF_RAD(0)});
     model_scale(&croissant, (vec3){6, 6, 6});
+    model_rotation(&croissant, (vec3){MNF_RAD(0), MNF_RAD(-105), MNF_RAD(0)});
+    model_translate(&croissant, (vec3){0.05, 4.34, -1.09});
     model_set_name(&croissant, "Croissant");
     darray_push(scene->models, &croissant);
             
     struct model lemon = model_load_from_file("res/lemon.obj");
     lemon.material = material_create("res/lemon/textures/lemon_albedo.jpeg", 
-        "res/lemon/textures/lemon_specular.jpeg", 1);
+                                     "res/lemon/textures/lemon_specular.jpeg", 1);
     lemon.material.shader = phong_shader;
-    model_translate(&lemon, (vec3){-0.10, 4.82, 1.28});
-    model_rotation(&lemon, (vec3){MNF_RAD(67), MNF_RAD(38), MNF_RAD(96)});
     model_scale(&lemon, (vec3){8, 8, 8});
+    model_rotation(&lemon, (vec3){MNF_RAD(67), MNF_RAD(38), MNF_RAD(96)});
+    model_translate(&lemon, (vec3){-0.10, 4.82, 1.28});
     model_set_name(&lemon, "Lemon");
     darray_push(scene->models, &lemon);
         
     struct model lime = model_load_from_file("res/lime.obj");
     lime.material = material_create("res/lime/textures/lime_albedo.jpeg", 
-        "res/lime/textures/lime_specular.jpeg", 1);
+                                    "res/lime/textures/lime_specular.jpeg", 1);
     lime.material.shader = phong_shader;
-    model_translate(&lime, (vec3){-0.43, 4.67, 1.25});
-    model_rotation(&lime, (vec3){MNF_RAD(67), MNF_RAD(80), MNF_RAD(-25)});
     model_scale(&lime, (vec3){5, 5, 5});
+    model_rotation(&lime, (vec3){MNF_RAD(67), MNF_RAD(80), MNF_RAD(-25)});
+    model_translate(&lime, (vec3){-0.43, 4.67, 1.25});
     model_set_name(&lime, "Lime");
     darray_push(scene->models, &lime);
         
     struct model orange = model_load_from_file("res/orange.obj");
     orange.material = material_create("res/orange/textures/orange_albedo.jpeg", 
-        "res/orange/textures/orange_specular.jpeg", 1);
+                                      "res/orange/textures/orange_specular.jpeg", 1);
     orange.material.shader = phong_shader;
-    model_translate(&orange, (vec3){-0.30, 4.44, 1.03});
-    model_rotation(&orange, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&orange, (vec3){5, 5, 5});
+    model_rotation(&orange, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_translate(&orange, (vec3){-0.30, 4.44, 1.03});
     model_set_name(&orange, "Orange");
     darray_push(scene->models, &orange); 
     
@@ -120,29 +120,29 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     bowl.material = material_create("res/bowl/textures/bowl.jpeg", 
                                     "res/bowl/textures/bowl_occlusion.jpeg", 1);
     bowl.material.shader = phong_shader;
-    model_translate(&bowl, (vec3){0.36, 4.30, 0.60});
-    model_rotation(&bowl, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&bowl, (vec3){5.1, 5.1, 5.1});
+    model_rotation(&bowl, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_translate(&bowl, (vec3){0.36, 4.30, 0.60});
     model_set_name(&bowl, "Bowl");
     darray_push(scene->models, &bowl);
         
     struct model cucumber = model_load_from_file("res/cucumber.obj");
     cucumber.material = material_create("res/cucumber/textures/cucumber.jpeg", 
-                                    NULL, 1);
+                                        NULL, 1);
     cucumber.material.shader = phong_shader;
-    model_translate(&cucumber, (vec3){0, 4.84, 1.74});
-    model_rotation(&cucumber, (vec3){MNF_RAD(239), MNF_RAD(42), MNF_RAD(85)});
     model_scale(&cucumber, (vec3){6, 6, 6});
+    model_rotation(&cucumber, (vec3){MNF_RAD(239), MNF_RAD(42), MNF_RAD(85)});
+    model_translate(&cucumber, (vec3){0, 4.84, 1.74});
     model_set_name(&cucumber, "Cucumber");
     darray_push(scene->models, &cucumber);
     
     struct model peach = model_load_from_file("res/peach.obj");
     peach.material = material_create("res/peach/textures/peach.jpg", 
-                                    NULL, 1);
+                                     NULL, 1);
     peach.material.shader = phong_shader;
-    model_translate(&peach, (vec3){-0.04, 4.74, 0.79});
-    model_rotation(&peach, (vec3){MNF_RAD(72), MNF_RAD(-161), MNF_RAD(21)});
     model_scale(&peach, (vec3){0.8, 0.8, 0.8});
+    model_rotation(&peach, (vec3){MNF_RAD(72), MNF_RAD(-161), MNF_RAD(21)});
+    model_translate(&peach, (vec3){-0.04, 4.74, 0.79});
     model_set_name(&peach, "Peach");
     darray_push(scene->models, &peach);
     
@@ -217,16 +217,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     darray_push(scene->models, &pudding_plate);
 
     /*
-    struct model watermelon = model_load_from_file("res/watermelon.obj");
-    watermelon.material = material_create("res/watermelon/textures/watermelon.jpeg", 
-    NULL, 1);
-    watermelon.material.shader = phong_shader;
-    model_translate(&watermelon, (vec3){1, 4.24, 1.35});
-    model_rotation(&watermelon, (vec3){MNF_RAD(-65), MNF_RAD(134), MNF_RAD(2.99)});
-    model_scale(&watermelon, (vec3){0.2, 0.2, 0.2});
-    model_set_name(&watermelon, "Watermelon");
-    darray_push(scene->models, &watermelon);
-
     struct model bread_seeds = model_load_from_file("res/bread-seeds.obj");
     bread_seeds.material = material_create("res/bread-seeds/textures/bread-seeds.jpeg", 
                                     NULL, 1);
@@ -243,9 +233,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     wooden_table.material = material_create("res/wooden_table/textures/table.png", 
                                             NULL, 1);
     wooden_table.material.shader = phong_shader;
-    model_translate(&wooden_table, (vec3){0, -0.2, 0});
-    model_rotation(&wooden_table, (vec3){MNF_RAD(0), MNF_RAD(90), MNF_RAD(0)});
     model_scale(&wooden_table, (vec3){7, 7, 7});
+    model_rotation(&wooden_table, (vec3){MNF_RAD(0), MNF_RAD(90), MNF_RAD(0)});
+    model_translate(&wooden_table, (vec3){0, -0.2, 0});
     model_set_name(&wooden_table, "Wooden table");
     darray_push(scene->models, &wooden_table);
     
@@ -253,9 +243,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     wooden_chair.material = material_create("res/wooden_chair/textures/chair.png", 
                                             NULL, 1);
     wooden_chair.material.shader = phong_shader;
-    model_translate(&wooden_chair, (vec3){1.7, -0.2, -1.45});
-    model_rotation(&wooden_chair, (vec3){MNF_RAD(0), MNF_RAD(90), MNF_RAD(0)});
     model_scale(&wooden_chair, (vec3){6, 6, 6});
+    model_rotation(&wooden_chair, (vec3){MNF_RAD(0), MNF_RAD(90), MNF_RAD(0)});
+    model_translate(&wooden_chair, (vec3){1.7, -0.2, -1.45});
     model_set_name(&wooden_chair, "Wooden chair");
     darray_push(scene->models, &wooden_chair);
     
@@ -268,9 +258,9 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model floor = model_create_cube();
     floor.material = material_create("res/textures/base.png", NULL, 1);
     floor.material.shader = phong_shader;
-    model_translate(&floor, (vec3){0, -0.24, 0});
-    model_rotation(&floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&floor, (vec3){50, 0.1, 50});
+    model_rotation(&floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_translate(&floor, (vec3){0, -0.24, 0});
     model_set_name(&floor, "Floor");
     darray_push(scene->models, &floor);
 

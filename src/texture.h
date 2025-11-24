@@ -30,7 +30,9 @@ struct texture texture_create(const char *path);
 
 /* Wrapper around glBindTexture() */
 void texture_bind(struct texture t, size_t texture_unit);
+/* Wrapper around texture_destroy_id */
 void texture_destroy(struct texture *t);
+void texture_destroy_id(uint32_t *id);
 
 struct texture cubemap_texture_create(const char *cubemap_faces[6]);
 void cubemap_texture_bind(struct texture t);

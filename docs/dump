@@ -1,0 +1,6 @@
+[...] create debug tools
+    [...] create world grid
+        [   ] setup world grid in shader
+    [   ] create gizmo manipulator (some help in ddiakoppoulos/tinygizmo)
+
+

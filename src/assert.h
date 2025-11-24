@@ -17,6 +17,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #define SAGE_ASSERT_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 /* Comment out if disabling assertions */
 #define SAGE_ENABLE_ASSERTIONS

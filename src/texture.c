@@ -187,9 +187,13 @@ void texture_bind(struct texture t, size_t n_texture_unit)
 
 void texture_destroy(struct texture *t)
 {
-    if (t->id > 1) {
-        glDeleteTextures(1, &t->id);
-        t->id = 0;
-    }
+    texture_destroy_id(&t->id);
+}
+
+void texture_destroy_id(uint32_t *id)
+{
+    if (*id > 1)
+        glDeleteTextures(1, id);
+    *id = 0;
 }
 

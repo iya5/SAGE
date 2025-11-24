@@ -17,9 +17,8 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdint.h>
 
 #include "config.h"
-#include "mnf/mnf_types.h"
 #include "platform.h"
-#include "ui.h"
+#include "ui/ui.h"
 #include "scene.h"
 #include "input.h"
 
@@ -57,7 +56,7 @@ int main(void)
                          SAGE_INITIAL_VIEWPORT_HEIGHT);
     ui_init(&ui, platform);
     scene_init(&scene, platform.viewport_width, platform.viewport_height);
-    ui_scene_nodes_build(&scene);
+    ui_build_scene_graph(&ui.scene_graph, &scene);
 
     /* This is our rendering loop (or can also be thought of as the game loop
        which 'runs' the entire program every frame until it closes.
@@ -79,18 +78,13 @@ int main(void)
     while (!platform_should_close(&platform)) {
         platform_update_frame_timing(&platform);
         platform_poll_input(&platform);
-        process_input(&scene, &platform);
 
-        ui_draw(&ui, &scene, &platform);
+        process_input(&scene, &platform);
+        ui_begin_frame(&ui, &scene, &platform);
         ui_process_input(&ui, &platform);
         scene_render(&scene);
 
-        /* The reason we draw the UI, then render the scene, then finally render
-           the UI is because of how the UI's backend requires setting some
-           changes to OpenGL's state that would affect our scene. There are more
-           things that do happen internally and can be viewed by reading the
-           documentation over at: 'ui.h' */
-        ui_render();
+        ui_end_frame();
         platform_swap_buffer(&platform);
     }
 
@@ -116,7 +110,7 @@ int main(void)
 
        For a lower-level overview: 'mesh'.h' shows how rendering works using
        OpenGL, what is OpenGL to begin with, and the overall graphics pipeline */
-    ui_shutdown(&ui);
+    //ui_shutdown(&ui);
     scene_destroy(&scene);
     platform_window_shutdown(&platform);
 
