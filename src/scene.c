@@ -30,13 +30,16 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 static void scene_clear_color(struct scene *scene);
 
+struct shader phong_shader;
+struct shader light_shader;
+
 void scene_init(struct scene *scene, float viewport_width, float viewport_height)
 {
     /* Allocating memory for models, materials, lighting, & shaders */
     scene->point_lights = darray_alloc(sizeof(struct point_light), 32);
     scene->models = darray_alloc(sizeof(struct model), 32);
 
-    if (scene->models == NULL || scene->point_lights == NULL) {
+   if (scene->models == NULL || scene->point_lights == NULL) {
         SFATAL("Failed to allocate memory for the scene");
         if (scene->models) darray_free(scene->models);
         if (scene->point_lights) darray_free(scene->point_lights);
@@ -45,6 +48,10 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
 
     scene->draw_skybox = true;
     mnf_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, scene->clear_color);
+
+    /* preparing shaders */
+    phong_shader = shader_create("glsl/phong.glsl");
+    light_shader = shader_create("glsl/light.glsl");
 
     /* A scene is composed of three important components; camera,
        geometry, & lighting */
@@ -60,10 +67,12 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
                        PERSPECTIVE_DEFAULT_FAR);
 
     /* This section consists of lighting */
-    struct shader light_shader = shader_create("glsl/light.glsl");
+    scene->lighting_params.enable_ambient = true;
+    scene->lighting_params.enable_diffuse = true;
+    scene->lighting_params.enable_specular = true;
+
     struct model light_body = model_load_from_file("res/sphere.obj");
     light_body.material = material_create(NULL, NULL, 1);
-    light_body.material.shader = light_shader;
     model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
 
     struct directional_light environment_light = {
@@ -99,12 +108,10 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     darray_push(scene->point_lights, &plight_3);
 
     /* This section consists of models */
-    struct shader phong_shader = shader_create("glsl/phong.glsl");
     
     struct model avocado = model_load_from_file("res/avocado.obj");
     avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
                                        "res/avocado/textures/avocado_specular.jpeg", 1);
-    avocado.material.shader = phong_shader;
     model_scale(&avocado, (vec3){6, 6, 6});
     model_rotation(&avocado, (vec3){MNF_RAD(-46), MNF_RAD(6), MNF_RAD(-133)});
     model_translate(&avocado, (vec3){0.10, 4.78, 1.20});
@@ -114,7 +121,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model croissant = model_load_from_file("res/croissant.obj");
     croissant.material = material_create("res/croissant/textures/croissant_albedo.jpeg", 
                                          "res/croissant/textures/croissant_albedo.jpeg", 1);
-    croissant.material.shader = phong_shader;
     model_scale(&croissant, (vec3){6, 6, 6});
     model_rotation(&croissant, (vec3){MNF_RAD(0), MNF_RAD(-105), MNF_RAD(0)});
     model_translate(&croissant, (vec3){0.05, 4.34, -1.09});
@@ -124,7 +130,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model lemon = model_load_from_file("res/lemon.obj");
     lemon.material = material_create("res/lemon/textures/lemon_albedo.jpeg", 
                                      "res/lemon/textures/lemon_specular.jpeg", 1);
-    lemon.material.shader = phong_shader;
     model_scale(&lemon, (vec3){8, 8, 8});
     model_rotation(&lemon, (vec3){MNF_RAD(67), MNF_RAD(38), MNF_RAD(96)});
     model_translate(&lemon, (vec3){-0.10, 4.82, 1.28});
@@ -134,7 +139,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model lime = model_load_from_file("res/lime.obj");
     lime.material = material_create("res/lime/textures/lime_albedo.jpeg", 
                                     "res/lime/textures/lime_specular.jpeg", 1);
-    lime.material.shader = phong_shader;
     model_scale(&lime, (vec3){5, 5, 5});
     model_rotation(&lime, (vec3){MNF_RAD(67), MNF_RAD(80), MNF_RAD(-25)});
     model_translate(&lime, (vec3){-0.43, 4.67, 1.25});
@@ -144,17 +148,15 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model orange = model_load_from_file("res/orange.obj");
     orange.material = material_create("res/orange/textures/orange_albedo.jpeg", 
                                       "res/orange/textures/orange_specular.jpeg", 1);
-    orange.material.shader = phong_shader;
     model_scale(&orange, (vec3){5, 5, 5});
     model_rotation(&orange, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_translate(&orange, (vec3){-0.30, 4.44, 1.03});
     model_set_name(&orange, "Orange");
     darray_push(scene->models, &orange); 
-    
+
     struct model bowl = model_load_from_file("res/bowl.obj");
     bowl.material = material_create("res/bowl/textures/bowl.jpeg", 
                                     "res/bowl/textures/bowl_occlusion.jpeg", 1);
-    bowl.material.shader = phong_shader;
     model_scale(&bowl, (vec3){5.1, 5.1, 5.1});
     model_rotation(&bowl, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_translate(&bowl, (vec3){0.36, 4.30, 0.60});
@@ -164,7 +166,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model cucumber = model_load_from_file("res/cucumber.obj");
     cucumber.material = material_create("res/cucumber/textures/cucumber.jpeg", 
                                         NULL, 1);
-    cucumber.material.shader = phong_shader;
     model_scale(&cucumber, (vec3){6, 6, 6});
     model_rotation(&cucumber, (vec3){MNF_RAD(239), MNF_RAD(42), MNF_RAD(85)});
     model_translate(&cucumber, (vec3){0, 4.84, 1.74});
@@ -174,7 +175,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model peach = model_load_from_file("res/peach.obj");
     peach.material = material_create("res/peach/textures/peach.jpg", 
                                      NULL, 1);
-    peach.material.shader = phong_shader;
     model_translate(&peach, (vec3){-0.04, 4.64, 0.89});
     model_rotation(&peach, (vec3){MNF_RAD(58), MNF_RAD(154.01), MNF_RAD(-19)});
     model_scale(&peach, (vec3){4, 4, 4});
@@ -184,7 +184,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model cake = model_load_from_file("res/cake.obj");
     cake.material = material_create("res/cake/textures/cake.jpeg", 
                                     NULL, 1);
-    cake.material.shader = phong_shader;
     model_translate(&cake, (vec3){1.29, 4.34, -0.44});
     model_rotation(&cake, (vec3){MNF_RAD(0), MNF_RAD(-4), MNF_RAD(0)});
     model_scale(&cake, (vec3){6, 6, 6});
@@ -194,7 +193,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model pudding = model_load_from_file("res/pudding.obj");
     pudding.material = material_create("res/pudding/textures/pudding.jpeg", 
                                     NULL, 1);
-    pudding.material.shader = phong_shader;
     model_translate(&pudding, (vec3){-0.84, 4.35, 0.60});
     model_rotation(&pudding, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&pudding, (vec3){6, 6, 6});
@@ -204,7 +202,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model homemade = model_load_from_file("res/homemade-bread.obj");
     homemade.material = material_create("res/homemade/textures/homemade.jpeg", 
                                     NULL, 1);
-    homemade.material.shader = phong_shader;
     model_translate(&homemade, (vec3){0.28, 4.30, -1.43});
     model_rotation(&homemade, (vec3){MNF_RAD(0), MNF_RAD(89), MNF_RAD(-0.99)});
     model_scale(&homemade, (vec3){4, 4, 4});
@@ -214,7 +211,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model melon_bread = model_load_from_file("res/melon-bread.obj");
     melon_bread.material = material_create("res/melon_bread/textures/melon-bread.jpeg", 
                                     NULL, 1);
-    melon_bread.material.shader = phong_shader;
     model_translate(&melon_bread, (vec3){-0.44, 4.34, -1.04});
     model_rotation(&melon_bread, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&melon_bread, (vec3){4, 4, 4});
@@ -224,7 +220,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model wooden_tray = model_load_from_file("res/wooden-tray.obj");
     wooden_tray.material = material_create("res/wooden_tray/textures/tray.jpg", 
                                             "res/wooden_tray/textures/tray_ROUGHNESS.jpg", 1);
-    wooden_tray.material.shader = phong_shader;
     model_translate(&wooden_tray, (vec3){-0.39, 4.13, -2.08});
     model_rotation(&wooden_tray, (vec3){MNF_RAD(0), MNF_RAD(-86), MNF_RAD(0)});
     model_scale(&wooden_tray, (vec3){6, 6, 6});
@@ -234,7 +229,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model cake_plate = model_load_from_file("res/dinner-plate.obj");
     cake_plate.material = material_create("res/dinner_plate/textures/dinner_plate.jpeg", 
                                             NULL, 1);
-    cake_plate.material.shader = phong_shader;
     model_translate(&cake_plate, (vec3){0.95, 4.19, 0.24});
     model_rotation(&cake_plate, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&cake_plate, (vec3){7, 7, 7});
@@ -244,7 +238,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model pudding_plate = model_load_from_file("res/dinner-plate.obj");
     pudding_plate.material = material_create("res/dinner_plate/textures/dinner_plate.jpeg", 
                                             NULL, 1);
-    pudding_plate.material.shader = phong_shader;
     model_translate(&pudding_plate, (vec3){-0.29, 4.19, 0.05});
     model_rotation(&pudding_plate, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&pudding_plate, (vec3){6, 6, 6});
@@ -254,7 +247,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model coffee = model_load_from_file("res/vienna.obj");
     coffee.material = material_create("res/vienna-coffee/textures/vienna.jpeg", 
                                         "res/vienna-coffee/textures/vienna_ao.jpeg", 1);
-    coffee.material.shader = phong_shader;
     model_translate(&coffee, (vec3){-0.20, 4.34, -1.67});
     model_rotation(&coffee, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&coffee, (vec3){4, 4, 4});
@@ -265,7 +257,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model bread_seeds = model_load_from_file("res/bread-seeds.obj");
     bread_seeds.material = material_create("res/bread-seeds/textures/bread-seeds.jpeg", 
                                     NULL, 1);
-    bread_seeds.material.shader = phong_shader;
     model_translate(&bread_seeds, (vec3){0, 6, 0});
     model_rotation(&bread_seeds, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&bread_seeds, (vec3){0.05, 0.05, 0.05});
@@ -276,7 +267,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model wooden_table = model_load_from_file("res/wooden-table.obj");
     wooden_table.material = material_create("res/wooden_table/textures/table.png", 
                                             NULL, 1);
-    wooden_table.material.shader = phong_shader;
     model_scale(&wooden_table, (vec3){7, 7, 7});
     model_rotation(&wooden_table, (vec3){MNF_RAD(0), MNF_RAD(90), MNF_RAD(0)});
     model_translate(&wooden_table, (vec3){0, -0.2, 0});
@@ -286,7 +276,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model wooden_chair = model_load_from_file("res/wooden-chair.obj");
     wooden_chair.material = material_create("res/wooden_chair/textures/chair.png", 
                                             NULL, 1);
-    wooden_chair.material.shader = phong_shader;
     model_scale(&wooden_chair, (vec3){6, 6, 6});
     model_rotation(&wooden_chair, (vec3){MNF_RAD(0), MNF_RAD(90), MNF_RAD(0)});
     model_translate(&wooden_chair, (vec3){1.7, -0.2, -1.45});
@@ -296,7 +285,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model carpet = model_load_from_file("res/carpet.obj");
     carpet.material = material_create("res/carpet/textures/carpet_alb.png", 
                                     "res/carpet/textures/carpet_mtl.png", 1);
-    carpet.material.shader = phong_shader;
     model_translate(&carpet, (vec3){0, -0.22, 0});
     model_rotation(&carpet, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&carpet, (vec3){3, 3, 3});
@@ -306,7 +294,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     struct model hw_floor = model_create_cube();
     hw_floor.material = material_create("res/hardwood/textures/hw_diff.jpeg", 
                                         "res/hardwood/textures/hw_spec.png", 1);
-    hw_floor.material.shader = phong_shader;
     model_translate(&hw_floor, (vec3){0, -0.24, 0});
     model_rotation(&hw_floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_scale(&hw_floor, (vec3){50, 0.1, 50});
@@ -322,6 +309,8 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
         "res/textures/skybox/back.jpg",
     };
     skybox_init(&scene->skybox, cubemap_faces);
+
+    SINFO("Finished Initializing Scene!");
 }
 
 void scene_render(struct scene *scene)
@@ -333,37 +322,34 @@ void scene_render(struct scene *scene)
 
     if (scene->draw_skybox) skybox_draw(scene->skybox, cam->view, cam->projection);
 
+    shader_use(light_shader);
+    shader_uniform_mat4(light_shader, "u_view", cam->view);
+    shader_uniform_mat4(light_shader, "u_projection", cam->projection);
     for (uint32_t i = 0; i < scene->point_lights->len; i++) {
         struct point_light *light = darray_at(scene->point_lights, i);
         if (!light->visible) continue;
 
         struct model light_model = light->geometric_model;
-        struct shader shader = light_model.material.shader;
-        shader_use(shader);
         model_translate(&light_model, light->pos);
-        shader_uniform_vec3(shader, "u_color", light->color);
-        shader_uniform_mat4(shader, "u_view", cam->view);
-        shader_uniform_mat4(shader, "u_projection", cam->projection);
-        model_draw(light_model, shader);
+        shader_uniform_vec3(light_shader, "u_color", light->color);
+        model_draw(light_model, light_shader);
     }
 
+    shader_use(phong_shader);
+    shader_uniform_mat4(phong_shader, "u_view", cam->view);
+    shader_uniform_vec3(phong_shader, "u_view_pos", cam->pos);
+    shader_uniform_mat4(phong_shader, "u_projection", cam->projection);
     for (uint32_t i = 0; i < scene->models->len; i++) {
         struct model *model = darray_at(scene->models, i);
         if (!model->visible) continue;
 
-        struct material material = model->material;
-        struct shader shader = material.shader;
+        lighting_apply(phong_shader,
+                       scene->environment_light,
+                       scene->point_lights,
+                       scene->lighting_params);
 
-        /* pre-rendering model */
-        shader_use(shader);
-        shader_uniform_mat4(shader, "u_view", cam->view);
-        shader_uniform_vec3(shader, "u_view_pos", cam->pos);
-        shader_uniform_mat4(shader, "u_projection", cam->projection);
-        lighting_apply(shader, scene->environment_light, scene->point_lights);
-
-        /* drawing model */
-        material_apply(material);
-        model_draw(*model, shader);
+        material_apply(phong_shader, model->material);
+        model_draw(*model, phong_shader);
     }
 }
 
@@ -378,6 +364,8 @@ void scene_destroy(struct scene *scene)
 
     darray_free(scene->point_lights);
     darray_free(scene->models);
+    shader_destroy(&phong_shader);
+    shader_destroy(&light_shader);
 }
 
 static void scene_clear_color(struct scene *scene)

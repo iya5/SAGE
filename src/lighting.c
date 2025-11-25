@@ -61,15 +61,27 @@ void point_light_set_specular(struct point_light *light, vec3 specular)
 
 void lighting_apply(struct shader active_shader,
                     struct directional_light directional_light,
-                    darray *point_lights)
+                    darray *point_lights,
+                    struct lighting_params params)
 {
     shader_uniform_vec3(active_shader, "u_directional_light.direction", directional_light.direction);
-    shader_uniform_vec3(active_shader, "u_directional_light.ambient", directional_light.ambient);
-    shader_uniform_vec3(active_shader, "u_directional_light.diffuse", directional_light.diffuse);
-    shader_uniform_vec3(active_shader, "u_directional_light.specular", directional_light.specular);
+
+    if (params.enable_ambient)
+        shader_uniform_vec3(active_shader, "u_directional_light.ambient", directional_light.ambient);
+    else
+        shader_uniform_vec3(active_shader, "u_directional_light.ambient", MNF_ZERO_VECTOR);
+
+    if (params.enable_diffuse)
+        shader_uniform_vec3(active_shader, "u_directional_light.diffuse", directional_light.diffuse);
+    else
+        shader_uniform_vec3(active_shader, "u_directional_light.diffuse", MNF_ZERO_VECTOR);
+
+    if (params.enable_specular)
+        shader_uniform_vec3(active_shader, "u_directional_light.specular", directional_light.specular);
+    else
+        shader_uniform_vec3(active_shader, "u_directional_light.specular", MNF_ZERO_VECTOR);
 
     shader_uniform_1i(active_shader, "u_num_point_lights", point_lights->len);
-
     for (size_t i = 0; i < point_lights->len; i++) {
         struct point_light *point_light = darray_at(point_lights, i);
         char uniform_name[MAX_UNIFORM_NAME_LEN] = {0};
@@ -85,11 +97,16 @@ void lighting_apply(struct shader active_shader,
 
         /* diffuse */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].diffuse", i);
-        shader_uniform_vec3(active_shader, uniform_name, point_light->diffuse);
-
+        if (params.enable_diffuse)
+            shader_uniform_vec3(active_shader, uniform_name, point_light->diffuse);
+        else
+            shader_uniform_vec3(active_shader, uniform_name, MNF_ZERO_VECTOR);
         /* specular */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].specular", i);
-        shader_uniform_vec3(active_shader, uniform_name, point_light->specular);
+        if (params.enable_specular)
+            shader_uniform_vec3(active_shader, uniform_name, point_light->specular);
+        else
+            shader_uniform_vec3(active_shader, uniform_name, MNF_ZERO_VECTOR);
 
         /* constant */
         snprintf(uniform_name, MAX_UNIFORM_NAME_LEN, "u_point_lights[%zu].constant", i);

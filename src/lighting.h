@@ -63,6 +63,12 @@ struct point_light {
     bool visible;
 };
 
+struct lighting_params {
+    bool enable_ambient;
+    bool enable_diffuse;
+    bool enable_specular;
+};
+
 struct point_light point_light_create(const char *name, float attenuation_range);
 void point_light_set_attenuation_range(struct point_light *light, float range);
 
@@ -73,7 +79,8 @@ void point_light_set_specular(struct point_light *light, vec3 specular);
 
 void lighting_apply(struct shader active_shader,
                     struct directional_light directional_light,
-                    darray *point_lights);
+                    darray *point_lights,
+                    struct lighting_params params);
 
 void light_set_name(struct point_light *light, const char name[LIGHT_NAME_MAX_SIZE]);
 

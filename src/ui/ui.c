@@ -73,6 +73,19 @@ void ui_begin_frame(struct ui *ui, struct scene *scene, struct platform *platfor
     if (nk_begin(ctx, "Debug", nk_rect(500, 50, 300, 300),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
                  | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_MINIMIZED )) {
+        if (nk_tree_push(ctx, NK_TREE_TAB, "Lighting Parameters", NK_MINIMIZED)) {
+            nk_bool ambient = scene->lighting_params.enable_ambient;
+            nk_bool diffuse = scene->lighting_params.enable_diffuse;
+            nk_bool specular = scene->lighting_params.enable_specular;
+            nk_checkbox_label(ctx, "Ambient", &ambient);
+            nk_checkbox_label(ctx, "Diffuse", &diffuse);
+            nk_checkbox_label(ctx, "Specular", &specular);
+            scene->lighting_params.enable_ambient = ambient;
+            scene->lighting_params.enable_diffuse = diffuse;
+            scene->lighting_params.enable_specular = specular;
+
+            nk_tree_pop(ctx);
+        }
         if (nk_tree_push(ctx, NK_TREE_TAB, "Skybox", NK_MINIMIZED)) {
             nk_layout_row_dynamic(ctx, 25, 2);
             if (nk_option_label(ctx, "enable", scene->draw_skybox))

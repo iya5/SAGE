@@ -30,7 +30,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
    shaders to render a particular object. */
 
 struct material {
-    struct shader shader;
     struct texture diffuse_map;
     struct texture specular_map;
     float shininess;
@@ -48,7 +47,7 @@ struct material material_create(const char *diffuse_map_path,
                                 const char *specular_map_path,
                                 float shininess);
 
-void material_apply(struct material material);
+void material_apply(struct shader shader, struct material material);
 
 /* Some extra notes on materials:
  

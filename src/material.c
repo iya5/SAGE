@@ -61,9 +61,9 @@ struct material material_create(const char *diffuse_map_path,
     return material;
 }
 
-void material_apply(struct material material)
+void material_apply(struct shader shader, struct material material)
 {
-    shader_uniform_1f(material.shader, "u_material.shininess", material.shininess);
+    shader_uniform_1f(shader, "u_material.shininess", material.shininess);
     texture_bind(material.diffuse_map, 0);
     texture_bind(material.specular_map, 1);
 }

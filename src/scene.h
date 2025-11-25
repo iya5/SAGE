@@ -60,8 +60,13 @@ struct scene {
        where parts of its memory might not be used */
     darray *models;
     darray *point_lights;
-    bool draw_skybox;
     vec3 clear_color;
+
+    /* Below are some flags for configuring the background as well as the
+       lighting parameters;  whether or not to enable particular components of
+       the Phong reflection model */
+    bool draw_skybox;
+    struct lighting_params lighting_params;
 };
 
 /* There are only 3 scene functons used and that is for initialization,

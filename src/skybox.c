@@ -20,6 +20,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "texture.h"
 #include "mnf/mnf_matrix.h"
 #include "logger.h"
+#include "obj_loader.h"
 
 struct shader skybox_shader;
 
@@ -29,8 +30,8 @@ void skybox_init(struct skybox *skybox, const char *cubemap_paths[6])
     if (skybox_shader.handle == 0)
         skybox_shader = shader_create("glsl/skybox.glsl");
 
-    skybox->cubemap = cubemap_texture_create(cubemap_paths);
     skybox->mesh = mesh_geometry_create_cube();
+    skybox->cubemap = cubemap_texture_create(cubemap_paths);
 }
 
 void skybox_draw(struct skybox skybox, mat4 view, mat4 projection)
