@@ -73,6 +73,11 @@ void ui_begin_frame(struct ui *ui, struct scene *scene, struct platform *platfor
     if (nk_begin(ctx, "Debug", nk_rect(500, 50, 300, 300),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE 
                  | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_MINIMIZED )) {
+        char info_buffer[128];
+        snprintf(info_buffer, 128, "%d fps (%.2f ms)", platform->fps, platform->frame_time * 1000);
+        nk_layout_row_dynamic(ctx, 25, 1);
+        nk_label(ctx, info_buffer, NK_TEXT_LEFT);
+
         if (nk_tree_push(ctx, NK_TREE_TAB, "Lighting Parameters", NK_MINIMIZED)) {
             nk_bool ambient = scene->lighting_params.enable_ambient;
             nk_bool diffuse = scene->lighting_params.enable_diffuse;
@@ -86,25 +91,17 @@ void ui_begin_frame(struct ui *ui, struct scene *scene, struct platform *platfor
 
             nk_tree_pop(ctx);
         }
-        if (nk_tree_push(ctx, NK_TREE_TAB, "Skybox", NK_MINIMIZED)) {
-            nk_layout_row_dynamic(ctx, 25, 2);
-            if (nk_option_label(ctx, "enable", scene->draw_skybox))
-                scene->draw_skybox= true;
-            if (nk_option_label(ctx, "disable", !scene->draw_skybox))
-                scene->draw_skybox= false;
+        if (nk_tree_push(ctx, NK_TREE_TAB, "Scene", NK_MINIMIZED)) {
+            nk_bool skybox = scene->draw_skybox;
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_checkbox_label(ctx, "Enable skybox", &skybox);
+            scene->draw_skybox = skybox;
+
+            nk_layout_row_dynamic(ctx, 25, 1);
+            nk_label(ctx, "Clear Color", NK_TEXT_LEFT);
+            ui_vec3_editor_rgb(ctx, scene->clear_color, 0.0f, 255.0f, 1.0f, 0.1f);
             nk_tree_pop(ctx);
         }
-
-        nk_layout_row_dynamic(ctx, 25, 1);
-        nk_label(ctx, "Clear Color", NK_TEXT_LEFT);
-        nk_layout_row_dynamic(ctx, 25, 1);
-        ui_vec3_editor_rgb(ctx, scene->clear_color, 0.0f, 255.0f, 1.0f, 0.1f);
-
-
-        char info_buffer[128];
-        snprintf(info_buffer, 128, "Metrics: %d fps (%.2f ms)", platform->fps, platform->frame_time * 1000);
-        nk_layout_row_dynamic(ctx, 25, 1);
-        nk_label(ctx, info_buffer, NK_TEXT_LEFT);
     }
     nk_end(ctx);
 
