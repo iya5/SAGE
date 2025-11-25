@@ -81,4 +81,10 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
 void scene_render(struct scene *scene);
 void scene_destroy(struct scene *scene);
 
+/* These are for the actual implementation files which are configurable,
+   rendering a specific can be done by defining the macro attached to that
+   scene inside scene_impl.c */
+void scene_init_models(struct scene *scene);
+void scene_init_lighting(struct scene *scene);
+
 #endif /* SAGE_SCENE_H */

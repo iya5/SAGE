@@ -196,6 +196,17 @@ struct texture cubemap_texture_create(const char *cubemap_faces[6])
     int32_t width, height, channels;
 	width = height = channels = 0;
 
+    /* TODO: */
+    GLenum format;
+    switch (channels) {
+        case 3: format = GL_RGB;
+                break;
+        case 4: format = GL_RGBA;
+                break;
+        default: format = GL_RED;
+                 break;
+    }
+
     /* set texture parameters */
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -211,11 +222,11 @@ struct texture cubemap_texture_create(const char *cubemap_faces[6])
 
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                      0,                /* level (lod)      */
-                     GL_RGB,           /* color components */
+                     format,           /* color components */
                      width,            /* width            */
                      height,           /* height           */
                      0,                /* border           */
-                     GL_RGB,           /* pixel format     */
+                     GL_RGBA,          /* pixel format     */
                      GL_UNSIGNED_BYTE, /* data type        */
                      data);            /* data in memory   */
     }
