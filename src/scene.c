@@ -26,7 +26,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "model.h"
 #include "shader.h"
 #include "lighting.h"
-#include "mnf/mnf_util.h"
 
 static void scene_clear_color(struct scene *scene);
 
@@ -71,16 +70,7 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     scene->lighting_params.enable_specular = true;
     scene_init_lighting(scene);
     scene_init_models(scene);
-
-     const char *cubemap_faces[6] = {
-        "res/textures/skybox/right.jpg",
-        "res/textures/skybox/left.jpg",
-        "res/textures/skybox/top.jpg",
-        "res/textures/skybox/bottom.jpg",
-        "res/textures/skybox/front.jpg",
-        "res/textures/skybox/back.jpg",
-    };
-    skybox_init(&scene->skybox, cubemap_faces);
+    scene_init_skybox(scene);
 
     SINFO("Finished Initializing Scene!");
 }

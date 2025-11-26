@@ -21,18 +21,101 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "scene.h"
 #include "mnf/mnf_util.h"
 
-#define SCENE_TWO
+#define MINECRAFT
 
 #ifdef SCENE_ONE
 
 void scene_init_models(struct scene *scene)
 {
+    
+    struct model jake = model_load_from_file("res/jake-the-dog.obj");
+    jake.material = material_create("res/jake/textures/jake.png", NULL, 80);
+    model_translate(&jake, (vec3){0, 0, 0.5});
+    model_rotation(&jake, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&jake, (vec3){5, 5, 5});
+    model_set_name(&jake, "Jake the Dog");
+    darray_push(scene->models, &jake);
 
+    /*
+    struct model floor = model_create_cube();
+    floor.material = material_create("res/textures/base.png", NULL, 1);
+    model_scale(&floor, (vec3){30, 0.1, 30});
+    model_translate(&floor, (vec3){0, -2, 0});
+    model_set_name(&floor, "Floor");
+    darray_push(scene->models, &floor);
+    */
 }
 
 void scene_init_lighting(struct scene *scene)
 {
+    struct model light_body = model_load_from_file("res/sphere.obj");
+    light_body.material = material_create(NULL, NULL, 1);
+    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
 
+    struct directional_light environment_light = {
+        .direction = {0, -1.0, 0},
+        .ambient = {0.3, 0.3, 0.3},
+        .diffuse = {0.5, 0.5, 0.5},
+        .specular = {0.2, 0.2, 0.2}
+    };
+    scene->environment_light = environment_light;
+
+    struct point_light r_light = {
+        .color = {1.0, 0.0, 0.0},
+        .pos = {1.45, 4.0, 0.0},
+        .diffuse = {1.0, 0.0, 0.0},
+        .specular = {1.0, 0.0, 0.0},
+        .constant = 1.0,
+        .linear = 0.9,
+        .quadratic = 0.032,
+        .geometric_model = light_body,
+        .visible = true,
+    };
+    light_set_name(&r_light, "Point Light 1");
+    darray_push(scene->point_lights, &r_light);
+
+
+    struct point_light g_light = {
+        .color = {0.0, 1.0, 0.0},
+        .pos = {-1.45, 4.0, 2.1},
+        .diffuse = {0.0, 1.0, 0.0},
+        .specular = {0.0, 1.0, 0.0},
+        .constant = 1.0,
+        .linear = 0.9,
+        .quadratic = 0.032,
+        .geometric_model = light_body,
+        .visible = true
+    };
+    light_set_name(&g_light, "Point Light 2");
+    darray_push(scene->point_lights, &g_light);
+
+
+    struct point_light b_light = {
+        .color = {0.0, 0.0, 1.0},
+        .pos = {-1.45, 4.0, -2.1},
+        .diffuse = {0.0, 0.0, 1.0},
+        .specular = {0.0, 0.0, 1.0},
+        .constant = 1.0,
+        .linear = 0.9,
+        .quadratic = 0.032,
+        .geometric_model = light_body,
+        .visible = true
+    };
+    light_set_name(&b_light, "Point Light 3");
+    darray_push(scene->point_lights, &b_light);
+}
+
+void scene_init_skybox(struct scene *scene)
+{
+    const char *cubemap_faces[6] = {
+        "res/skybox/default/px.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/py.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/pz.jpg",
+        "res/skybox/default/nz.jpg",
+    };
+    skybox_init(&scene->skybox, cubemap_faces);
 }
 
 #endif
@@ -42,10 +125,6 @@ void scene_init_lighting(struct scene *scene)
 
 void scene_init_models(struct scene *scene)
 {
-    struct model light_body = model_load_from_file("res/sphere.obj");
-    light_body.material = material_create(NULL, NULL, 1);
-    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
-
     struct model avocado = model_load_from_file("res/avocado.obj");
     avocado.material = material_create("res/avocado/textures/avocado_albedo.jpeg", 
                                        "res/avocado/textures/avocado_specular.jpeg", 1);
@@ -89,7 +168,7 @@ void scene_init_models(struct scene *scene)
     model_rotation(&orange, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
     model_translate(&orange, (vec3){-0.30, 4.44, 1.03});
     model_set_name(&orange, "Orange");
-    darray_push(scene->models, &orange); 
+    darray_push(scene->models, &orange);
 
     struct model bowl = model_load_from_file("res/bowl.obj");
     bowl.material = material_create("res/bowl/textures/bowl.jpeg", 
@@ -181,14 +260,71 @@ void scene_init_models(struct scene *scene)
     model_set_name(&pudding_plate, "Pudding plate");
     darray_push(scene->models, &pudding_plate);
     
-    struct model coffee = model_load_from_file("res/vienna.obj");
-    coffee.material = material_create("res/vienna-coffee/textures/vienna.jpeg", 
+    struct model v_coffee = model_load_from_file("res/vienna.obj");
+    v_coffee.material = material_create("res/vienna-coffee/textures/vienna.jpeg", 
                                         "res/vienna-coffee/textures/vienna_ao.jpeg", 1);
-    model_translate(&coffee, (vec3){-0.20, 4.34, -1.67});
+    model_translate(&v_coffee, (vec3){-0.20, 4.34, -1.66});
+    model_rotation(&v_coffee, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&v_coffee, (vec3){5, 5, 5});
+    model_set_name(&v_coffee, "Vienna Coffee");
+    darray_push(scene->models, &v_coffee);
+    
+    struct model coffee = model_load_from_file("res/coffee.obj");
+    coffee.material = material_create("res/coffee/textures/coffee_alb.jpg", 
+                                        "res/coffee/textures/coffee_sp.jpg", 1);
+    model_translate(&coffee, (vec3){-0.76, 4.34, -1.66});
     model_rotation(&coffee, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
-    model_scale(&coffee, (vec3){4, 4, 4});
-    model_set_name(&coffee, "Vienna Coffee");
+    model_scale(&coffee, (vec3){22, 22, 22});
+    model_set_name(&coffee, "Coffee");
     darray_push(scene->models, &coffee);
+    
+    struct model pot = model_load_from_file("res/teapot.obj");
+    pot.material = material_create("res/coffee-pot/textures/teapot_alb.png", 
+                                        "res/coffee-pot/textures/teapot_roughness.png", 1);
+    model_translate(&pot, (vec3){-0.07, 4.33, -1.96});
+    model_rotation(&pot, (vec3){MNF_RAD(0), MNF_RAD(124), MNF_RAD(0)});
+    model_scale(&pot, (vec3){25, 25, 25});
+    model_set_name(&pot, "Coffee pot");
+    darray_push(scene->models, &pot);
+
+    struct model slv = model_load_from_file("res/silverware.obj");
+    slv.material = material_create(NULL, NULL , 2048);
+    model_translate(&slv, (vec3){-0.93, 4.05, -1.04});
+    model_rotation(&slv, (vec3){MNF_RAD(5.6), MNF_RAD(47), MNF_RAD(-7.90)});
+    model_scale(&slv, (vec3){30, 30, 30});
+    model_set_name(&slv, "Silverware");
+    darray_push(scene->models, &slv);
+    
+    struct model tissue = model_load_from_file("res/tissue.obj");
+
+    tissue.material = material_create("res/tissue/textures/tissue_alb.png", 
+                                    NULL, 1);
+    model_translate(&tissue, (vec3){0.52, 4.26, -1.91});
+    model_rotation(&tissue, (vec3){MNF_RAD(93), MNF_RAD(185), MNF_RAD(2.20)});
+    model_scale(&tissue, (vec3){25, 45, 10});
+    model_set_name(&tissue, "Tissue");
+    darray_push(scene->models, &tissue);
+    
+    struct model tissue2 = model_load_from_file("res/tissue.obj");
+
+    tissue2.material = material_create("res/tissue/textures/tissue_alb.png", 
+                                    NULL, 1);
+    model_translate(&tissue2, (vec3){0.59, 4.22, -1.90});
+    model_rotation(&tissue2, (vec3){MNF_RAD(90), MNF_RAD(182.6), MNF_RAD(0)});
+    model_scale(&tissue2, (vec3){25, 45, 10});
+    model_set_name(&tissue2, "Tissue 2");
+    darray_push(scene->models, &tissue2);
+    
+    
+    struct model socrates = model_load_from_file("res/socrates.obj");
+
+    socrates.material = material_create("res/socrates/textures/soc_alb.png", 
+                                        "res/socrates/textures/soc_rough.png", 1);
+    model_translate(&socrates, (vec3){1.19, 4.3, 1.66});
+    model_rotation(&socrates, (vec3){MNF_RAD(0), MNF_RAD(25.9), MNF_RAD(0)});
+    model_scale(&socrates, (vec3){4, 4, 4});
+    model_set_name(&socrates, "Socrates");
+    darray_push(scene->models, &socrates);  
 
     struct model wooden_table = model_load_from_file("res/wooden-table.obj");
     wooden_table.material = material_create("res/wooden_table/textures/table.png", 
@@ -222,7 +358,7 @@ void scene_init_models(struct scene *scene)
                                         "res/hardwood/textures/hw_spec.png", 1);
     model_translate(&hw_floor, (vec3){0, -0.24, 0});
     model_rotation(&hw_floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
-    model_scale(&hw_floor, (vec3){50, 0.1, 50});
+    model_scale(&hw_floor, (vec3){40, 0.1, 40});
     model_set_name(&hw_floor, "Floor");
     darray_push(scene->models, &hw_floor);
 }
@@ -242,28 +378,25 @@ void scene_init_lighting(struct scene *scene)
     scene->environment_light = environment_light;
 
     struct point_light plight_1 = point_light_create("Point Light 1", 50.0);
-    point_light_set_color(&plight_1, (vec3){1.0, 0.0, 0.0});
+    point_light_set_color(&plight_1, (vec3){1.0, 1.0, 1.0});
     point_light_set_pos(&plight_1, (vec3){0.60, 9.0, 4.0});
-    point_light_set_diffuse(&plight_1, (vec3){1.0, 0.0, 0.0});
-    point_light_set_specular(&plight_1, (vec3){1.0, 0.0, 0.0});
+    point_light_set_diffuse(&plight_1, (vec3){1.0, 1.0, 1.0});
+    point_light_set_specular(&plight_1, (vec3){1.0, 1.0, 1.0});
     plight_1.geometric_model = light_body;
     darray_push(scene->point_lights, &plight_1);
+}
 
-    struct point_light plight_2 = point_light_create("Point Light 2", 50.0);
-    point_light_set_color(&plight_2, (vec3){0.0, 1.0, 0.0});
-    point_light_set_pos(&plight_2, (vec3){0.60, 9.0, 0.0});
-    point_light_set_diffuse(&plight_2, (vec3){0.0, 1.0, 0.0});
-    point_light_set_specular(&plight_2, (vec3){0.0, 1.0, 0.0});
-    plight_2.geometric_model = light_body;
-    darray_push(scene->point_lights, &plight_2);
-
-    struct point_light plight_3 = point_light_create("Point Light 3", 50.0);
-    point_light_set_color(&plight_3, (vec3){0.0, 0.0, 1.0});
-    point_light_set_pos(&plight_3, (vec3){0.60, 9.0, -4.0});
-    point_light_set_diffuse(&plight_3, (vec3){0.0, 0.0, 1.0});
-    point_light_set_specular(&plight_3, (vec3){0.0, 0.0, 1.0});
-    plight_3.geometric_model = light_body;
-    darray_push(scene->point_lights, &plight_3);
+void scene_init_skybox(struct scene *scene)
+{
+    const char *cubemap_faces[6] = {
+        "res/skybox/default/px.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/py.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/pz.jpg",
+        "res/skybox/default/nz.jpg",
+    };
+    skybox_init(&scene->skybox, cubemap_faces);
 }
 
 #endif
@@ -273,12 +406,106 @@ void scene_init_lighting(struct scene *scene)
 
 void scene_init_models(struct scene *scene)
 {
+    struct model socrates = model_load_from_file("res/socrates.obj");
 
+    socrates.material = material_create("res/socrates/textures/soc_alb.png", 
+                                    "res/socrates/textures/soc_rough.png", 1);
+    model_translate(&socrates, (vec3){0, 0, 0});
+    model_rotation(&socrates, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&socrates, (vec3){6, 6, 6});
+    model_set_name(&socrates, "Socrates");
+    darray_push(scene->models, &socrates);
 }
 
 void scene_init_lighting(struct scene *scene)
 {
+    struct model light_body = model_load_from_file("res/sphere.obj");
+    light_body.material = material_create(NULL, NULL, 1);
+    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
 
+    struct directional_light environment_light = {
+        .direction = {1, -1.0, 1.5},
+        .ambient = {60.0/255.0, 100.0/255.0, 100.0/255.0},
+        .diffuse = {150.0/255.0, 150.0/255.0, 150.0/255.0},
+        .specular = {50.0/255.0, 50.0/255.0, 50.0/255.0}
+    };
+    scene->environment_light = environment_light;
+
+    struct point_light plight_1 = point_light_create("Point Light 1", 50.0);
+    point_light_set_color(&plight_1, (vec3){1.0, 1.0, 1.0});
+    point_light_set_pos(&plight_1, (vec3){-4.95, 4.44, 1.29});
+    point_light_set_diffuse(&plight_1, (vec3){1.0, 1.0, 1.0});
+    point_light_set_specular(&plight_1, (vec3){1.0, 1.0, 1.0});
+    plight_1.geometric_model = light_body;
+    darray_push(scene->point_lights, &plight_1);
+
+    struct shader phong_shader = shader_create("glsl/phong.glsl");
+}
+
+void scene_init_skybox(struct scene *scene)
+{
+    const char *cubemap_faces[6] = {
+        "res/skybox/default/px.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/py.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/pz.jpg",
+        "res/skybox/default/nz.jpg",
+    };
+    skybox_init(&scene->skybox, cubemap_faces);
+}
+
+#endif
+
+#ifdef MINECRAFT
+
+void scene_init_models(struct scene *scene)
+{
+    struct model mc_castle = model_load_from_file("res/castle.obj");
+    mc_castle.material = material_create("res/minecraft-castle/textures/castle.jpg", NULL, 80);
+    model_translate(&mc_castle, (vec3){0, 0, 0});
+    model_rotation(&mc_castle, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&mc_castle, (vec3){16, 16, 16});
+    model_set_name(&mc_castle, "Minecraft Castle");
+    darray_push(scene->models, &mc_castle);
+}
+
+void scene_init_lighting(struct scene *scene)
+{
+    struct model light_body = model_load_from_file("res/sphere.obj");
+    light_body.material = material_create(NULL, NULL, 1);
+    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
+
+    struct directional_light environment_light = {
+        .direction = {16.04, -1.04, 2.95},
+        .ambient = {150.0/255.0, 150.0/255.0, 150.0/255.0},
+        .diffuse = {200.0/255.0, 200.0/255.0, 200.0/255.0},
+        .specular = {50.0/255.0, 50.0/255.0, 50.0/255.0}
+    };
+    scene->environment_light = environment_light;
+
+    struct point_light plight_1 = point_light_create("Point Light 1", 50.0);
+    point_light_set_color(&plight_1, (vec3){1.0, 1.0, 1.0});
+    point_light_set_pos(&plight_1, (vec3){37, 41.99, 10.44});
+    point_light_set_diffuse(&plight_1, (vec3){1.0, 1.0, 1.0});
+    point_light_set_specular(&plight_1, (vec3){1.0, 1.0, 1.0});
+    plight_1.geometric_model = light_body;
+    darray_push(scene->point_lights, &plight_1);
+
+    struct shader phong_shader = shader_create("glsl/phong.glsl");
+}
+
+void scene_init_skybox(struct scene *scene)
+{
+    const char *cubemap_faces[6] = {
+        "res/skybox/default/px.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/py.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/pz.jpg",
+        "res/skybox/default/nz.jpg",
+    };
+    skybox_init(&scene->skybox, cubemap_faces);
 }
 
 #endif

@@ -86,5 +86,6 @@ void scene_destroy(struct scene *scene);
    scene inside scene_impl.c */
 void scene_init_models(struct scene *scene);
 void scene_init_lighting(struct scene *scene);
+void scene_init_skybox(struct scene *scene);
 
 #endif /* SAGE_SCENE_H */
