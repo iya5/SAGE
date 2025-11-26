@@ -47,6 +47,10 @@ int main(void)
        Finally, the scene is initialized; including the geometry, lighting, &
        camera necessary to view the 3D rendered models.
 
+       When the scene is done, we build the UI's scene graph based on the data
+       loaded onto the Scene. There are perhaps better ways of doing this such
+       as lazily loading them but for now, this is the implementation.
+
        All of these initializations will later on be 'deinitialized' for
        gracefully ending the program. */
     platform_window_init(&platform, 
@@ -110,7 +114,7 @@ int main(void)
 
        For a lower-level overview: 'mesh'.h' shows how rendering works using
        OpenGL, what is OpenGL to begin with, and the overall graphics pipeline */
-    //ui_shutdown(&ui);
+    ui_shutdown(&ui);
     scene_destroy(&scene);
     platform_window_shutdown(&platform);
 

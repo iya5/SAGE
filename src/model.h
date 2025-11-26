@@ -24,6 +24,12 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #define MODEL_NAME_MAX_SIZE 64
 
+struct transform {
+    vec3 rotation;
+    vec3 scale;
+    vec3 position;
+};
+
 struct model {
     char name[MODEL_NAME_MAX_SIZE];
     struct mesh mesh;
