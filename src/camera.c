@@ -15,6 +15,9 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include "camera.h"
 #include <math.h>
+#include "mnf/mnf_matrix.h"
+#include "mnf/mnf_vector.h"
+#include "mnf/mnf_util.h"
 
 void camera_init(struct camera *cam, vec3 pos, vec3 forward, vec3 world_up)
 {

@@ -17,15 +17,16 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "obj_loader.h"
+#include "darray.h"
 #include "logger.h"
 #include "mnf/mnf_vector.h"
-#include "mesh.h"
 
 #define LINE_INITIAL_SIZE 512
 
-darray *obj_load_from_file(const char *path)
+void obj_load_mesh(const char *path, darray **vertices, darray **indices)
 {
     FILE *file = fopen(path, "r");
 
@@ -42,10 +43,19 @@ darray *obj_load_from_file(const char *path)
         exit(1);
     }
 
+    if (*vertices == NULL)
+        *vertices = darray_alloc(sizeof(struct vertex), 1028);
+
+    /* TODO: Figure out how to load indices */
+    /*
+    if (*indices == NULL)
+        *indices = darray_alloc(sizeof(uint32_t), 1028);
+    */
+    *indices = NULL;
+
     darray *positions = darray_alloc(sizeof(vec3), 1028);
-    darray *uvs = darray_alloc(sizeof(vec2), 1028);
     darray *normals = darray_alloc(sizeof(vec3), 1028);
-    darray *vertices = darray_alloc(sizeof(struct vertex), 1028);
+    darray *uvs = darray_alloc(sizeof(vec2), 1028);
 
     ssize_t nread;
     while ((nread = getline(&line, &size, file)) != -1) {
@@ -71,6 +81,7 @@ darray *obj_load_from_file(const char *path)
                    &normal[0],
                    &normal[1],
                    &normal[2]);
+            mnf_vec3_normalize(normal, normal);
             darray_push(normals, normal);
         }
 
@@ -105,18 +116,15 @@ darray *obj_load_from_file(const char *path)
                 mnf_vec3_copy(*normal, vertex.normal);
                 mnf_vec2_copy(*uv, vertex.uv);
 
-                darray_push(vertices, &vertex);
+                darray_push(*vertices, &vertex);
             }
         }
     }
 
+    free(line);
     darray_free(positions);
     darray_free(uvs);
     darray_free(normals);
-
-    free(line);
     fclose(file);
-    
-    return vertices;
 }
 

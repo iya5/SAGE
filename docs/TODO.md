@@ -6,27 +6,27 @@
 [...] -> in progress
 ```
 
-[...] project setup
+[ x ] project setup
     [ x ] setup opengl and opengl function loader
     [ x ] setup libraries for window management
     [ x ] setup logger
-    [...] setup build system
-    [   ] setup intermediate gui library (nuklear)
+    [ x ] setup build system
+    [ x ] setup intermediate gui library (nuklear)
 
 [...] create graphics math library (only what is necessary for now)
 
-[...] setup window and input
-    [...] setup glfw and open a window
-    [...] setup basic hints and configurations
-    [...] setup input
+[ x ] setup window and input
+    [ x ] setup glfw and open a window
+    [ x ] setup basic hints and configurations
+    [ x ] setup input
+        [ x ] setup callbacks
+        [ x ] save input stream to diy built input manager?
 
 [ x ] render a triangle
     [ x ] setup rendering pipeline
         [ x ] create shaders for pipeline
             [ x ] vertex shader
             [ x ] fragment shader
-            [   ] **(optional)** tesselation shader
-            [   ] **(optional)** geometry shader
         [ x ] create shader parser
             [ x ] unify glsl shaders into a single file
         [ x ] setup vertices and memory buffers for GPU
@@ -49,45 +49,27 @@
     [ x ] edit vertex array to include vertices in 3d space
     [ x ] reconfigure memory buffers and draw calls
 
-[...] create debug tools
-    [...] create world grid
-        [   ] setup world grid in shader
-    [   ] create gizmo manipulator (some help in ddiakoppoulos/tinygizmo)
-
 [...] render basic lighting
-    [ x ] create shader to calculate phong lighting model
+    [ x ] write a shader to calculate lighting based on the phong lighting model
         [ x ] ambient reflection
         [ x ] diffuse / lambertian reflection
         [ x ] specular reflection
     [ x ] reconfigure memory buffers and vertex arrays to take in normals
-    [ x ] create gouraud shader
-    [...] shade multiple light casters
+    [ x ] shade multiple light casters
 
-[...] render simple materials
+[ x ] render simple materials
     [ x ] diffuse map
     [ x ] specular map
+    [ x ] reconfigure texture functions to account for texture units in the GPU
 
 [ x ] render a skybox
+    [ x ] setup cubemap textures
 
-[   ] render a model
-    [   ] setup a model loader
+[ x ] render a model
+    [ x ] setup a model loader
 
-[   ] render text
+[ x ] render a scene
+    [ x ] setup a configurable scene file
 
-[   ] setup intermediate gui
-    [   ] access transformation functions
-    [   ] access file system
-        [   ] load files
-        [   ] save files
-
-[...] render a scene
-
-[   ] setup pbr (physically-based rendering)
-
-[   ] optimizations
-
---- optional but pretty cool goals!
-
-[   ] create and render procedural terrain
-[   ] create and ren
-[   ] update comment formatting
+[ x ] setup intermediate gui
+    [ x ] access transformation functions

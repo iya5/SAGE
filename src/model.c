@@ -13,6 +13,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
+#include <string.h>
+
 #include "material.h"
 #include "mesh.h"
 #include "mnf/mnf_matrix.h"
@@ -23,6 +25,7 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include "obj_loader.h"
 #include "darray.h"
 #include "texture.h"
+#include "logger.h"
 
 static void transform_model_matrix(struct transform transform, mat4 out);
 
@@ -31,15 +34,20 @@ struct model model_load_from_file(const char *path)
     struct model model;
     struct mesh mesh;
 
-    darray *vertices = obj_load_from_file(path);
-    mesh = mesh_create_from_vertices(vertices);
-    model.mesh = mesh;
+    darray *vertices = NULL;
+    darray *indices = NULL;
+    obj_load_mesh(path, &vertices, &indices);
+    mesh = mesh_create(vertices, indices);
 
+    model.mesh = mesh;
+    model.visible = true;
     model.material = material_create_default();
     
     mnf_vec3_copy(MNF_ONE_VECTOR, model.transform.scale);
     mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.rotation);
     mnf_vec3_copy(MNF_ZERO_VECTOR, model.transform.position);
+
+    model_set_name(&model, "Model");
 
     return model;
 }
@@ -51,6 +59,7 @@ struct model model_create_cube(void)
 
     mesh = mesh_geometry_create_cube();
     model.mesh = mesh;
+    model.visible = true;
 
     model.material = material_create_default();
     
@@ -61,6 +70,10 @@ struct model model_create_cube(void)
     return model;
 }
 
+void model_set_name(struct model *model, char name[MODEL_NAME_MAX_SIZE])
+{
+    strncpy(model->name, name, MODEL_NAME_MAX_SIZE);
+}
 
 void model_draw(struct model model, struct shader shader)
 {

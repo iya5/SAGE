@@ -27,6 +27,7 @@ void main()
        NOTE: I said model because we're representing the vertex in world space,
        but we can optimize by also converting this in view space to reduce one
        variable needed (view position) for calculating specular */
+
     mat3 normal_mat = mat3(transpose(inverse(u_model)));
     frag_pos = vec3(u_model * vec4(attr_pos, 1.0));
     frag_normal = normal_mat * attr_normal;
@@ -67,6 +68,7 @@ struct point_light {
     float constant;
     float linear;
     float quadratic;
+    bool visible;
 };
 #define MAX_SCENE_POINT_LIGHT 8
 uniform int u_num_point_lights;
@@ -81,6 +83,7 @@ vec3 directional_light_calculate(directional_light light);
 
 vec3 point_light_calculate(point_light light, vec3 normal, vec3 view_direction)
 {
+    if (!light.visible) return vec3(0.0);
     /* Retrieve the light direction by getting the difference between its
        position and the fragment currently being shaded. This will be used for
        both the diffuse & specular reflection model */
@@ -153,6 +156,7 @@ vec3 point_light_calculate(point_light light, vec3 normal, vec3 view_direction)
        factors so that the brightness of the light on the fragment decreases
        as distance increases.so intensity of light on the fragment decreases as
        distance of the fragment to the light increases */
+
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
@@ -197,7 +201,6 @@ void main()
     /* Calculating the influence of all point lights passed to the shader */
     for (int i = 0; i < u_num_point_lights; i++)
         output_color += point_light_calculate(u_point_lights[i], normal, view_direction);
-
     out_color = vec4(output_color, 1.0);
 }
 

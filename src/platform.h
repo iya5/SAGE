@@ -76,26 +76,42 @@ enum polygon_mode {
     POLYGON_FILL
 };
 
+struct mouse {
+    float x;    /* Current x position */
+    float y;    /* Current y position */
+    float dx;   /* Delta x since last frame */
+    float dy;   /* Delta y since last frame */
+    float scroll_x;    /* Horizontal scroll position (possibly unused) */
+    float scroll_y;    /* Vertical scroll position */
+    bool buttons[MOUSE_COUNT];  /* Button states */
+};
+
 struct input_state {
-    float mouse_x;
-    float mouse_y;
-    float mouse_dx;
-    float mouse_dy;
+    struct mouse mouse;
     bool keys[KEY_COUNT];
-    bool mouse_buttons[MOUSE_COUNT];
 };
 
 struct platform {
-    void *context;    /* glfw treats the window as a context */
-    struct input_state *input;
+    /* Context manages the internal state of the window; this implementation is
+       done & managed by GLFW */
+    void *context;
+    struct input_state input;
     bool running;
+    enum polygon_mode draw_mode;
     int32_t viewport_width;
     int32_t viewport_height;
+
+    uint32_t fps;
+    float frame_time;
+    uint32_t fps_count;
+    double fps_timer;
+    double dt;
+    double current_time;
+    double previous_time;
 };
 
 /* Initializes platform specific window (GLFW) and stores configurations such as
- * viewport sizes, window sizes, and manages input states
- */
+   viewport sizes, window sizes, and manages input states */
 bool platform_window_init(struct platform *platform, 
                           int32_t viewport_width,
                           int32_t viewport_height,
@@ -105,13 +121,13 @@ bool platform_window_init(struct platform *platform,
 /* Shutdowns the window and frees related memory */
 void platform_window_shutdown(struct platform *platform);
 
-/* Polls input however majority of binds are done via events (this is just a
- * wrapper around glfwPollInput() 
- */
+/* Calculates frame timing information like FPS, dt, etc */
+void platform_update_frame_timing(struct platform *platform);
+
+/* Polls input; wrapper around glfwPollInput() */
 void platform_poll_input(struct platform *platform);
 
-/* Returns the time via GLFW
- */
+/* Returns the time via GLFW */
 double platform_get_time_seconds(void);
 
 /* Swaps the back buffer with the front buffer */

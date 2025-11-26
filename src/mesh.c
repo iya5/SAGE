@@ -15,35 +15,112 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <glad/gl.h>
 
 #include "assert.h"
 #include "darray.h"
-#include "mnf/mnf_types.h"
 #include "mnf/mnf_vector.h"
 #include "logger.h"
 #include "mesh.h"
 
-#define N_VERTICES_2D_TRIANGLE 3
-#define N_INDICES_2D_TRIANGLE 3
-
-#define N_VERTICES_QUAD 4
-#define N_INDICES_QUAD 6
-
-#define N_VERTICES_CUBE 36
-
-static struct mesh_gpu mesh_gpu_create(const darray *vertices, 
-                                       const darray *indices);
-static void mesh_gpu_free(struct mesh_gpu *buffer);
-
-struct mesh mesh_create_from_vertices(darray *vertices)
+static struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices)
 {
-    struct mesh mesh;
-    mesh.buffer = mesh_gpu_create(vertices, NULL);
-    mesh.vertices = vertices;
-    mesh.indices = NULL;
+    struct mesh_gpu buffer;
+    
+    uint32_t vao;
+    uint32_t vbo;
+    uint32_t ibo;
 
-    SINFO("Created a mesh with %d vertices", mesh.vertices->len);
+    /* generating buffers */
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    /* bind vao */
+    glBindVertexArray(vao);
+
+    /* bind and copy data over to the buffer */
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, 
+                 vertices->item_size * vertices->len,
+                 vertices->items,
+                 GL_STATIC_DRAW);
+
+    /* configure the vao to interpret attributes */
+    /* stride is the offset between consecutive generic vertex attributes */
+    size_t stride = sizeof(struct vertex);
+
+    void *pos_offset = (void *) 0;
+    void *normal_offset = (void *) offsetof(struct vertex, normal);
+    void *uv_offset = (void *) offsetof(struct vertex, uv);
+
+    /* position attribute */
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, pos_offset);
+    glEnableVertexAttribArray(0);
+    /* normal attribute */
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, normal_offset);
+    glEnableVertexAttribArray(1);
+    /* uv attribute */
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, uv_offset);
+    glEnableVertexAttribArray(2);
+
+    if (indices) {
+        glGenBuffers(1, &ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     indices->item_size * indices->len,
+                     indices->items,
+                     GL_STATIC_DRAW);
+        buffer.ibo = ibo;
+        buffer.index_count = indices->len;
+    } else {
+        buffer.ibo = 0;
+        buffer.index_count = 0;
+    }
+
+    /* unbinding */
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    buffer.vao = vao;
+    buffer.vbo = vbo;
+    buffer.vertex_count = vertices->len;
+
+    return buffer;
+}
+
+static void mesh_gpu_free(struct mesh_gpu *buffer)
+{
+    glDeleteVertexArrays(1, &(buffer->vao));
+    glDeleteBuffers(1, &(buffer->vbo));
+    if (buffer->ibo > 0)
+        glDeleteBuffers(1, &(buffer->ibo));
+
+    buffer->vao = 0;
+    buffer->vbo = 0;
+    buffer->ibo = 0;
+    buffer->vertex_count = 0;
+    buffer->index_count = 0;
+}
+
+struct mesh mesh_create(darray *vertices, darray *indices)
+{
+    SASSERT_MSG(vertices !=  NULL, "Creating a mesh must atleast have vertices");
+
+    struct mesh mesh;
+    mesh.vertices = vertices;
+
+    if (indices == NULL) {
+        mesh.buffer = mesh_gpu_create(vertices, NULL);
+        mesh.indices = NULL;
+        SINFO("Created a mesh with %u vertices and 0 indices", mesh.vertices->len);
+    } else {
+        mesh.buffer = mesh_gpu_create(vertices, indices);
+        mesh.indices = indices;
+        SINFO("Created a mesh with %u vertices and %u indices",
+              mesh.vertices->len,
+              mesh.indices->len);
+    }
 
     return mesh;
 }
@@ -53,7 +130,6 @@ struct mesh mesh_geometry_create_cube(void)
     struct mesh mesh;
 
     darray *vertices = darray_alloc(sizeof(struct vertex), 3);
-
     if (vertices == NULL) goto err;
 
     vec3 pos[] = {
@@ -107,8 +183,8 @@ struct mesh mesh_geometry_create_cube(void)
         {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}
     };
 
-    for (int i = 0; i < N_VERTICES_CUBE; i++) {
-        struct vertex vertex = {0};
+    for (int i = 0; i < 36; i++) {
+        struct vertex vertex;
         mnf_vec3_copy(pos[i], vertex.pos);
         mnf_vec3_copy(normal[i], vertex.normal);
         mnf_vec2_copy(uv[i], vertex.uv);
@@ -164,112 +240,4 @@ void mesh_draw(struct mesh mesh)
     } else {
         glDrawArrays(GL_TRIANGLES, 0, mesh.buffer.vertex_count);
     }
-}
-
-static struct mesh_gpu mesh_gpu_create(const darray *vertices, const darray *indices)
-{
-    struct mesh_gpu buffer;
-    
-    uint32_t vao;
-    uint32_t vbo;
-    uint32_t ibo;
-
-    /* generating buffers */
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-
-    /* bind vao */
-    glBindVertexArray(vao);
-
-    /* bind and copy data over to the buffer */
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, 
-                 vertices->item_size * vertices->len,
-                 vertices->items,
-                 GL_STATIC_DRAW);
-
-    /* configure the vao to interpret attributes */
-    /* stride is the offset between consecutive generic vertex attributes */
-    size_t vertex_size = 8;
-    size_t stride = vertex_size * sizeof(float);
-    GLboolean normalized = GL_FALSE;
-
-    /* bind position attributes */
-    uint32_t pos_index = 0;
-    int32_t pos_size = 3;
-    void *pos_offset = (void *) 0;
-    glVertexAttribPointer(pos_index,
-                          pos_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          pos_offset);
-    glEnableVertexAttribArray(pos_index);
-
-
-    /* bind normal uv attributes */
-    uint32_t normal_index = 1;
-    int32_t normal_size = 3;
-    void *normal_offset = (void *) ((pos_size) * sizeof(float));
-    glVertexAttribPointer(normal_index,
-                          normal_size,
-                          GL_FLOAT,
-                          normalized,
-                          stride,
-                          normal_offset);
-
-    /* bind texture uv attributes */
-    uint32_t uv_index = 2;
-    int32_t uv_size = 2;
-    void *uv_offset = (void *) ((pos_size + normal_size) * sizeof(float));
-    glVertexAttribPointer(uv_index,
-                          uv_size,
-                          GL_FLOAT,
-                          normalized, 
-                          stride,
-                          uv_offset);
-    glEnableVertexAttribArray(uv_index);
-    glEnableVertexAttribArray(normal_index);
-
-    if (indices) {
-        /* generating buffer for indices */
-        glGenBuffers(1, &ibo);
-        /* bind indices for index drawing */
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     indices->item_size * indices->len,
-                     indices->items,
-                     GL_STATIC_DRAW);
-
-        buffer.ibo = ibo;
-        buffer.index_count = (uint32_t) indices->len;
-    } else {
-        buffer.ibo = 0;
-        buffer.index_count = 0;
-    }
-
-
-    /* unbinding */
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    buffer.vao = vao;
-    buffer.vbo = vbo;
-    buffer.vertex_count = (uint32_t) vertices->len;
-
-    return buffer;
-}
-
-static void mesh_gpu_free(struct mesh_gpu *buffer)
-{
-    glDeleteVertexArrays(1, &(buffer->vao));
-    glDeleteBuffers(1, &(buffer->vbo));
-    if (buffer->ibo > 0)
-        glDeleteBuffers(1, &(buffer->ibo));
-
-    buffer->vao = 0;
-    buffer->vbo = 0;
-    buffer->ibo = 0;
-    buffer->vertex_count = 0;
-    buffer->index_count = 0;
 }
