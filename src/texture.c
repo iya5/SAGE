@@ -225,13 +225,13 @@ struct texture cubemap_texture_create(const char *cubemap_faces[6])
                      width,            /* width            */
                      height,           /* height           */
                      0,                /* border           */
-                     GL_RGBA,          /* pixel format     */
+                     format,           /* pixel format     */
                      GL_UNSIGNED_BYTE, /* data type        */
                      data);            /* data in memory   */
     }
 
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 	return texture;
 }

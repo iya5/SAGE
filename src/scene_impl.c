@@ -111,7 +111,7 @@ void scene_init_skybox(struct scene *scene)
         "res/skybox/default/px.jpg",
         "res/skybox/default/nx.jpg",
         "res/skybox/default/py.jpg",
-        "res/skybox/default/nx.jpg",
+        "res/skybox/default/ny.jpg",
         "res/skybox/default/pz.jpg",
         "res/skybox/default/nz.jpg",
     };
@@ -392,7 +392,7 @@ void scene_init_skybox(struct scene *scene)
         "res/skybox/default/px.jpg",
         "res/skybox/default/nx.jpg",
         "res/skybox/default/py.jpg",
-        "res/skybox/default/nx.jpg",
+        "res/skybox/default/ny.jpg",
         "res/skybox/default/pz.jpg",
         "res/skybox/default/nz.jpg",
     };
@@ -438,8 +438,6 @@ void scene_init_lighting(struct scene *scene)
     point_light_set_specular(&plight_1, (vec3){1.0, 1.0, 1.0});
     plight_1.geometric_model = light_body;
     darray_push(scene->point_lights, &plight_1);
-
-    struct shader phong_shader = shader_create("glsl/phong.glsl");
 }
 
 void scene_init_skybox(struct scene *scene)
@@ -448,7 +446,7 @@ void scene_init_skybox(struct scene *scene)
         "res/skybox/default/px.jpg",
         "res/skybox/default/nx.jpg",
         "res/skybox/default/py.jpg",
-        "res/skybox/default/nx.jpg",
+        "res/skybox/default/ny.jpg",
         "res/skybox/default/pz.jpg",
         "res/skybox/default/nz.jpg",
     };
@@ -491,8 +489,6 @@ void scene_init_lighting(struct scene *scene)
     point_light_set_specular(&plight_1, (vec3){1.0, 1.0, 1.0});
     plight_1.geometric_model = light_body;
     darray_push(scene->point_lights, &plight_1);
-
-    struct shader phong_shader = shader_create("glsl/phong.glsl");
 }
 
 void scene_init_skybox(struct scene *scene)
@@ -501,7 +497,7 @@ void scene_init_skybox(struct scene *scene)
         "res/skybox/default/px.jpg",
         "res/skybox/default/nx.jpg",
         "res/skybox/default/py.jpg",
-        "res/skybox/default/nx.jpg",
+        "res/skybox/default/ny.jpg",
         "res/skybox/default/pz.jpg",
         "res/skybox/default/nz.jpg",
     };
