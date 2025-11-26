@@ -82,7 +82,7 @@ void scene_render(struct scene *scene)
     struct camera *cam = &(scene->cam);
     camera_update(cam);
 
-    //if (scene->draw_skybox) skybox_draw(scene->skybox, cam->view, cam->projection);
+    if (scene->draw_skybox) skybox_draw(scene->skybox, cam->view, cam->projection);
 
     shader_use(light_shader);
     shader_uniform_mat4(light_shader, "u_view", cam->view);

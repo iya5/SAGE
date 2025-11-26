@@ -23,12 +23,10 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 struct skybox {
     struct texture cubemap;
     struct mesh mesh;
-    vec3 rotation;
 };
 
 void skybox_init(struct skybox *skybox, const char *cubemap_paths[6]);
 void skybox_draw(struct skybox skybox, mat4 view, mat4 projection);
 void skybox_destroy(struct skybox *skybox);
-void skybox_rotate(struct skybox *skybox, vec3 euler_angles);
 
 #endif /* SAGE_SKYBOX_H */

@@ -106,10 +106,18 @@ struct mesh {
    Then we destroy a mesh by freeing up its data and memory location in the GPU
    at the end of its lifetime, then there are the binding and drawing which
    should always be used in tandem: Binding the mesh first before drawing it! */
+
+/* Documentation for function usage */
+
+/* ... */
 struct mesh mesh_geometry_create_cube(void);
+/* ... */
 struct mesh mesh_create(darray *vertices, darray *indices);
+/* ... */
 void mesh_destroy(struct mesh *mesh);
+/* ... */
 void mesh_bind(struct mesh mesh);
+/* ... */
 void mesh_draw(struct mesh mesh);
 
 #endif /* SAGE_MESH_H */

@@ -97,9 +97,6 @@ void ui_begin_frame(struct ui *ui, struct scene *scene, struct platform *platfor
             nk_checkbox_label(ctx, "Enable skybox", &skybox);
             ui_vec3_editor_rgb(ctx, scene->clear_color, 0.0f, 255.0f, 1.0f, 0.1f);
             scene->draw_skybox = skybox;
-
-            ui_vec3_editor_deg(ctx, scene->skybox.rotation, -UINT16_MAX, UINT16_MAX, 10, 0.1);
-
             nk_label(ctx, "Clear Color", NK_TEXT_LEFT);
             ui_vec3_editor_rgb(ctx, scene->clear_color, 0.0f, 255.0f, 1.0f, 0.1f);
             nk_tree_pop(ctx);

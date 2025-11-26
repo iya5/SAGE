@@ -113,7 +113,8 @@ int main(void)
        are things displayed!
 
        For a lower-level overview: 'mesh'.h' shows how rendering works using
-       OpenGL, what is OpenGL to begin with, and the overall graphics pipeline */
+       OpenGL, what is OpenGL to begin with, and the overall graphics
+       pipeline */
     ui_shutdown(&ui);
     scene_destroy(&scene);
     platform_window_shutdown(&platform);

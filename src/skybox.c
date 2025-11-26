@@ -16,8 +16,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 #include <glad/gl.h>
 #include "skybox.h"
 #include "mesh.h"
-#include "mnf/mnf_transform.h"
-#include "mnf/mnf_vector.h"
 #include "shader.h"
 #include "texture.h"
 #include "mnf/mnf_matrix.h"
@@ -55,11 +53,6 @@ void skybox_draw(struct skybox skybox, mat4 view, mat4 projection)
     glDepthMask(GL_FALSE);
     mesh_draw(skybox.mesh);
     glDepthMask(GL_TRUE);
-}
-
-void skybox_rotate(struct skybox *skybox, vec3 euler_angles)
-{
-    mnf_vec3_copy(euler_angles, skybox->rotation);
 }
 
 void skybox_destroy(struct skybox *skybox)

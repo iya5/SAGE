@@ -18,10 +18,11 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
    it simply combines them all together which is probably not the expected
    result */
 
+#include "model.h"
 #include "scene.h"
 #include "mnf/mnf_util.h"
 
-#define MINECRAFT
+#define TEAPOT
 
 #ifdef SCENE_ONE
 
@@ -505,3 +506,132 @@ void scene_init_skybox(struct scene *scene)
 }
 
 #endif
+
+#ifdef TEAPOT
+
+void scene_init_models(struct scene *scene)
+{
+    struct model teapot = model_load_from_file("res/teapot/source/teapot.obj");
+    teapot.material = material_create("res/textures/lavender.png", NULL, 120);
+    model_translate(&teapot, (vec3){0.32, 1.64, 0});
+    model_rotation(&teapot, (vec3){MNF_RAD(0), MNF_RAD(73.0), MNF_RAD(0)});
+    model_scale(&teapot, (vec3){0.1, 0.1, 0.1});
+    model_set_name(&teapot, "Teapot");
+    darray_push(scene->models, &teapot);
+
+    struct model sphere = model_load_from_file("res/sphere.obj");
+    sphere.material = material_create("res/textures/uv-grid.jpg", NULL, 120);
+    model_translate(&sphere, (vec3){-2.91, 1.87, -2.34});
+    model_rotation(&sphere, (vec3){MNF_RAD(15.40), MNF_RAD(144.30), MNF_RAD(42.60)});
+    model_scale(&sphere, (vec3){1.0, 1.0, 1.0});
+    model_set_name(&sphere, "Sphere");
+    darray_push(scene->models, &sphere);
+
+    struct model cube = model_create_cube();
+    cube.material = material_create("res/textures/base.png", NULL, 120);
+    model_translate(&cube, (vec3){-1.79, 1.37, 1.74});
+    model_rotation(&cube, (vec3){MNF_RAD(0), MNF_RAD(111.90), MNF_RAD(0)});
+    model_scale(&cube, (vec3){2.0, 2.0, 2.0});
+    model_set_name(&cube, "Cube 1");
+    darray_push(scene->models, &cube);
+
+    struct model cub = model_create_cube();
+    cub.material = material_create("res/textures/base.png", NULL, 120);
+    model_translate(&cub, (vec3){0.21, 1, 0});
+    model_rotation(&cub, (vec3){MNF_RAD(0), MNF_RAD(50), MNF_RAD(0)});
+    model_scale(&cub, (vec3){2.4, 1.3, 1.3});
+    model_set_name(&cub, "Cube 2");
+    darray_push(scene->models, &cub);
+
+    /* problem with model_create_cube is that it continously initiates a new
+       vertex array with the same vertices and VAO attributes, so we are
+       generating the multiple meshes for the same model, THAT is not good!
+
+       We only need to have one mesh and then we can make multiple models out
+       of that mesh. Currently there is no resource management which is why
+       this problem is put off for now but it is very problematic!
+
+       Same thing for the textures */
+    struct model floor = model_create_cube();
+    //floor.material = material_create("res/textures/base.png", NULL, 12);
+    floor.material = material_create(NULL, NULL, 12);
+    model_translate(&floor, (vec3){0, 0, 0});
+    model_rotation(&floor, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&floor, (vec3){10.0, 1.0, 10.0});
+    model_set_name(&floor, "Floor");
+    darray_push(scene->models, &floor);
+
+
+    struct model left_wall = model_create_cube();
+    left_wall.material = material_create("res/textures/red.png", NULL, 1);
+    model_translate(&left_wall, (vec3){0, 5, 5});
+    model_rotation(&left_wall, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&left_wall, (vec3){10.0, 10.0, 1.0});
+    model_set_name(&left_wall, "Left Wall");
+    darray_push(scene->models, &left_wall);
+
+    struct model right_wall = model_create_cube();
+    right_wall.material = material_create("res/textures/green.png", NULL, 1);
+    model_translate(&right_wall, (vec3){0, 5, -5});
+    model_rotation(&right_wall, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&right_wall, (vec3){10.0, 10.0, 1.0});
+    model_set_name(&right_wall, "Right Wall");
+    darray_push(scene->models, &right_wall);
+
+
+    struct model back_wall = model_create_cube();
+    back_wall.material = material_create(NULL, NULL, 1);
+    model_translate(&back_wall, (vec3){-5, 5, 0});
+    model_rotation(&back_wall, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&back_wall, (vec3){1.0, 10.0, 10.0});
+    model_set_name(&back_wall, "Back Wall");
+    darray_push(scene->models, &back_wall);
+
+
+    struct model roof = model_create_cube();
+    roof.material = material_create(NULL, NULL, 1);
+    model_translate(&roof, (vec3){0, 10, 0});
+    model_rotation(&roof, (vec3){MNF_RAD(0), MNF_RAD(0), MNF_RAD(0)});
+    model_scale(&roof, (vec3){10.0, 1.0, 10.0});
+    model_set_name(&roof, "Roof");
+    darray_push(scene->models, &roof);
+}
+
+void scene_init_lighting(struct scene *scene)
+{
+    struct model light_body = model_load_from_file("res/sphere.obj");
+    light_body.material = material_create(NULL, NULL, 1);
+    model_scale(&light_body, (vec3){0.1, 0.1, 0.1});
+
+    struct directional_light environment_light = {
+        .direction = {16.04, -1.04, 2.95},
+        .ambient = {76.0/255.0, 76.0/255.0, 76.0/255.0},
+        .diffuse = {0.0/255.0, 0.0/255.0, 0.0/255.0},
+        .specular = {0.0/255.0, 0.0/255.0, 0.0/255.0}
+    };
+    scene->environment_light = environment_light;
+
+    struct point_light plight_1 = point_light_create("Point Light 1", 20.0);
+    point_light_set_color(&plight_1, (vec3){2.0, 7.0, 2.5});
+    point_light_set_pos(&plight_1, (vec3){0, 9.55, 0.0});
+    point_light_set_diffuse(&plight_1, (vec3){1.0, 1.0, 1.0});
+    point_light_set_specular(&plight_1, (vec3){1.0, 1.0, 1.0});
+    plight_1.geometric_model = light_body;
+    darray_push(scene->point_lights, &plight_1);
+}
+
+void scene_init_skybox(struct scene *scene)
+{
+    const char *cubemap_faces[6] = {
+        "res/skybox/default/px.jpg",
+        "res/skybox/default/nx.jpg",
+        "res/skybox/default/py.jpg",
+        "res/skybox/default/ny.jpg",
+        "res/skybox/default/pz.jpg",
+        "res/skybox/default/nz.jpg",
+    };
+    skybox_init(&scene->skybox, cubemap_faces);
+    scene->draw_skybox = false;
+}
+
+#endif /* TEAPOT */
