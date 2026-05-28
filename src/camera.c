@@ -1,18 +1,3 @@
-/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
-
-This file is part of Sage
-
-Sage is free software: you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation,
-either version 3 of the License, or (at your option) any later version.
-
-Sage is distributed in the hope that it will be useful, but WITHOUT ANY 
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with 
-Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
-
 #include "camera.h"
 #include <math.h>
 #include "mnf/mnf_matrix.h"
@@ -144,82 +129,6 @@ void camera_update(struct camera *cam)
 
 void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
 {
-    /* 
-     * Calculating the camera (view) matrix reorients the world coordinate
-     * space so that it's all relative to the camera's position. This doesn't
-     * yet setup how the camera will render or view things (that will be done by
-     * the next transformation, the projection matrix) but insteads prepares the
-     * orientation and coordinates of the vertices, models, meshes, & etc.
-     *
-     * Note: the view matrix isn't the camera's transform in world space but
-     * the inverse of that. Why? We would just be moving the camera in the world
-     * and not the world to the camera.
-     *
-     * The inverse matrix is simply a matrix where multiplying it against
-     * another transform matrix yields an identity matrix, hence it's the inverse
-     * transformation of that matrix.
-     */
-
-    /*
-     * A view matrix typically looks like this (in column major)
-     *
-     * [ Rx,  Ry,  Rz, -Px]
-     * [ Ux,  Uy,  Uv, -Py]
-     * [-Fx, -Fy, -Fz,  Pz]
-     * [  0,   0,   0,   1]
-     *
-     * Where U is a unit vector pointing upwards
-     * Where F is a unit vector pointing forwards (negated)
-     * Where R is the unit vector pointing to the right
-     * and P is the position of the camera relative to the world space (negated)
-     *
-     * All of these unit vectors represent the basis vectors of view space
-     *
-     * However, since P is the position of the camera in world space, and we need
-     * to convert it to the camera's local space (hence the inverse) where the
-     * basis vectors are:
-     *      - right:    x
-     *      - forward:  z
-     *      - up:       y
-     *
-     *  In order to map the camera position to the basis vectors of the camera's
-     *  local space, we can simply use the dot product to project each component
-     *  of the camera's position onto the basis vectors, hence getting its
-     *  inverse. It places the camera's position parallel to the basis vectors
-     *  of the view space.
-     */
-
-    /*
-     * First step is to calculate the distance between camera and the target
-     * into a distance vector, then to normalize it such that it becomes a
-     * unit vector turning to our forward vector and giving the direction the
-     * camera is facing
-     *
-     * The steps are to first calculate the distance for each of their components:
-     *
-     *      d[i] = target_pos[i] - cam_pos[i]
-     *
-     *       (vector from camera to pos)
-     *
-     * Calculating the magnitude of that new vector is simply done by 
-     * getting the square root of the sum of squares of each component
-     * (This is pretty much getting the hypotenus of a triangle)
-     *
-     *                 n = 2
-     *      ||d|| = sqrt(∑ d[i] * d[i])
-     *                 i = 0
-     *
-     *      (length of distance vector or simply the magnitude/hypotenus)
-     *
-     *
-     * Finally, dividing the distance vector by the magnitude yeilds the unit
-     * vector forward
-     *     
-     *      F̂ = d / ||d||
-     *
-     *      (same arrow but whose length = 1 so simply the direction)
-     */
-
     vec3 distance = {
         target[X] - pos[X],
         target[Y] - pos[Y],
@@ -229,36 +138,6 @@ void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
     vec3 cam_forward;
     mnf_vec3_normalize(distance, cam_forward);
 
-    /* 
-     * Calculting the right vector means to find the vector perpendicular to both
-     * forward and upward.
-     *
-     * OpenGL is a right-hand coordinate system but its Normalized Device
-     * Coordinate is left-handed instead. hence it's necessary to negate the
-     * forward vector at the end.
-     *
-     * The origin is the bottom left with +x going right, +y going up, and +z
-     * going towards the user with -z going towards the screen
-     *
-     * With that in mind, the perpendicular vector of both x and y (which is the
-     * z vector) only needs taking the cross product between the two
-     *
-     * the equation for it is:
-     *
-     *      R̂ = F̂ x Û
-     *
-     *      (With the left hand:
-     *       thumb points right representing +x
-     *       index points up representing +y
-     *       middle finger points forward representing +z)
-     *
-     * where F̂ is the calculated unit vector for forward and Û is the unit vector
-     * for the upward direction of the camera itself
-     * 
-     * Why that order?, F̂ x Û gives the vector to the right while
-     * Û x F̂ gives the vector to the left
-     */
-    
     // normalizing prevents some really weird distortions. Why? because they are
     // our basis vectors for the coordinate system and must be unit vectors
     vec3 cam_right, cam_up;
@@ -269,9 +148,6 @@ void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
     mnf_vec3_cross(cam_right, cam_forward, cam_up);
     mnf_vec3_normalize(cam_up, cam_up);
 
-    // before plugging it in, we must map the camera's position onto the basis
-    // vectors of view space by using the dot product to project the former
-    // onto the latter
     vec3 cam_translate = {
         mnf_vec3_dot(cam_right, pos),
         mnf_vec3_dot(cam_up, pos),
@@ -279,12 +155,6 @@ void view_lookat(mat4 view, vec3 pos, vec3 target, vec3 up)
 
     };
 
-    /*
-     * [ Rx,  Ry,  Rz, -Px]
-     * [ Ux,  Uy,  Uv, -Py]
-     * [-Fx, -Fy, -Fz,  Pz]
-     * [  0,   0,   0,   1]
-     */
     mat4 temp = {
         {cam_right[X], cam_up[X], -cam_forward[X], 0},
         {cam_right[Y], cam_up[Y], -cam_forward[Y], 0},
@@ -302,55 +172,12 @@ void projection_perspective(mat4 projection,
                             float near,
                             float far)
 {
-    /*
-     * The projection matrix (specifically using perspective) handles defining
-     * the near and far clipping planes. This is the visible range along the Z
-     * axis (take for example the chunk render distance in minecraft), with the
-     * front of the "near" distance—or behind the camera—and anything past the
-     * "far" distance being outside the visible range. Projection is simply just
-     * the mapping of camera-space coordinates to screen-space coordinates.
-     *
-     * All the geometry outside this range is then "clipped" or removed from the
-     * rendering pipeline in a later state
-     *
-     * It also defines the field of view (FOV) which is an angle.
-     *
-     * The resulting clipping planes and FOV creates a volume, creating a frustrum
-     * that handles all the viewable rendered objects.
-     *
-     * With that, the final part is the actual perspective where the far plane
-     * gets "squished" to become a square with the near plane, creating a distortion
-     * of farther objects being smaller then nearer objects. It also makes farther
-     * objects closer to the center, mimicking real life persepctive.
-     */
-
-    /*
-     * Typical values for near is 0.1 and 100.0 for far, giving us a rendering
-     * distance of 99.9 units
-     */
-
-    /*
-     * Projection matrix looks like this (in column major)
-     *
-     * [Sx,  0,  0,  0]
-     * [ 0, Sy,  0,  0]
-     * [ 0,  0, Sz, Pz]
-     * [ 0,  0, -1,  0]
-     *
-     * S is just a vector that scales its respective components x, y, z
-     * Pz adjusts points' range between clipping planes (the near and far plane
-     * of the view frustrum, thus it is used for the perspective division
-     * the -1 swaps the vector's fourth component 'w' with its negated
-     * third 'z' component used for perspective division
-     */
-
     float range = tan(fov * 0.5) * near;
 
     float Sx = (2.0 * near) / (range * aspect + range * aspect);
     float Sy = near / range;
     float Sz = -(far + near) / (far - near);
 
-    // what exactly is that name Pz?
     float Pz = -(2 * far * near) / (far - near);
 
     mat4 temp = {

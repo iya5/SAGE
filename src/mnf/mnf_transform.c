@@ -1,18 +1,3 @@
-/* Manifold: Graphics Math Library for Sage.
-
-This file is part of Sage
-
-Sage is free software: you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation,
-either version 3 of the License, or (at your option) any later version.
-
-Sage is distributed in the hope that it will be useful, but WITHOUT ANY 
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with 
-Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
-
 #include <math.h>
 
 #include "mnf_matrix.h"
@@ -21,12 +6,6 @@ Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
 
 void mnf_euler_rotate_x(mat4 in, float phi, mat4 out)
 {
-    /*
-     * For rotating around the x-axis
-     * [1    0     0 ]
-     * [0  cosφ -sinφ]
-     * [0  sinφ  cosφ]
-     */
     mat4 rotate_x = {
         {1,         0,         0, 0},
         {0,  cos(phi),  sin(phi), 0},
@@ -40,12 +19,6 @@ void mnf_euler_rotate_x(mat4 in, float phi, mat4 out)
 
 void mnf_euler_rotate_y(mat4 in, float theta, mat4 out)
 {
-    /* 
-     * For rotating around the y-axis
-     * [cosθ 0 -sinθ]
-     * [ 0   1   0  ]
-     * [sinθ 0  cosθ]
-     */
     mat4 rotate_y = {
         { cos(theta), 0,  sin(theta), 0},
         {          0, 1,           0, 0},
@@ -58,12 +31,6 @@ void mnf_euler_rotate_y(mat4 in, float theta, mat4 out)
 
 void mnf_euler_rotate_z(mat4 in, float psi, mat4 out)
 {
-    /*
-     * For rotating around the z-axis
-     * [cosψ -sinψ 0]
-     * [sinψ  cosψ 0]
-     * [ 0     0   1]
-     */
     mat4 rotate_z = {
         { cos(psi), sin(psi), 0, 0},
         {-sin(psi), cos(psi), 0, 0},
@@ -86,8 +53,6 @@ void mnf_euler_rotate_xyz(mat4 in, vec3 euler_angles, mat4 out)
 
 void mnf_axis_angle_rotate(mat4 in, vec3 n, float theta, mat4 out)
 {
-    // TODO: add formula here
-    // in column major
     mnf_vec3_normalize(n, n);
 
     float nx = n[X];
@@ -120,14 +85,6 @@ void mnf_axis_angle_rotate(mat4 in, vec3 n, float theta, mat4 out)
 
 void mnf_mat4_scale(mat4 in, vec3 scalars, mat4 out)
 {
-    /* 
-     * For scaling a mat4 based on a vec3 of scalars k
-     * [1 0 0 0][kx]   [kx  0  0 0]
-     * [0 1 0 0][ky] = [ 0 ky  0 0]
-     * [0 0 1 0][kz]   [ 0  0 kz 0]
-     * [0 0 0 1][ 1]   [ 0  0  0 1]
-     */
-
     mat4 scale = {
         {scalars[X], 0, 0, 0},
         {0, scalars[Y], 0, 0},
@@ -140,14 +97,6 @@ void mnf_mat4_scale(mat4 in, vec3 scalars, mat4 out)
 
 void mnf_mat4_scale_along_axis(mat4 in, float scalar, vec3 n, mat4 out)
 {
-    /*
-     * For scaling along the axis parallel to n (as a unit vector) by scalar k
-     * [1+(k-1)nx²  (k-1)nxny  (k-1)nxnz 0]
-     * [ (k-1)nxny 1+(k-1)ny²  (k-1)nynz 0]
-     * [ (k-1)nxnz  (k-1)nynz 1+(k-1)nz² 0]
-     * [         0          0          0 1]
-     */
-    
     float nx2 = n[X] * n[X];
     float ny2 = n[Y] * n[Y];
     float nz2 = n[Z] * n[Z];

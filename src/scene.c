@@ -1,18 +1,3 @@
-/* SAGE: Sage Ain't A Game Engine. An OpenGL 3D Renderer.
-
-This file is part of Sage
-
-Sage is free software: you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation,
-either version 3 of the License, or (at your option) any later version.
-
-Sage is distributed in the hope that it will be useful, but WITHOUT ANY 
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with 
-Sage; see the file LICENSE. If not, see <https://www.gnu.org/licenses/>.    */
-
 #include <stdlib.h>
 #include <glad/gl.h>
 
@@ -52,10 +37,6 @@ void scene_init(struct scene *scene, float viewport_width, float viewport_height
     phong_shader = shader_create("glsl/phong.glsl");
     light_shader = shader_create("glsl/light.glsl");
 
-    /* A scene is composed of three important components; camera,
-       geometry, & lighting */
-
-    /* This section consists of the camera */
     struct camera *cam = &(scene->cam);
     float aspect = viewport_width / viewport_height;
     camera_init(cam, CAM_DEFAULT_POS, CAM_DEFAULT_FORWARD, CAM_DEFAULT_UP);
